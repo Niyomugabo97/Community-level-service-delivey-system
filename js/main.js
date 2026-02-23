@@ -122,6 +122,30 @@ function loadTrending() {
     `).join('');
 }
 
+// Load infrastructure reports for home page
+function loadInfrastructureReports() {
+    const container = document.getElementById('infrastructureReports');
+    if (!container) return;
+
+    const reports = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
+    if (reports.length === 0) {
+        container.innerHTML = '<p>No infrastructure reports yet.</p>';
+        return;
+    }
+
+    const sorted = [...reports].sort((a, b) => new Date(b.dateReported) - new Date(a.dateReported));
+
+    container.innerHTML = sorted.map(r => `
+        <div class="activity-card">
+            <img src="${r.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="Infrastructure image">
+            <div class="card-date">${formatDate(r.date || r.dateReported)}</div>
+            <p>${r.description || 'No description provided.'}</p>
+            <div class="card-place">📍 ${r.place || '—'}</div>
+            <small class="card-by">Reported by: ${r.reportedBy || 'Anonymous'}</small>
+        </div>
+    `).join('');
+}
+
 // Load school dropout statistics (home page)
 function loadSchoolDropoutStats() {
     const totalSchoolsEl = document.getElementById('homeTotalSchools');
@@ -181,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNews();
     loadTrending();
     loadSchoolDropoutStats();
+    loadInfrastructureReports();
 });
 
 

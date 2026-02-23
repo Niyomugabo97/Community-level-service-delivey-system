@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="with-bottom-sidebar">
     <header>
         <nav class="navbar">
             <div class="container">
@@ -26,10 +26,12 @@
     </header>
 
     <main class="dashboard-container">
-        <div class="dashboard-sidebar">
+        <div class="dashboard-sidebar bottom">
             <ul class="dashboard-menu">
                 <li><a href="#" data-section="drugs" class="active"><i class="fa-solid fa-bottle-droplet"></i> Report Drugs/Illegal Drinks</a></li>
                 <li><a href="#" data-section="violence"><i class="fa-solid fa-hand-fist"></i> Report Sexual Violence</a></li>
+                <li><a href="#" data-section="infrastructure"><i class="fa-solid fa-road"></i> Damaged Infrastructure Report</a></li>
+                <li><a href="#" data-section="visitors"><i class="fa-solid fa-user-group"></i> Report Visitors / Guests</a></li>
                 <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat with Leaders</a></li>
             </ul>
         </div>
@@ -130,6 +132,143 @@
                         </thead>
                         <tbody id="violenceTableBody">
                         </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Damaged Infrastructure Report Section -->
+            <section id="infrastructure" class="dashboard-section">
+                <h2><i class="fa-solid fa-road"></i> Report Damaged Infrastructure</h2>
+                <form id="infrastructureForm" class="form-container">
+                    <div class="form-group">
+                        <label>Place/Location</label>
+                        <input type="text" id="infrastructurePlace" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="infrastructureDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="infrastructureImage" accept="image/*" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="infrastructureDescription" rows="3" placeholder="Describe the damaged infrastructure (e.g., broken road, damaged bridge, etc.)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Reports</h3>
+                    <table id="infrastructureTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Place/Location</th>
+                                <th>Date</th>
+                                <th>Image</th>
+                                <th>Description</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody id="infrastructureTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Visitors / Guests Report Section -->
+            <section id="visitors" class="dashboard-section">
+                <h2><i class="fa-solid fa-user-group"></i> Report Visitors / Guests in Family</h2>
+                <form id="visitorsForm" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Your Sector</label>
+                            <input type="text" id="visitorYourSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Your Cell</label>
+                            <input type="text" id="visitorYourCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Your Village</label>
+                            <input type="text" id="visitorYourVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Your Telephone</label>
+                            <input type="tel" id="visitorYourTelephone">
+                        </div>
+                        <div class="form-group">
+                            <label>Visitor's Names</label>
+                            <input type="text" id="visitorNames" required placeholder="Comma separated or single name">
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Visitors</label>
+                            <input type="number" id="visitorCount" min="1" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Visitor IDs</label>
+                            <input type="text" id="visitorIDs" placeholder="Comma separated national IDs">
+                        </div>
+                        <div class="form-group">
+                            <label>Visitor Telephone</label>
+                            <input type="tel" id="visitorTelephone">
+                        </div>
+                        <div class="form-group">
+                            <label>Where they come from (Province)</label>
+                            <input type="text" id="visitorFromProvince">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>District</label>
+                            <input type="text" id="visitorFromDistrict">
+                        </div>
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="visitorFromSector">
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="visitorFromCell">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="visitorFromVillage">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Visit (Description)</label>
+                            <input type="text" id="visitorReason">
+                        </div>
+                        <div class="form-group">
+                            <label>Return Date</label>
+                            <input type="date" id="visitorReturnDate">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Visitor Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Visitor Reports</h3>
+                    <table id="visitorsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Visitor Names</th>
+                                <th>Count</th>
+                                <th>Visitor IDs</th>
+                                <th>From (Province/District/Sector/Cell/Village)</th>
+                                <th>Reason</th>
+                                <th>Return</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorsTableBody"></tbody>
                     </table>
                 </div>
             </section>

@@ -72,6 +72,14 @@ function setupForms() {
     if (chatForm) {
         chatForm.addEventListener('submit', handleCitizenChatSubmit);
     }
+    
+        // Infrastructure form
+        const infraForm = document.getElementById('infrastructureForm');
+        if (infraForm) infraForm.addEventListener('submit', handleInfrastructureSubmit);
+
+        // Visitors form
+        const visitorsForm = document.getElementById('visitorsForm');
+        if (visitorsForm) visitorsForm.addEventListener('submit', handleVisitorsSubmit);
 }
 
 // Build leader recipients dropdown based on selected role
@@ -203,6 +211,8 @@ function loadViolenceTable() {
 function loadAllTables() {
     loadDrugsTable();
     loadViolenceTable();
+    loadInfrastructureTable();
+    loadVisitorsTable();
 }
 
 // Format date helper
@@ -213,6 +223,123 @@ function formatDate(dateString) {
         month: 'short', 
         day: 'numeric' 
     });
+}
+
+// Handle infrastructure report submission (citizen)
+function handleInfrastructureSubmit(e) {
+    e.preventDefault();
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+
+    const place = document.getElementById('infrastructurePlace').value.trim();
+    const dateVal = document.getElementById('infrastructureDate').value;
+    const desc = (document.getElementById('infrastructureDescription') && document.getElementById('infrastructureDescription').value) ? document.getElementById('infrastructureDescription').value.trim() : '';
+    const fileInput = document.getElementById('infrastructureImage');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+
+    function saveReport(imageData) {
+        const record = {
+            id: Date.now(),
+            place: place,
+            date: dateVal,
+            image: imageData || null,
+            description: desc,
+            reportedBy: currentUser ? currentUser.name : 'Citizen',
+            reportedByEmail: currentUser ? currentUser.email : '',
+            dateReported: new Date().toISOString()
+        };
+
+        const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
+        records.push(record);
+        localStorage.setItem('infrastructureReports', JSON.stringify(records));
+
+        e.target.reset();
+        loadInfrastructureTable();
+        alert('Infrastructure report submitted successfully!');
+    }
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            saveReport(evt.target.result);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        saveReport(null);
+    }
+}
+
+function loadInfrastructureTable() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+    const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
+    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
+    const tbody = document.getElementById('infrastructureTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+        <tr>
+            <td>${escapeHtml(r.place)}</td>
+            <td>${formatDate(r.date || r.dateReported)}</td>
+            <td>${r.image ? `<img src="${r.image}" alt="img" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
+            <td>${truncateDesc(r.description, 60)}</td>
+            <td>${formatDate(r.dateReported)}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
+}
+
+// Handle visitors/guests report submission (citizen)
+function handleVisitorsSubmit(e) {
+    e.preventDefault();
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+
+    const record = {
+        id: Date.now(),
+        yourSector: document.getElementById('visitorYourSector').value,
+        yourCell: document.getElementById('visitorYourCell').value,
+        yourVillage: document.getElementById('visitorYourVillage').value,
+        yourTelephone: document.getElementById('visitorYourTelephone').value,
+        visitorNames: document.getElementById('visitorNames').value,
+        visitorCount: parseInt(document.getElementById('visitorCount').value) || 1,
+        visitorIDs: document.getElementById('visitorIDs').value,
+        visitorTelephone: document.getElementById('visitorTelephone').value,
+        fromProvince: document.getElementById('visitorFromProvince').value,
+        fromDistrict: document.getElementById('visitorFromDistrict').value,
+        fromSector: document.getElementById('visitorFromSector').value,
+        fromCell: document.getElementById('visitorFromCell').value,
+        fromVillage: document.getElementById('visitorFromVillage').value,
+        reason: document.getElementById('visitorReason').value,
+        returnDate: document.getElementById('visitorReturnDate').value,
+        reportedBy: currentUser.name || 'Citizen',
+        reportedByEmail: currentUser.email || '',
+        dateReported: new Date().toISOString()
+    };
+
+    const records = JSON.parse(localStorage.getItem('visitorReports')) || [];
+    records.push(record);
+    localStorage.setItem('visitorReports', JSON.stringify(records));
+
+    e.target.reset();
+    loadVisitorsTable();
+    alert('Visitor report submitted successfully!');
+}
+
+function loadVisitorsTable() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+    const records = JSON.parse(localStorage.getItem('visitorReports')) || [];
+    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
+    const tbody = document.getElementById('visitorsTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+        <tr>
+            <td>${escapeHtml(r.visitorNames)}</td>
+            <td>${r.visitorCount}</td>
+            <td>${escapeHtml(r.visitorIDs || '—')}</td>
+            <td>${escapeHtml([r.fromProvince, r.fromDistrict, r.fromSector, r.fromCell, r.fromVillage].filter(Boolean).join(' / '))}</td>
+            <td>${truncateDesc(r.reason, 60)}</td>
+            <td>${r.returnDate ? formatDate(r.returnDate) : '—'}</td>
+            <td>${formatDate(r.dateReported)}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="7">No visitor reports yet</td></tr>';
 }
 
 // ===== Chat between Citizen and Leaders =====
@@ -326,3 +453,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function truncateDesc(text, len) {
+    if (!text) return '—';
+    return text.length <= len ? escapeHtml(text) : escapeHtml(text.slice(0, len)) + '…';
+}
