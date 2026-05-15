@@ -5,11 +5,28 @@ const { Member } = require("../models");
 //////////////// CREATE //////////////////
 router.post("/", async (req, res) => {
   try {
+    console.log("Member creation request body:", req.body);
+    
+    // Validate required fields
+    const requiredFields = ['name', 'telephone', 'sector', 'cell', 'village'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        error: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+    
     const member = new Member(req.body);
     await member.save();
+    console.log("Member created successfully:", member);
     res.json(member);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error creating member:", err);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack 
+    });
   }
 });
 

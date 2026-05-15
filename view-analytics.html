@@ -35,81 +35,23 @@
             <div class="container">
                 <h2 class="section-title"><i class="fa-solid fa-chart-line"></i> View Analytics</h2>
                 <div class="analytics-content">
-                    <p>Community service analytics and performance metrics will be displayed here.</p>
+                    <p>Community service analytics and performance metrics.</p>
                     <div class="analytics-placeholder">
                         <i class="fa-solid fa-chart-bar fa-3x"></i>
                         <h3>Analytics Dashboard</h3>
                         <p>View comprehensive analytics about community services, attendance, and performance metrics.</p>
-                        <a href="login.html" class="btn btn-primary">Login to View Analytics</a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- School Dropout Statistics Section -->
-        <section class="statistics-section">
-            <div class="container">
-                <h2 class="section-title"><i class="fa-solid fa-graduation-cap"></i> School Dropout Statistics</h2>
-                <div class="statistics-grid">
-                    <div class="stat-card">
-                        <h3><i class="fa-solid fa-school"></i> Total Schools Registered</h3>
-                        <p class="stat-number" id="homeTotalSchools">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3><i class="fa-solid fa-user-graduate"></i> Total Dropout Students</h3>
-                        <p class="stat-number" id="homeTotalDropouts">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3><i class="fa-solid fa-percent"></i> Average Dropout Rate</h3>
-                        <p class="stat-number" id="homeAverageRate">0%</p>
-                    </div>
-                </div>
-
-                <!-- Per-School Statistics -->
-                <div id="homeSchoolList" class="school-list"></div>
-            </div>
-        </section>
-
+        
         <!-- Attendance Analytics Section -->
         <section class="statistics-section">
             <div class="container">
                 <h2 class="section-title"><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
                 
-                <!-- Statistics Overview -->
-                <div class="statistics-container">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Attendance Overview</h3>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h4>Overall Attendance Rate</h4>
-                            <div class="stat-value" id="homeOverallAttendanceRate">0%</div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="homeAttendanceProgress"></div>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Total Members</h4>
-                            <div class="stat-value" id="homeTotalMembers">0</div>
-                            <div class="stat-detail">Registered citizens</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Present Today</h4>
-                            <div class="stat-value" id="homePresentToday">0</div>
-                            <div class="stat-detail">Face recognition</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Absent Today</h4>
-                            <div class="stat-value" id="homeAbsentToday">0</div>
-                            <div class="stat-detail">Not attended</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Attendance Bar Chart -->
-                    <div class="chart-container">
-                        <h4>Attendance Distribution</h4>
-                        <div class="chart-wrapper">
-                            <canvas id="attendanceChart" width="800" height="400"></canvas>
-                        </div>
-                    </div>
+                                    
                     
                     <!-- Attendance Categories -->
                     <div class="attendance-categories">
@@ -170,22 +112,32 @@
                         </div>
                     </div>
                     
-                    <!-- Analytics Actions -->
-                    <div class="analytics-actions">
-                        <h4>Analytics Actions</h4>
-                        <div class="action-buttons">
-                            <button class="btn btn-primary" onclick="exportAttendanceData()">
-                                <i class="fa-solid fa-download"></i> Export Data
-                            </button>
-                            <button class="btn btn-secondary" onclick="refreshAnalytics()">
-                                <i class="fa-solid fa-sync"></i> Refresh
-                            </button>
-                            <button class="btn btn-info" onclick="viewDetailedReport()">
-                                <i class="fa-solid fa-chart-line"></i> Detailed Report
-                            </button>
-                        </div>
+                    
+                </div>
+            </div>
+        </section>
+
+        <!-- School Dropout Statistics Section -->
+        <section class="statistics-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-graduation-cap"></i> School Dropout Statistics</h2>
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <h3><i class="fa-solid fa-school"></i> Total Schools Registered</h3>
+                        <p class="stat-number" id="homeTotalSchools">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3><i class="fa-solid fa-user-graduate"></i> Total Dropout Students</h3>
+                        <p class="stat-number" id="homeTotalDropouts">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3><i class="fa-solid fa-percent"></i> Average Dropout Rate</h3>
+                        <p class="stat-number" id="homeAverageRate">0%</p>
                     </div>
                 </div>
+
+                <!-- Per-School Statistics -->
+                <div id="homeSchoolList" class="school-list"></div>
             </div>
         </section>
 
@@ -300,5 +252,6 @@
     <script src="js/api.js"></script>
     <script src="js/navbar.js"></script>
     <script src="js/home.js"></script>
+    <script src="js/analytics.js"></script>
 </body>
 </html>

@@ -106,6 +106,76 @@ class ApiService {
         }
     }
 
+    async getSchoolDropoutStatistics() {
+        try {
+            const response = await fetch(`${this.baseURL}/schools/dropout-statistics`);
+            
+            if (!response.ok) throw new Error('Failed to fetch school dropout statistics');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching school dropout statistics:', error);
+            throw error;
+        }
+    }
+
+    async getSchools() {
+        try {
+            const response = await fetch(`${this.baseURL}/schools`);
+            
+            if (!response.ok) throw new Error('Failed to fetch schools');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching schools:', error);
+            throw error;
+        }
+    }
+
+    async getBestPerformingSectors(limit = 10, date) {
+        try {
+            const params = new URLSearchParams();
+            params.append('limit', limit);
+            if (date) params.append('date', date);
+            
+            const response = await fetch(`${this.baseURL}/attendance/best-sectors?${params}`);
+            
+            if (!response.ok) throw new Error('Failed to fetch best performing sectors');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching best performing sectors:', error);
+            throw error;
+        }
+    }
+
+    async getBestPerformingVillages(limit = 10, sector, date) {
+        try {
+            const params = new URLSearchParams();
+            params.append('limit', limit);
+            if (sector) params.append('sector', sector);
+            if (date) params.append('date', date);
+            
+            const response = await fetch(`${this.baseURL}/attendance/best-villages?${params}`);
+            
+            if (!response.ok) throw new Error('Failed to fetch best performing villages');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching best performing villages:', error);
+            throw error;
+        }
+    }
+
+    async getPerformanceRankings(date) {
+        try {
+            const queryString = date ? `?date=${date}` : '';
+            const response = await fetch(`${this.baseURL}/attendance/performance-rankings${queryString}`);
+            
+            if (!response.ok) throw new Error('Failed to fetch performance rankings');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching performance rankings:', error);
+            throw error;
+        }
+    }
+
     // Attendance API
     async getAttendance(filters = {}) {
         try {

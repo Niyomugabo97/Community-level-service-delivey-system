@@ -1,213 +1,314 @@
-// Authentication JavaScript
+// Authentication - Tab switching and form handling
 
-// Tab switching
 document.addEventListener('DOMContentLoaded', () => {
+    initAuthPage();
+});
+
+function initAuthPage() {
+    setupTabSwitching();
+    handleQueryParams();
+    setupFormValidation();
+    setupUserTypeFields();
+}
+
+// Tab Switching
+function setupTabSwitching() {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
-    const signupUserType = document.getElementById('signupUserType');
-    const leaderFields = document.getElementById('leaderFields');
+    const tabSwitches = document.querySelectorAll('.tab-switch');
 
-    // Tab switching
+    // Tab button clicks
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            
-            tabButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            if (tab === 'login') {
-                loginForm.classList.add('active');
-                signupForm.classList.remove('active');
-            } else {
-                signupForm.classList.add('active');
-                loginForm.classList.remove('active');
-            }
+            switchTab(btn.dataset.tab, tabButtons, loginForm, signupForm);
         });
     });
 
-    // Show/hide leader fields
+    // Tab switch links (in footer text)
+    tabSwitches.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tab = btn.dataset.tab;
+            switchTab(tab, tabButtons, loginForm, signupForm);
+        });
+    });
+}
+
+function switchTab(tab, tabButtons, loginForm, signupForm) {
+    tabButtons.forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+
+    if (tab === 'login') {
+        loginForm.classList.add('active');
+        signupForm.classList.remove('active');
+        window.history.replaceState({}, '', 'auth.html');
+    } else if (tab === 'signup') {
+        signupForm.classList.add('active');
+        loginForm.classList.remove('active');
+        window.history.replaceState({}, '', 'auth.html?tab=signup');
+    }
+}
+
+// Handle query parameters (e.g., auth.html?tab=signup)
+function handleQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+
+    if (tab === 'signup') {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        switchTab('signup', tabButtons, loginForm, signupForm);
+    }
+}
+
+// User Type Selection - Show/Hide Fields
+function setupUserTypeFields() {
+    const signupUserType = document.getElementById('signupUserType');
+    const leaderFields = document.getElementById('leaderFields');
     const cellFields = document.getElementById('cellFields');
     const sectorFields = document.getElementById('sectorFields');
-    
-    if (signupUserType) {
-        signupUserType.addEventListener('change', (e) => {
-            const value = e.target.value;
-            
-            // Hide all fields first and remove required attributes
-            if (leaderFields) {
-                leaderFields.style.display = 'none';
-                leaderFields.querySelectorAll('input').forEach(input => input.removeAttribute('required'));
-            }
-            if (cellFields) {
-                cellFields.style.display = 'none';
-                cellFields.querySelectorAll('input').forEach(input => input.removeAttribute('required'));
-            }
-            if (sectorFields) {
-                sectorFields.style.display = 'none';
-                sectorFields.querySelectorAll('input').forEach(input => input.removeAttribute('required'));
-            }
-            
-            // Show and add required attributes based on selection
-            if (value === 'leader' && leaderFields) {
-                leaderFields.style.display = 'block';
-                leaderFields.querySelectorAll('input').forEach(input => input.setAttribute('required', 'required'));
-            } else if (value === 'cell' && cellFields) {
-                cellFields.style.display = 'block';
-                cellFields.querySelectorAll('input').forEach(input => input.setAttribute('required', 'required'));
-            } else if (value === 'sector' && sectorFields) {
-                sectorFields.style.display = 'block';
-                sectorFields.querySelectorAll('input').forEach(input => input.setAttribute('required', 'required'));
-            }
+
+    if (!signupUserType) return;
+
+    signupUserType.addEventListener('change', () => {
+        // Hide all fields first
+        if (leaderFields) leaderFields.style.display = 'none';
+        if (cellFields) cellFields.style.display = 'none';
+        if (sectorFields) sectorFields.style.display = 'none';
+
+        // Show relevant fields based on selection
+        const selectedType = signupUserType.value;
+
+        if (selectedType === 'leader') {
+            if (leaderFields) leaderFields.style.display = 'block';
+        } else if (selectedType === 'cell') {
+            if (cellFields) cellFields.style.display = 'block';
+        } else if (selectedType === 'sector') {
+            if (sectorFields) sectorFields.style.display = 'block';
+        }
+    });
+}
+
+// Form Validation
+function setupFormValidation() {
+    const loginForm = document.getElementById('loginFormElement');
+    const signupForm = document.getElementById('signupFormElement');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLoginSubmit();
         });
     }
 
-    // Login form
-    const loginFormElement = document.getElementById('loginFormElement');
-    if (loginFormElement) {
-        loginFormElement.addEventListener('submit', handleLogin);
+    if (signupForm) {
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleSignupSubmit();
+        });
     }
+}
 
-    // Signup form
-    const signupFormElement = document.getElementById('signupFormElement');
-    if (signupFormElement) {
-        signupFormElement.addEventListener('submit', handleSignup);
-    }
-});
+function handleLoginSubmit() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
 
-// Handle login
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const userType = document.getElementById('userType').value;
-
-    if (!userType) {
-        alert('Please select account type');
+    if (!email || !password) {
+        showAlert('Please fill in all fields', 'error');
         return;
     }
 
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    // Find user
-    const user = users.find(u => 
-        (u.email === email || u.username === email) && 
-        u.password === password && 
-        u.userType === userType
-    );
+    if (!isValidEmail(email)) {
+        showAlert('Please enter a valid email address', 'error');
+        return;
+    }
 
-    if (user) {
-        // Store current user session
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-        
-        // Redirect based on user type
-        if (userType === 'leader') {
+    // Send login request to backend
+    fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            showAlert(data.error || 'Invalid credentials', 'error');
+            return;
+        }
+
+        // store token and user session
+        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+        sessionStorage.setItem('token', data.token);
+
+        const user = data.user;
+        if (user.userType === 'leader') {
             window.location.href = 'leader-dashboard.html';
-        } else if (userType === 'cell') {
+        } else if (user.userType === 'cell') {
             window.location.href = 'cell-dashboard.html';
-        } else if (userType === 'sector') {
+        } else if (user.userType === 'sector') {
             window.location.href = 'sector-dashboard.html';
-        } else if (userType === 'school') {
+        } else if (user.userType === 'school') {
             window.location.href = 'school-dashboard.html';
         } else {
             window.location.href = 'citizen-dashboard.html';
         }
-    } else {
-        alert('Invalid credentials. Please try again or sign up.');
-    }
+    })
+    .catch(err => {
+        console.error(err);
+        showAlert('Login failed. Check console for details.', 'error');
+    });
 }
 
-// Handle signup
-function handleSignup(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById('signupName').value;
-    const email = document.getElementById('signupEmail').value;
-    const phone = document.getElementById('signupPhone').value;
-    const password = document.getElementById('signupPassword').value;
-    const confirmPassword = document.getElementById('signupConfirmPassword').value;
+function handleSignupSubmit() {
+    const fullName = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const phone = document.getElementById('signupPhone').value.trim();
+    const password = document.getElementById('signupPassword').value.trim();
+    const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
     const userType = document.getElementById('signupUserType').value;
+    const agreeTerms = document.getElementById('agreeTerms').checked;
 
     // Validation
-    if (password !== confirmPassword) {
-        alert('Passwords do not match');
+    if (!fullName || !email || !phone || !password || !confirmPassword || !userType) {
+        showAlert('Please fill in all required fields', 'error');
         return;
     }
 
-    if (!userType) {
-        alert('Please select account type');
+    if (!isValidEmail(email)) {
+        showAlert('Please enter a valid email address', 'error');
         return;
     }
-    
-    // Additional validation for leader-specific fields
+
+    if (password.length < 6) {
+        showAlert('Password must be at least 6 characters long', 'error');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showAlert('Passwords do not match', 'error');
+        return;
+    }
+
+    if (!agreeTerms) {
+        showAlert('Please agree to the terms of service and privacy policy', 'error');
+        return;
+    }
+
+    // Validate leader-specific fields
     if (userType === 'leader') {
-        const sector = document.getElementById('signupSector').value;
-        const cell = document.getElementById('signupCell').value;
-        const village = document.getElementById('signupVillage').value;
-        if (!sector || !cell || !village) {
-            alert('Please fill in all required fields (Sector, Cell, Village)');
+        const village = document.getElementById('signupVillage').value.trim();
+        const cell = document.getElementById('signupCell').value.trim();
+        const sector = document.getElementById('signupSector').value.trim();
+        if (!village || !cell || !sector) {
+            showAlert('Please fill in all location fields for leaders', 'error');
             return;
         }
-    } else if (userType === 'cell') {
-        const sector = document.getElementById('signupCellSector').value;
-        const cell = document.getElementById('signupCellCell').value;
-        if (!sector || !cell) {
-            alert('Please fill in all required fields (Sector, Cell)');
+    }
+
+    // Validate cell-specific fields
+    if (userType === 'cell') {
+        const cellCell = document.getElementById('signupCellCell').value.trim();
+        const cellSector = document.getElementById('signupCellSector').value.trim();
+        if (!cellCell || !cellSector) {
+            showAlert('Please fill in all location fields for cell leaders', 'error');
             return;
         }
-    } else if (userType === 'sector') {
-        const sector = document.getElementById('signupSectorSector').value;
-        if (!sector) {
-            alert('Please fill in the Sector field');
+    }
+
+    // Validate sector-specific fields
+    if (userType === 'sector') {
+        const sectorSector = document.getElementById('signupSectorSector').value.trim();
+        if (!sectorSector) {
+            showAlert('Please fill in the sector field', 'error');
             return;
         }
     }
 
     // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    // Check if user already exists
-    if (users.find(u => u.email === email)) {
-        alert('User with this email already exists');
-        return;
-    }
-
-    // Create new user
-    const newUser = {
-        id: Date.now(),
-        name,
+    // prepare payload
+    const payload = {
+        name: fullName,
         email,
-        phone,
-        password, // In production, this should be hashed
-        userType,
-        createdAt: new Date().toISOString()
+        telephone: phone,
+        password,
+        userType
     };
 
-    // Add leader-specific fields if leader
+    // add role-specific fields
     if (userType === 'leader') {
-        newUser.sector = document.getElementById('signupSector').value;
-        newUser.cell = document.getElementById('signupCell').value;
-        newUser.village = document.getElementById('signupVillage').value;
+        payload.village = document.getElementById('signupVillage').value.trim();
+        payload.cell = document.getElementById('signupCell').value.trim();
+        payload.sector = document.getElementById('signupSector').value.trim();
     } else if (userType === 'cell') {
-        newUser.sector = document.getElementById('signupCellSector').value;
-        newUser.cell = document.getElementById('signupCellCell').value;
+        payload.cell = document.getElementById('signupCellCell').value.trim();
+        payload.sector = document.getElementById('signupCellSector').value.trim();
     } else if (userType === 'sector') {
-        newUser.sector = document.getElementById('signupSectorSector').value;
+        payload.sector = document.getElementById('signupSectorSector').value.trim();
     }
 
-    // Save user
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
+    fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            showAlert(data.error || 'Registration failed', 'error');
+            return;
+        }
 
-    alert('Account created successfully! Please login.');
-    
-    // Switch to login tab
-    document.querySelector('.tab-btn[data-tab="login"]').click();
-    
-    // Clear form
-    e.target.reset();
+        showAlert('Account created successfully! Redirecting...', 'success');
+        // store token and user session
+        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+        sessionStorage.setItem('token', data.token);
+
+        // Redirect after a short delay
+        setTimeout(() => {
+            if (data.user.userType === 'leader') {
+                window.location.href = 'leader-dashboard.html';
+            } else if (data.user.userType === 'cell') {
+                window.location.href = 'cell-dashboard.html';
+            } else if (data.user.userType === 'sector') {
+                window.location.href = 'sector-dashboard.html';
+            } else if (data.user.userType === 'school') {
+                window.location.href = 'school-dashboard.html';
+            } else {
+                window.location.href = 'citizen-dashboard.html';
+            }
+        }, 800);
+    })
+    .catch(err => {
+        console.error(err);
+        showAlert('Registration failed. Check console for details.', 'error');
+    });
 }
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function isValidUsername(username) {
+    // Simple username validation (alphanumeric and underscore)
+    return /^[a-zA-Z0-9_]{3,}$/.test(username);
+}
+
+function showAlert(message, type = 'info') {
+    // Simple alert - in production, replace with toast notifications
+    if (type === 'error') {
+        alert('❌ ' + message);
+    } else if (type === 'success') {
+        alert('✅ ' + message);
+    } else {
+        alert('ℹ️ ' + message);
+    }
+}
+
 
 

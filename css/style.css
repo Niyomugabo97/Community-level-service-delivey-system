@@ -31,14 +31,14 @@
 
 .stat-card {
     background: #f8f9fa;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
     text-align: center;
     border-left: 4px solid var(--primary-color);
 }
 
 .stat-card h4 {
-    margin: 0 0 10px 0;
+    margin: 0 0 5px 0;
     color: var(--text-color);
     font-size: 14px;
     font-weight: 600;
@@ -111,8 +111,8 @@
 .village-breakdown-section {
     background: var(--white);
     border-radius: 10px;
-    padding: 25px;
-    margin-top: 30px;
+    padding: 10px;
+    margin-top: 5px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
 }
@@ -120,11 +120,18 @@
 .sector-statistics h4,
 .village-breakdown-section h5 {
     color: var(--text-color);
-    margin-bottom: 20px;
+    margin: 0;
+    padding: 0;
     font-size: 18px;
     font-weight: 600;
     border-bottom: 2px solid var(--primary-color);
     padding-bottom: 10px;
+}
+
+
+
+.sector-chart-container {
+    display: none;
 }
 
 .sector-stat-item,
@@ -179,21 +186,21 @@
 
 /* Enhanced Attendance Categories */
 .attendance-categories {
-    margin-top: 30px;
+    margin-top: 15px;
     background: var(--white);
     border-radius: 10px;
-    padding: 25px;
+    padding: 15px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
 }
 
 .attendance-categories h4 {
     color: var(--text-color);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     font-size: 18px;
     font-weight: 600;
     border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 .category-item {
@@ -305,7 +312,7 @@
 
 .attendance-categories {
     background: #fff;
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -616,23 +623,29 @@
 
 /* Village Breakdown by Sector Styles */
 .village-breakdown-section {
-    margin-top: 30px;
-    padding: 20px;
+    margin-top: 5px;
+    padding: 10px;
     background: #f8f9fa;
     border-radius: 10px;
     border: 1px solid #e9ecef;
 }
 
 .village-breakdown-section h5 {
-    margin: 0 0 20px 0;
+    margin: 0;
+    padding: 0;
     color: var(--primary-color);
     font-size: 18px;
     font-weight: 600;
     text-align: center;
 }
 
-.sector-village-group {
-    margin-bottom: 25px;
+.village-chart-container {
+    display: none;
+}
+
+.village-sector-group {
+    margin-top: 5px;
+    margin-bottom: 10px;
     background: white;
     border-radius: 8px;
     padding: 15px;
@@ -643,7 +656,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--primary-color);
 }
@@ -1579,7 +1592,6 @@ html, body {
 .nav-menu a:hover,
 .nav-menu a.active {
     opacity: 0.8;
-    text-decoration: underline;
 }
 
 /* Hero Section */
@@ -3096,6 +3108,213 @@ body.with-bottom-sidebar .dashboard-content {
     body.with-bottom-sidebar .dashboard-content {
         margin-left: 0;
     }
+}
+
+/* Best Performer Styles */
+.best-performer {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.best-performer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ffd700, #ffed4e, #ffd700);
+    animation: shimmer 2s infinite;
+}
+
+.best-performer .progress-fill.best-performer {
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.best-performer-label {
+    background: #ffd700;
+    color: #333;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 8px;
+    display: inline-block;
+    box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Enhanced Sector and Village Statistics */
+.sector-stat-item, .village-stat-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sector-stat-item:hover, .village-stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sector-stat-item h4, .village-stat-item span {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.sector-stats, .village-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sector-stats span, .village-stat-item span {
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.progress-bar {
+    background: #e9ecef;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 1s ease-in-out;
+}
+
+.village-sector-group {
+    margin-bottom: 10px;
+}
+
+.village-sector-group h5 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 5px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.village-list {
+    display: grid;
+    gap: 12px;
+}
+
+/* Rank Badge Styles */
+.rank-badge {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 8px;
+    display: inline-block;
+    min-width: 20px;
+    text-align: center;
+}
+
+.best-performer .rank-badge {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+}
+
+/* Enhanced Sector and Village Display */
+.sector-header, .village-header {
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.sector-name, .village-name {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.sector-name-display, .village-location {
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6c757d;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    display: inline-block;
+    border: 1px solid #e9ecef;
+}
+
+.sector-stats, .village-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.sector-stat-item h4, .sector-name, .village-sector-group h5, .village-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.sector-stat-item .rank-badge, .village-stat-item .rank-badge {
+    margin-right: 8px;
+}
+
+.sector-stat-item,
+.village-stat-item {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 4px solid #28a745;
+}
+
+.sector-stat-item:hover,
+.village-stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sector-stat-item.best-performer,
+.village-stat-item.best-performer {
+    border-left-color: #ffd700;
 }
 
 

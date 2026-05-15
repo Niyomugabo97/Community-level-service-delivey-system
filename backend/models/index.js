@@ -4,13 +4,13 @@ const mongoose = require("mongoose");
 // 1. MEMBER MODEL
 /////////////////////////////
 const memberSchema = new mongoose.Schema({
-  name: String,
-  age: Number,
-  sex: { type: String, enum: ["Male", "Female"] },
-  telephone: { type: String, unique: true },
-  sector: String,
-  cell: String,
-  village: String,
+  name: { type: String, required: [true, "Name is required"] },
+  age: { type: Number, required: [true, "Age is required"] },
+  sex: { type: String, enum: ["Male", "Female"], required: [true, "Sex is required"] },
+  telephone: { type: String, unique: true, required: [true, "Telephone is required"] },
+  sector: { type: String, required: [true, "Sector is required"] },
+  cell: { type: String, required: [true, "Cell is required"] },
+  village: { type: String, required: [true, "Village is required"] },
   nin: String,
   insuranceNumber: String,
   insuranceStatus: { type: String, enum: ["Active", "Inactive"] },
@@ -151,6 +151,21 @@ const LeaderLocation = mongoose.model("LeaderLocation", leaderLocationSchema);
 
 
 /////////////////////////////
+// 9. CITIZEN REPORTS
+/////////////////////////////
+const citizenReportSchema = new mongoose.Schema({
+  type: { type: String, enum: ['drugs','violence','infrastructure','visitors','chat','other'], required: true },
+  data: { type: mongoose.Schema.Types.Mixed },
+  reportedBy: String,
+  reportedByEmail: String,
+  reportedByPhone: String,
+  dateReported: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const CitizenReport = mongoose.model("CitizenReport", citizenReportSchema);
+
+
+/////////////////////////////
 // EXPORT ALL MODELS
 /////////////////////////////
 module.exports = {
@@ -162,4 +177,25 @@ module.exports = {
   HomeUpdate,
   Performance,
   LeaderLocation
+  ,CitizenReport
+  // User model will be attached below if available
 };
+
+/////////////////////////////
+// 10. USER MODEL
+/////////////////////////////
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  telephone: { type: String },
+  userType: { type: String },
+  sector: { type: String },
+  cell: { type: String },
+  village: { type: String },
+  passwordHash: { type: String, required: true }
+}, { timestamps: true });
+
+const User = mongoose.model("User", userSchema);
+
+// attach User to exports
+module.exports.User = User;

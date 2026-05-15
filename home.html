@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Community Level Service Delivery Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="home.html" class="active"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="analytics.html"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+                    <li><a href="about.html"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
+                    <li><a href="contact.html"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
+                    <li class="auth-menu">
+                        <a href="auth.html"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                    </li>
+                    <li class="auth-menu">
+                        <a href="auth.html?tab=signup"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Welcome to Community Level Service Delivery Platform</h2>
+                <p>Platform for Local Leaders and Citizens to Collaborate and Report</p>
+                <div class="hero-buttons">
+                    <a href="analytics.html" class="btn btn-primary"><i class="fa-solid fa-chart-line"></i> View Analytics</a>
+                    <a href="auth.html" class="btn btn-secondary"><i class="fa-solid fa-user-plus"></i> Get Started</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activities Section -->
+        <section class="activities-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-calendar-check"></i> Recent Activities</h2>
+                <p class="section-subtitle">Latest updates from your community</p>
+                <div class="activities-grid" id="activitiesGrid">
+                    <!-- Activities will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Upcoming Sessions/News Section -->
+        <section class="news-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Upcoming Sessions & News</h2>
+                <p class="section-subtitle">Stay informed about upcoming community events</p>
+                <div class="news-grid" id="newsGrid">
+                    <!-- News will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Section -->
+        <section class="trending-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-fire-flame-curved"></i> Trending in Your Community</h2>
+                <p class="section-subtitle">What's happening right now</p>
+                <div class="trending-grid" id="trendingGrid">
+                    <!-- Trending items will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Damaged Infrastructure Reports -->
+        <section class="infrastructure-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-road"></i> Infrastructure Reports</h2>
+                <p class="section-subtitle">Reported issues requiring attention</p>
+                <div class="activities-grid" id="infrastructureReports">
+                    <!-- Infrastructure reports will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h3>
+                    <p>Your trusted platform for local service delivery and community reporting.</p>
+                    <div class="social-links">
+                        <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="home.html">Home</a></li>
+                        <li><a href="analytics.html">Analytics</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="#">Report Issue</a></li>
+                        <li><a href="#">View Updates</a></li>
+                        <li><a href="#">Community Events</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Community Level Service Delivery Platform. All rights reserved.</p>
+                <p>Designed with <i class="fas fa-heart"></i> for your community</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/navbar.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -52,7 +52,7 @@ function setupNavigation() {
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
         e.preventDefault();
         sessionStorage.removeItem('currentUser');
-        window.location.href = 'login.html';
+        window.location.href = 'home.html';
     });
 }
 

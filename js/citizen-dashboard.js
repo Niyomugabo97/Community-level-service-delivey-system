@@ -55,7 +55,7 @@ function setupNavigation() {
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
         e.preventDefault();
         sessionStorage.removeItem('currentUser');
-        window.location.href = 'login.html';
+        window.location.href = 'home.html';
     });
 }
 
@@ -82,6 +82,22 @@ function setupForms() {
         if (visitorsForm) visitorsForm.addEventListener('submit', handleVisitorsSubmit);
 }
 
+// Send report to backend API; returns true on success, false on failure
+async function sendReportToServer(record) {
+    try {
+        const res = await fetch('/api/citizen-reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record)
+        });
+        if (!res.ok) throw new Error('Server responded with ' + res.status);
+        return true;
+    } catch (err) {
+        console.warn('sendReportToServer failed:', err);
+        return false;
+    }
+}
+
 // Build leader recipients dropdown based on selected role
 function setupLeaderRecipients() {
     const roleSelect = document.getElementById('chatRecipientRole');
@@ -106,105 +122,119 @@ function setupLeaderRecipients() {
 }
 
 // Report Drugs
-function handleDrugsSubmit(e) {
+async function handleDrugsSubmit(e) {
     e.preventDefault();
     
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     
     const record = {
-        id: Date.now(),
-        name: document.getElementById('drugsName').value,
-        sector: document.getElementById('drugsSector').value,
-        cell: document.getElementById('drugsCell').value,
-        village: document.getElementById('drugsVillage').value,
-        description: (document.getElementById('drugsDescription') && document.getElementById('drugsDescription').value) ? document.getElementById('drugsDescription').value.trim() : '',
-        reportedBy: currentUser.name,
-        reportedByEmail: currentUser.email,
-        reportedByPhone: currentUser.phone || '',
-        date: new Date().toISOString()
+        type: 'drugs',
+        data: {
+            name: document.getElementById('drugsName').value,
+            sector: document.getElementById('drugsSector').value,
+            cell: document.getElementById('drugsCell').value,
+            village: document.getElementById('drugsVillage').value,
+            description: (document.getElementById('drugsDescription') && document.getElementById('drugsDescription').value) ? document.getElementById('drugsDescription').value.trim() : ''
+        },
+        reportedBy: currentUser ? currentUser.name : 'Citizen',
+        reportedByEmail: currentUser ? currentUser.email : '',
+        reportedByPhone: currentUser ? (currentUser.phone || '') : '',
+        dateReported: new Date().toISOString()
     };
 
-    const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
-    records.push(record);
-    localStorage.setItem('drugsRecords', JSON.stringify(records));
+    const saved = await sendReportToServer(record);
+    if (!saved) {
+        alert('Failed to send drug report to server. Please try again.');
+    } else {
+        alert('Drug report sent successfully!');
+    }
 
     e.target.reset();
     loadDrugsTable();
-    alert('Drug report sent successfully! It will be visible on village, cell and sector pages.');
 }
 
-function loadDrugsTable() {
+async function loadDrugsTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
-    
-    // Filter to show only current user's reports
-    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
-    
     const tbody = document.getElementById('drugsTableBody');
-    
     const trunc = (t, len) => (!t || t.length <= len) ? (t || '—') : t.slice(0, len) + '…';
-    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(record => `
-        <tr>
-            <td>${record.name}</td>
-            <td>${record.sector}</td>
-            <td>${record.cell}</td>
-            <td>${record.village}</td>
-            <td>${trunc(record.description, 40)}</td>
-            <td>${formatDate(record.date)}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
+
+    try {
+        const res = await fetch(`/api/citizen-reports?type=drugs&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) throw new Error('Server error');
+        const userRecords = await res.json();
+        tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+            <tr>
+                <td>${escapeHtml(r.data.name)}</td>
+                <td>${escapeHtml(r.data.sector)}</td>
+                <td>${escapeHtml(r.data.cell)}</td>
+                <td>${escapeHtml(r.data.village)}</td>
+                <td>${trunc(r.data.description, 40)}</td>
+                <td>${formatDate(r.dateReported)}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
+    } catch (err) {
+        console.warn('Could not load drugs reports:', err);
+        tbody.innerHTML = '<tr><td colspan="6">Unable to load reports</td></tr>';
+    }
 }
 
 // Report Sexual Violence
-function handleViolenceSubmit(e) {
+async function handleViolenceSubmit(e) {
     e.preventDefault();
     
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     
     const record = {
-        id: Date.now(),
-        victimName: document.getElementById('violenceVictimName').value,
-        telephone: document.getElementById('violenceTelephone').value,
-        sector: document.getElementById('violenceSector').value,
-        cell: document.getElementById('violenceCell').value,
-        village: document.getElementById('violenceVillage').value,
-        description: document.getElementById('violenceDescription').value,
-        reportedBy: currentUser.name,
-        reportedByEmail: currentUser.email,
-        reportedByPhone: currentUser.phone || '',
-        date: new Date().toISOString()
+        type: 'violence',
+        data: {
+            victimName: document.getElementById('violenceVictimName').value,
+            telephone: document.getElementById('violenceTelephone').value,
+            sector: document.getElementById('violenceSector').value,
+            cell: document.getElementById('violenceCell').value,
+            village: document.getElementById('violenceVillage').value,
+            description: document.getElementById('violenceDescription').value
+        },
+        reportedBy: currentUser ? currentUser.name : 'Citizen',
+        reportedByEmail: currentUser ? currentUser.email : '',
+        reportedByPhone: currentUser ? (currentUser.phone || '') : '',
+        dateReported: new Date().toISOString()
     };
 
-    const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
-    records.push(record);
-    localStorage.setItem('violenceRecords', JSON.stringify(records));
+    const saved = await sendReportToServer(record);
+    if (!saved) {
+        alert('Failed to send violence report to server. Please try again.');
+    } else {
+        alert('Sexual violence report sent successfully!');
+    }
 
     e.target.reset();
     loadViolenceTable();
-    alert('Sexual violence report sent successfully! It will be visible on village, cell and sector pages.');
 }
 
-function loadViolenceTable() {
+async function loadViolenceTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
-    
-    // Filter to show only current user's reports
-    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
-    
     const tbody = document.getElementById('violenceTableBody');
-    
     const trunc = (t, len) => (!t || t.length <= len) ? (t || '—') : t.slice(0, len) + '…';
-    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(record => `
-        <tr>
-            <td>${record.victimName}</td>
-            <td>${record.telephone}</td>
-            <td>${record.sector}</td>
-            <td>${record.cell}</td>
-            <td>${record.village}</td>
-            <td>${trunc(record.description, 40)}</td>
-            <td>${formatDate(record.date)}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="7">No reports yet</td></tr>';
+
+    try {
+        const res = await fetch(`/api/citizen-reports?type=violence&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) throw new Error('Server error');
+        const userRecords = await res.json();
+        tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+            <tr>
+                <td>${escapeHtml(r.data.victimName)}</td>
+                <td>${escapeHtml(r.data.telephone)}</td>
+                <td>${escapeHtml(r.data.sector)}</td>
+                <td>${escapeHtml(r.data.cell)}</td>
+                <td>${escapeHtml(r.data.village)}</td>
+                <td>${trunc(r.data.description, 40)}</td>
+                <td>${formatDate(r.dateReported)}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="7">No reports yet</td></tr>';
+    } catch (err) {
+        console.warn('Could not load violence reports:', err);
+        tbody.innerHTML = '<tr><td colspan="7">Unable to load reports</td></tr>';
+    }
 }
 
 // Load all tables
@@ -226,7 +256,7 @@ function formatDate(dateString) {
 }
 
 // Handle infrastructure report submission (citizen)
-function handleInfrastructureSubmit(e) {
+async function handleInfrastructureSubmit(e) {
     e.preventDefault();
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
 
@@ -236,25 +266,29 @@ function handleInfrastructureSubmit(e) {
     const fileInput = document.getElementById('infrastructureImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    function saveReport(imageData) {
+    async function saveReport(imageData) {
         const record = {
-            id: Date.now(),
-            place: place,
-            date: dateVal,
-            image: imageData || null,
-            description: desc,
+            type: 'infrastructure',
+            data: {
+                place: place,
+                date: dateVal,
+                image: imageData || null,
+                description: desc
+            },
             reportedBy: currentUser ? currentUser.name : 'Citizen',
             reportedByEmail: currentUser ? currentUser.email : '',
             dateReported: new Date().toISOString()
         };
 
-        const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
-        records.push(record);
-        localStorage.setItem('infrastructureReports', JSON.stringify(records));
+        const saved = await sendReportToServer(record);
+        if (!saved) {
+            alert('Failed to send infrastructure report to server. Please try again.');
+        } else {
+            alert('Infrastructure report submitted successfully!');
+        }
 
         e.target.reset();
         loadInfrastructureTable();
-        alert('Infrastructure report submitted successfully!');
     }
 
     if (file) {
@@ -264,82 +298,98 @@ function handleInfrastructureSubmit(e) {
         };
         reader.readAsDataURL(file);
     } else {
-        saveReport(null);
+        await saveReport(null);
     }
 }
 
-function loadInfrastructureTable() {
+async function loadInfrastructureTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
-    const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
-    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
     const tbody = document.getElementById('infrastructureTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
-        <tr>
-            <td>${escapeHtml(r.place)}</td>
-            <td>${formatDate(r.date || r.dateReported)}</td>
-            <td>${r.image ? `<img src="${r.image}" alt="img" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
-            <td>${truncateDesc(r.description, 60)}</td>
-            <td>${formatDate(r.dateReported)}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
+    try {
+        const res = await fetch(`/api/citizen-reports?type=infrastructure&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) throw new Error('Server error');
+        const userRecords = await res.json();
+        tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+            <tr>
+                <td>${escapeHtml(r.data.place)}</td>
+                <td>${formatDate(r.data.date || r.dateReported)}</td>
+                <td>${r.data.image ? `<img src="${r.data.image}" alt="img" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
+                <td>${truncateDesc(r.data.description, 60)}</td>
+                <td>${formatDate(r.dateReported)}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
+    } catch (err) {
+        console.warn('Could not load infrastructure reports:', err);
+        tbody.innerHTML = '<tr><td colspan="5">Unable to load reports</td></tr>';
+    }
 }
 
 // Handle visitors/guests report submission (citizen)
-function handleVisitorsSubmit(e) {
+async function handleVisitorsSubmit(e) {
     e.preventDefault();
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
 
     const record = {
-        id: Date.now(),
-        yourSector: document.getElementById('visitorYourSector').value,
-        yourCell: document.getElementById('visitorYourCell').value,
-        yourVillage: document.getElementById('visitorYourVillage').value,
-        yourTelephone: document.getElementById('visitorYourTelephone').value,
-        visitorNames: document.getElementById('visitorNames').value,
-        visitorCount: parseInt(document.getElementById('visitorCount').value) || 1,
-        visitorIDs: document.getElementById('visitorIDs').value,
-        visitorTelephone: document.getElementById('visitorTelephone').value,
-        fromProvince: document.getElementById('visitorFromProvince').value,
-        fromDistrict: document.getElementById('visitorFromDistrict').value,
-        fromSector: document.getElementById('visitorFromSector').value,
-        fromCell: document.getElementById('visitorFromCell').value,
-        fromVillage: document.getElementById('visitorFromVillage').value,
-        reason: document.getElementById('visitorReason').value,
-        returnDate: document.getElementById('visitorReturnDate').value,
+        type: 'visitors',
+        data: {
+            yourSector: document.getElementById('visitorYourSector').value,
+            yourCell: document.getElementById('visitorYourCell').value,
+            yourVillage: document.getElementById('visitorYourVillage').value,
+            yourTelephone: document.getElementById('visitorYourTelephone').value,
+            visitorNames: document.getElementById('visitorNames').value,
+            visitorCount: parseInt(document.getElementById('visitorCount').value) || 1,
+            visitorIDs: document.getElementById('visitorIDs').value,
+            visitorTelephone: document.getElementById('visitorTelephone').value,
+            fromProvince: document.getElementById('visitorFromProvince').value,
+            fromDistrict: document.getElementById('visitorFromDistrict').value,
+            fromSector: document.getElementById('visitorFromSector').value,
+            fromCell: document.getElementById('visitorFromCell').value,
+            fromVillage: document.getElementById('visitorFromVillage').value,
+            reason: document.getElementById('visitorReason').value,
+            returnDate: document.getElementById('visitorReturnDate').value
+        },
         reportedBy: currentUser.name || 'Citizen',
         reportedByEmail: currentUser.email || '',
         dateReported: new Date().toISOString()
     };
 
-    const records = JSON.parse(localStorage.getItem('visitorReports')) || [];
-    records.push(record);
-    localStorage.setItem('visitorReports', JSON.stringify(records));
+    const saved = await sendReportToServer(record);
+    if (!saved) {
+        alert('Failed to send visitor report to server. Please try again.');
+    } else {
+        alert('Visitor report submitted successfully!');
+    }
 
     e.target.reset();
     loadVisitorsTable();
-    alert('Visitor report submitted successfully!');
 }
 
-function loadVisitorsTable() {
+async function loadVisitorsTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
-    const records = JSON.parse(localStorage.getItem('visitorReports')) || [];
-    const userRecords = records.filter(r => r.reportedByEmail === currentUser.email);
     const tbody = document.getElementById('visitorsTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
-        <tr>
-            <td>${escapeHtml(r.visitorNames)}</td>
-            <td>${r.visitorCount}</td>
-            <td>${escapeHtml(r.visitorIDs || '—')}</td>
-            <td>${escapeHtml([r.fromProvince, r.fromDistrict, r.fromSector, r.fromCell, r.fromVillage].filter(Boolean).join(' / '))}</td>
-            <td>${truncateDesc(r.reason, 60)}</td>
-            <td>${r.returnDate ? formatDate(r.returnDate) : '—'}</td>
-            <td>${formatDate(r.dateReported)}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="7">No visitor reports yet</td></tr>';
+    try {
+        const res = await fetch(`/api/citizen-reports?type=visitors&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) throw new Error('Server error');
+        const userRecords = await res.json();
+        tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
+            <tr>
+                <td>${escapeHtml(r.data.visitorNames)}</td>
+                <td>${r.data.visitorCount}</td>
+                <td>${escapeHtml(r.data.visitorIDs || '—')}</td>
+                <td>${escapeHtml([r.data.fromProvince, r.data.fromDistrict, r.data.fromSector, r.data.fromCell, r.data.fromVillage].filter(Boolean).join(' / '))}</td>
+                <td>${truncateDesc(r.data.reason, 60)}</td>
+                <td>${r.data.returnDate ? formatDate(r.data.returnDate) : '—'}</td>
+                <td>${formatDate(r.dateReported)}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="7">No visitor reports yet</td></tr>';
+    } catch (err) {
+        console.warn('Could not load visitor reports:', err);
+        tbody.innerHTML = '<tr><td colspan="7">Unable to load reports</td></tr>';
+    }
 }
 
 // ===== Chat between Citizen and Leaders =====
