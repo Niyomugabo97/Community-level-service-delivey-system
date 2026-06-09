@@ -21,6 +21,7 @@
                 <ul class="nav-menu">
                     <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
                     <li><a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
                 </ul>
             </div>
         </nav>
@@ -30,17 +31,19 @@
         <div class="dashboard-sidebar bottom">
             <ul class="dashboard-menu">
                 <li><a href="#register" data-section="register" class="active"><i class="fa-solid fa-user-plus"></i> 1. Register Members</a></li>
-                <li><a href="#umuganda" data-section="umuganda"><i class="fa-solid fa-people-group"></i> 2. Umuganda Attendance</a></li>
-                <li><a href="#analytics" data-section="analytics"><i class="fa-solid fa-chart-bar"></i> 3. Attendance Analytics</a></li>
-                <li><a href="#inteko" data-section="inteko"><i class="fa-solid fa-clipboard-list"></i> 4. Inteko Minutes & Decisions</a></li>
-                <li><a href="#insurance" data-section="insurance"><i class="fa-solid fa-shield-halved"></i> 5. Insurance Payment</a></li>
-                <li><a href="#drugs" data-section="drugs"><i class="fa-solid fa-bottle-droplet"></i> 6. Report Drugs/Illegal Drinks</a></li>
-                <li><a href="#violence" data-section="violence"><i class="fa-solid fa-hand-fist"></i> 7. Report Sexual Violence</a></li>
-                <li><a href="#infrastructure" data-section="infrastructure"><i class="fa-solid fa-road"></i> 8. Damaged Infrastructure Report</a></li>
-                <li><a href="#case" data-section="case"><i class="fa-solid fa-scale-balanced"></i> 9. Shift Automate Ikirago (Case)</a></li>
-                <li><a href="#homeupdates" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> 10. Recent Activities & Home Updates</a></li>
-                <li><a href="#chat" data-section="chat"><i class="fa-solid fa-comments"></i> 11. Chat</a></li>
-                <li><a href="#visitors" data-section="visitors"><i class="fa-solid fa-user-group"></i> 12. Visitor Reports</a></li>
+                <li><a href="#inteko-attendance" data-section="inteko-attendance"><i class="fa-solid fa-clipboard-check"></i> 2. Inteko Attendance</a></li>
+                <li><a href="#umuganda" data-section="umuganda"><i class="fa-solid fa-people-group"></i> 3. Umuganda Attendance</a></li>
+                <li><a href="#analytics" data-section="analytics"><i class="fa-solid fa-chart-bar"></i> 4. Attendance Analytics</a></li>
+                <li><a href="#inteko" data-section="inteko"><i class="fa-solid fa-clipboard-list"></i> 5. Inteko Minutes & Decisions</a></li>
+                <li><a href="#insurance" data-section="insurance"><i class="fa-solid fa-shield-halved"></i> 6. Insurance Payment</a></li>
+                <li><a href="#drugs" data-section="drugs"><i class="fa-solid fa-bottle-droplet"></i> 7. Report Drugs/Illegal Drinks</a></li>
+                <li><a href="#violence" data-section="violence"><i class="fa-solid fa-hand-fist"></i> 8. Report Sexual Violence</a></li>
+                <li><a href="#infrastructure" data-section="infrastructure"><i class="fa-solid fa-road"></i> 9. Damaged Infrastructure Report</a></li>
+                <li><a href="#case" data-section="case"><i class="fa-solid fa-scale-balanced"></i> 10. Shift Automate Ikirago (Case)</a></li>
+                <li><a href="#homeupdates" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> 11. Recent Activities & Home Updates</a></li>
+                <li><a href="#chat" data-section="chat"><i class="fa-solid fa-comments"></i> 12. Chat</a></li>
+                <li><a href="#visitors" data-section="visitors"><i class="fa-solid fa-user-group"></i> 13. Visitor Reports</a></li>
+                <li><a href="#my-profile" data-section="my-profile"><i class="fa-solid fa-id-card"></i> 14. My Profile</a></li>
             </ul>
         </div>
 
@@ -301,105 +304,310 @@
                 </div>
             </section>
 
-            <!-- Attendance Analytics Section -->
-            <section id="analytics" class="dashboard-section">
-                <h2><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
-                
-                <!-- Statistics Overview -->
-                <div class="statistics-container">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Attendance Overview</h3>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h4>Overall Attendance Rate</h4>
-                            <div class="stat-value" id="overallAttendanceRate">0%</div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="attendanceProgress"></div>
+            <!-- Inteko Attendance Section -->
+            <section id="inteko-attendance" class="dashboard-section">
+                <h2><i class="fa-solid fa-clipboard-check"></i> Inteko Attendance</h2>
+
+                <div class="manual-attendance-container">
+                    <!-- Location Selection -->
+                    <div class="leader-location-selection">
+                        <h3>Select Your Location</h3>
+                        <div class="location-selector">
+                            <div class="form-group">
+                                <label>Select Sector *</label>
+                                <select id="intekoSector" required onchange="updateIntekoLeaderCells()">
+                                    <option value="">-- Select your sector --</option>
+                                    <option value="Ruhuha">Ruhuha</option>
+                                    <option value="Nyarugenge">Nyarugenge</option>
+                                    <option value="Mayange">Mayange</option>
+                                </select>
                             </div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Total Members</h4>
-                            <div class="stat-value" id="totalMembers">0</div>
-                            <div class="stat-detail">Registered citizens</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Present Today</h4>
-                            <div class="stat-value" id="presentToday">0</div>
-                            <div class="stat-detail">Attended Today</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Absent Today</h4>
-                            <div class="stat-value" id="absentToday">0</div>
-                            <div class="stat-detail">Not attended</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Attendance Bar Chart -->
-                    <div class="chart-container">
-                        <h4>Attendance Distribution</h4>
-                        <div class="chart-wrapper">
-                            <canvas id="attendanceChart" width="800" height="400"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Attendance Categories -->
-                    <div class="attendance-categories">
-                        <h4>Attendance Performance Breakdown</h4>
-                        <div class="category-grid">
-                            <div class="category-item excellent">
-                                <div class="category-label">Excellent (80-100%)</div>
-                                <div class="category-count" id="excellentCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="excellentBar"></div>
-                                </div>
+                            <div class="form-group">
+                                <label>Select Cell *</label>
+                                <select id="intekoCell" required onchange="updateIntekoLeaderVillages()" disabled>
+                                    <option value="">Select your cell</option>
+                                </select>
                             </div>
-                            <div class="category-item good">
-                                <div class="category-label">Good (50-79%)</div>
-                                <div class="category-count" id="goodCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="goodBar"></div>
-                                </div>
+                            <div class="form-group">
+                                <label>Select Village *</label>
+                                <select id="intekoVillage" required disabled>
+                                    <option value="">Select your village</option>
+                                </select>
                             </div>
-                            <div class="category-item poor">
-                                <div class="category-label">Poor (1-49%)</div>
-                                <div class="category-count" id="poorCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="poorBar"></div>
-                                </div>
-                            </div>
-                            <div class="category-item none">
-                                <div class="category-label">No Attendance (0%)</div>
-                                <div class="category-count" id="noneCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="noneBar"></div>
-                                </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary" onclick="confirmIntekoLocation()">
+                                    <i class="fa-solid fa-check"></i> Confirm Location
+                                </button>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Sector Statistics with Village Breakdown -->
-                    <div class="sector-statistics">
-                        <h4>Sector Attendance Statistics</h4>
-                        <div class="sector-grid">
-                            <div class="sector-chart-container">
-                                <canvas id="sectorChart" width="400" height="300"></canvas>
+
+                    <!-- Attendance Marking Section (Initially Hidden) -->
+                    <div id="intekoAttendanceMarkingSection" style="display: none;">
+                        <div class="attendance-header">
+                            <h3>Mark Inteko Attendance for <span id="intekoSelectedLocation"></span></h3>
+                            <div class="attendance-date">
+                                <label>Month:</label>
+                                <select id="intekoAttendanceMonth" onchange="updateIntekoAttendanceDate()">
+                                    <option value="">-- Select month --</option>
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <label>Date:</label>
+                                <input type="date" id="intekoAttendanceDate">
                             </div>
-                            <div class="sector-details" id="sectorDetails">
-                                <!-- Sector statistics will be populated here -->
+                            <div class="action-buttons">
+                                <button class="btn btn-success" onclick="markAllIntekoPresent()">
+                                    <i class="fa-solid fa-check-double"></i> Mark All Present
+                                </button>
+                                <button class="btn btn-danger" onclick="markAllIntekoAbsent()">
+                                    <i class="fa-solid fa-times"></i> Mark All Absent
+                                </button>
+                                <button class="btn btn-secondary" onclick="changeIntekoLocation()">
+                                    <i class="fa-solid fa-arrow-left"></i> Change Location
+                                </button>
                             </div>
                         </div>
-                        
-                        <!-- Village Breakdown by Sector -->
-                        <div class="village-breakdown-section">
-                            <h5>Village Attendance by Sector</h5>
-                            <div class="village-chart-container">
-                                <canvas id="villageChart" width="400" height="300"></canvas>
+
+                        <div class="members-attendance-list">
+                            <div class="attendance-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Total Members:</span>
+                                    <span class="summary-value" id="intekoTotalMembersCount">0</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Present:</span>
+                                    <span class="summary-value present" id="intekoPresentCount">0</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Absent:</span>
+                                    <span class="summary-value absent" id="intekoAbsentCount">0</span>
+                                </div>
                             </div>
-                            <div id="villageBreakdownContainer">
-                                <!-- Village breakdown by sector will be populated here -->
+
+                            <table class="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Sector</th>
+                                        <th>Cell</th>
+                                        <th>Village</th>
+                                        <th>Telephone</th>
+                                        <th>Attendance Status</th>
+                                        <th>Performance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="intekoAttendanceTableBody"></tbody>
+                            </table>
+
+                            <div class="save-attendance-section">
+                                <button class="btn btn-primary btn-large" onclick="saveIntekoAttendance()">
+                                    <i class="fa-solid fa-save"></i> Save Inteko Attendance
+                                </button>
+                            </div>
+
+                            <div id="intekoSavedRecordsWrap" class="data-table-container" style="margin-top: 1.5rem; display: none;">
+                                <div class="table-header">
+                                    <h3>Saved Inteko Attendance Records</h3>
+                                    <div class="table-actions">
+                                        <input type="text" id="intekoSearchName" placeholder="Search by name..." class="search-input" onkeyup="filterIntekoSavedRecords()">
+                                        <select id="intekoFilterSector" class="filter-select" onchange="filterIntekoSavedRecords()">
+                                            <option value="">All Sectors</option>
+                                        </select>
+                                        <select id="intekoFilterCell" class="filter-select" onchange="filterIntekoSavedRecords()">
+                                            <option value="">All Cells</option>
+                                        </select>
+                                        <select id="intekoFilterVillage" class="filter-select" onchange="filterIntekoSavedRecords()">
+                                            <option value="">All Villages</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Sex</th>
+                                            <th>Age</th>
+                                            <th>Telephone</th>
+                                            <th>Sector</th>
+                                            <th>Cell</th>
+                                            <th>Village</th>
+                                            <th>Attendance Status</th>
+                                            <th>Performance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="intekoSavedTableBody"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <!-- Attendance Analytics Section -->
+            <section id="analytics" class="dashboard-section">
+                <h2><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
+
+                <!-- Type tabs -->
+                <div class="sub-analytics-tabs" style="margin-bottom:0;">
+                    <a class="sub-analytics-tab active" data-atab="umuganda-analytics">
+                        <i class="fa-solid fa-people-group"></i> Umuganda Attendance
+                    </a>
+                    <a class="sub-analytics-tab" data-atab="inteko-analytics">
+                        <i class="fa-solid fa-clipboard-check"></i> Inteko Attendance
+                    </a>
+                </div>
+
+                <!-- ── UMUGANDA panel ── -->
+                <div class="sub-tab-panel active" id="atab-umuganda-analytics" style="padding-top:1.5rem;">
+
+                    <!-- Summary cards -->
+                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Members</h4>
+                            <div class="stat-value" id="uga-totalMembers">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="uga-present">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
+                            <div class="stat-value" style="color:#e74c3c;" id="uga-absent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-percent"></i> Attendance Rate</h4>
+                            <div class="stat-value" id="uga-rate">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Date filter -->
+                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <label>Filter by date:</label>
+                        <input type="date" id="uga-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <button class="btn btn-primary" onclick="loadUmugandaAnalytics()">
+                            <i class="fa-solid fa-filter"></i> Apply
+                        </button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('uga-dateFilter').value='';loadUmugandaAnalytics();">
+                            <i class="fa-solid fa-times"></i> Clear
+                        </button>
+                        <button class="btn btn-success" onclick="downloadAttendanceCSV('umuganda')" style="margin-left:auto;">
+                            <i class="fa-solid fa-download"></i> Download CSV
+                        </button>
+                    </div>
+
+                    <!-- Present table -->
+                    <div class="data-table-container" style="margin-bottom:1.5rem;">
+                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members <span id="uga-present-count" style="font-size:14px;font-weight:400;"></span></h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Name</th><th>Sex</th><th>Age</th>
+                                    <th>Sector</th><th>Cell</th><th>Village</th>
+                                    <th>Telephone</th><th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uga-present-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Absent table -->
+                    <div class="data-table-container">
+                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members <span id="uga-absent-count" style="font-size:14px;font-weight:400;"></span></h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Name</th><th>Sex</th><th>Age</th>
+                                    <th>Sector</th><th>Cell</th><th>Village</th>
+                                    <th>Telephone</th><th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uga-absent-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── INTEKO panel ── -->
+                <div class="sub-tab-panel" id="atab-inteko-analytics" style="padding-top:1.5rem;">
+
+                    <!-- Summary cards -->
+                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Members</h4>
+                            <div class="stat-value" id="int-totalMembers">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="int-present">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
+                            <div class="stat-value" style="color:#e74c3c;" id="int-absent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-percent"></i> Attendance Rate</h4>
+                            <div class="stat-value" id="int-rate">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Date filter -->
+                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <label>Filter by date:</label>
+                        <input type="date" id="int-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <button class="btn btn-primary" onclick="loadIntekoAnalytics()">
+                            <i class="fa-solid fa-filter"></i> Apply
+                        </button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('int-dateFilter').value='';loadIntekoAnalytics();">
+                            <i class="fa-solid fa-times"></i> Clear
+                        </button>
+                        <button class="btn btn-success" onclick="downloadAttendanceCSV('inteko')" style="margin-left:auto;">
+                            <i class="fa-solid fa-download"></i> Download CSV
+                        </button>
+                    </div>
+
+                    <!-- Present table -->
+                    <div class="data-table-container" style="margin-bottom:1.5rem;">
+                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members <span id="int-present-count" style="font-size:14px;font-weight:400;"></span></h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Name</th><th>Sex</th><th>Age</th>
+                                    <th>Sector</th><th>Cell</th><th>Village</th>
+                                    <th>Telephone</th><th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="int-present-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Absent table -->
+                    <div class="data-table-container">
+                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members <span id="int-absent-count" style="font-size:14px;font-weight:400;"></span></h4>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Name</th><th>Sex</th><th>Age</th>
+                                    <th>Sector</th><th>Cell</th><th>Village</th>
+                                    <th>Telephone</th><th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="int-absent-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </section>
 
             <!-- Inteko Minutes Section -->
@@ -885,75 +1093,29 @@
             <!-- Shift Automate Case Section -->
             <section id="case" class="dashboard-section">
                 <h2><i class="fa-solid fa-scale-balanced"></i> Shift Automate Ikirago (Case)</h2>
-                <form id="caseForm" class="form-container">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Leader's Name</label>
-                            <input type="text" id="caseLeaderName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Leader's Telephone</label>
-                            <input type="tel" id="caseLeaderTelephone" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Sector</label>
-                            <input type="text" id="caseSector" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Cell</label>
-                            <input type="text" id="caseCell" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Village</label>
-                            <input type="text" id="caseVillage" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Plaintiff / Complainant (Urega)</label>
-                            <input type="text" id="casePlaintiff" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Defendant / Accused (Urerwa)</label>
-                            <input type="text" id="caseDefendant" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Case Description</label>
-                        <textarea id="caseDescription" rows="5" required></textarea>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Expected Resolution Days</label>
-                            <input type="number" id="caseResolutionDays" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Case Date</label>
-                            <input type="date" id="caseDate" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Record Case</button>
-                </form>
                 <div class="data-table-container">
-                    <h3>Case Records</h3>
+                    <h3>Citizen Case Records</h3>
                     <table id="caseTable" class="data-table">
                         <thead>
                             <tr>
-                                <th>Case ID</th>
-                                <th>Plaintiff</th>
-                                <th>Defendant</th>
-                                <th>Sector</th>
-                                <th>Cell</th>
-                                <th>Village</th>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Plaintiff (Reporter)</th>
+                                <th>Accused (Defendant)</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Level</th>
                                 <th>Status</th>
+                                <th>Time Left</th>
+                                <th>Evidence</th>
                                 <th>Date</th>
-                                <th>Countdown</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="caseTableBody">
+                            <tr>
+                                <td colspan="12">No cases submitted yet</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1181,13 +1343,108 @@
                     </div>
                 </div>
             </section>
+            <!-- My Profile Section -->
+            <section id="my-profile" class="dashboard-section">
+                <h2><i class="fa-solid fa-id-card"></i> My Profile</h2>
+                <p class="section-desc">Your profile will be displayed publicly on the About Us page so citizens can see their community leaders.</p>
+
+                <div class="profile-editor-layout">
+                    <!-- Photo Card -->
+                    <div class="profile-photo-card">
+                        <div class="profile-photo-preview" id="profilePhotoPreview">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div class="profile-photo-actions">
+                            <label for="profilePhotoFile" class="btn btn-secondary btn-sm">
+                                <i class="fa-solid fa-upload"></i> Upload Photo
+                            </label>
+                            <input type="file" id="profilePhotoFile" accept="image/*" style="display:none">
+                            <span id="profilePhotoUploadStatus" class="upload-status"></span>
+                        </div>
+                        <p class="photo-hint">JPG, PNG or GIF — max 5 MB</p>
+                    </div>
+
+                    <!-- Profile Form -->
+                    <form id="leaderProfileForm" class="form-container profile-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="profileName" required placeholder="e.g. Jean Pierre Habimana">
+                            </div>
+                            <div class="form-group">
+                                <label>Role / Title</label>
+                                <input type="text" id="profileRole" placeholder="e.g. Village Leader, Cell Leader">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sector *</label>
+                                <input type="text" id="profileSector" required placeholder="e.g. Kacyiru">
+                            </div>
+                            <div class="form-group">
+                                <label>Cell *</label>
+                                <input type="text" id="profileCell" required placeholder="e.g. Kabuye">
+                            </div>
+                            <div class="form-group">
+                                <label>Village *</label>
+                                <input type="text" id="profileVillage" required placeholder="e.g. Amahoro">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Telephone *</label>
+                            <input type="tel" id="profileTelephone" required placeholder="e.g. 0788123456">
+                        </div>
+                        <div class="form-group">
+                            <label>Short Bio / Description</label>
+                            <textarea id="profileBio" rows="3" placeholder="A short description about yourself and your role in the community..."></textarea>
+                        </div>
+
+                        <div id="profileFormStatus" class="form-status" style="display:none"></div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm" id="deleteProfileBtn" style="display:none">
+                                <i class="fa-solid fa-trash"></i> Delete Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Live Preview -->
+                <div class="profile-preview-section">
+                    <h3><i class="fa-solid fa-eye"></i> Preview (as seen on About Us page)</h3>
+                    <div class="leader-card-preview" id="leaderCardPreview" style="display:none">
+                        <div class="leader-card">
+                            <div class="leader-photo" id="previewPhoto">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <div class="leader-info">
+                                <h4 id="previewName">—</h4>
+                                <span class="leader-role" id="previewRole">—</span>
+                                <div class="leader-location">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <span id="previewLocation">—</span>
+                                </div>
+                                <div class="leader-tel">
+                                    <i class="fa-solid fa-phone"></i>
+                                    <span id="previewTelephone">—</span>
+                                </div>
+                                <p class="leader-bio" id="previewBio"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
     <script src="js/config.js"></script>
-<script src="js/api.js"></script>
-<script src="js/face-recognition.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/face-recognition.js"></script>
     <script src="js/leader-dashboard.js"></script>
+    <script src="js/leader-profile.js"></script>
     <script src="js/navbar.js"></script>
 </body>
 </html>

@@ -20,27 +20,20 @@ router.post("/", async (req, res) => {
 //////////////// GET ALL //////////////////
 router.get("/", async (req, res) => {
   try {
-    const { date, sector, village, status } = req.query;
+    const { date, sector, village, status, type } = req.query;
     let filter = {};
-    
+
     if (date) {
       filter.date = {
         $gte: new Date(date),
         $lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
       };
     }
-    
-    if (sector) {
-      filter.sector = sector;
-    }
-    
-    if (village) {
-      filter.village = village;
-    }
-    
-    if (status) {
-      filter.status = status;
-    }
+
+    if (sector) filter.sector = sector;
+    if (village) filter.village = village;
+    if (status)  filter.status = status;
+    if (type)    filter.type   = type;
 
     const data = await Attendance.find(filter).sort({ date: -1 });
     res.json(data);
@@ -52,7 +45,7 @@ router.get("/", async (req, res) => {
 //////////////// GET BEST PERFORMING SECTORS //////////////////
 router.get("/best-sectors", async (req, res) => {
   try {
-    const { limit = 10, date } = req.query;
+    const { limit = 10, date, month, year } = req.query;
     let dateFilter = {};
     if (date) {
       dateFilter = {
@@ -61,6 +54,10 @@ router.get("/best-sectors", async (req, res) => {
           $lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
         }
       };
+    } else if (month && year) {
+      const start = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const end = new Date(parseInt(year), parseInt(month), 1);
+      dateFilter = { date: { $gte: start, $lt: end } };
     }
 
     // Fetch attendance records and all members in parallel
@@ -151,13 +148,17 @@ router.get("/best-sectors", async (req, res) => {
 // NOTE: /:id routes are placed AFTER named routes to avoid swallowing them
 router.get("/best-villages", async (req, res) => {
   try {
-    const { limit = 100, sector, date } = req.query;
+    const { limit = 100, sector, date, month, year } = req.query;
     let attendanceFilter = {};
     if (date) {
       attendanceFilter.date = {
         $gte: new Date(date),
         $lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
       };
+    } else if (month && year) {
+      const start = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const end = new Date(parseInt(year), parseInt(month), 1);
+      attendanceFilter.date = { $gte: start, $lt: end };
     }
 
     // Fetch attendance records and all members in parallel
@@ -256,6 +257,97 @@ router.get("/best-villages", async (req, res) => {
     res.json(bestVillages);
   } catch (err) {
     console.error("Error fetching best performing villages:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//////////////// GET BEST PERFORMING CELLS //////////////////
+router.get("/best-cells", async (req, res) => {
+  try {
+    const { limit = 100, sector, date, month, year } = req.query;
+    let attendanceFilter = {};
+    if (date) {
+      attendanceFilter.date = {
+        $gte: new Date(date),
+        $lt: new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
+      };
+    } else if (month && year) {
+      const start = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const end = new Date(parseInt(year), parseInt(month), 1);
+      attendanceFilter.date = { $gte: start, $lt: end };
+    }
+
+    // Fetch attendance records and all members in parallel
+    const [attendanceRecords, allMembers] = await Promise.all([
+      Attendance.find(attendanceFilter).lean(),
+      Member.find({}).lean()
+    ]);
+
+    // Build a phone -> member lookup map for fast enrichment
+    const memberMap = {};
+    allMembers.forEach(m => {
+      if (m.telephone) memberMap[String(m.telephone).trim()] = m;
+    });
+
+    // Group enriched attendance records by resolved sector + cell
+    const cellMap = {};
+
+    // Initialize map using known members (optionally scoped to sector)
+    const membersToSeed = sector ? allMembers.filter(m => m.sector === sector) : allMembers;
+    membersToSeed.forEach(m => {
+      const key = `${m.sector || 'Unnamed Sector'}||${m.cell || 'Unnamed Cell'}`;
+      if (!cellMap[key]) {
+        cellMap[key] = { sector: m.sector || 'Unnamed Sector', cell: m.cell || 'Unnamed Cell', total: 0, present: 0, absent: 0 };
+      }
+    });
+
+    attendanceRecords.forEach(record => {
+      let recSector = (record.sector && record.sector.trim()) || null;
+      let recCell = (record.cell && record.cell.trim()) || null;
+
+      if (!recSector || !recCell) {
+        const member = memberMap[String(record.citizenId || "").trim()];
+        if (member) {
+          recSector = recSector || (member.sector && member.sector.trim()) || null;
+          recCell = recCell || (member.cell && member.cell.trim()) || null;
+        }
+      }
+
+      // Filter by sector query param if provided
+      if (sector && recSector !== sector) return;
+
+      const resolvedSector = recSector || "Unnamed Sector";
+      const resolvedCell = recCell || "Unnamed Cell";
+      const key = `${resolvedSector}||${resolvedCell}`;
+
+      if (!cellMap[key]) {
+        cellMap[key] = { sector: resolvedSector, cell: resolvedCell, total: 0, present: 0, absent: 0 };
+      }
+      cellMap[key].total++;
+      if (record.status === "present") cellMap[key].present++;
+      else cellMap[key].absent++;
+    });
+
+    // Convert to array, calculate rates, sort and limit
+    let bestCells = Object.values(cellMap).map(data => ({
+      sector: data.sector,
+      cell: data.cell,
+      total: data.total,
+      present: data.present,
+      absent: data.absent,
+      rate: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
+      isBest: false,
+      rank: 0
+    }));
+
+    // Sort by rate desc, then by total desc
+    bestCells.sort((a, b) => (b.rate - a.rate) || (b.total - a.total));
+    bestCells = bestCells.slice(0, parseInt(limit));
+    bestCells.forEach((c, i) => { c.rank = i + 1; c.isBest = i === 0 && c.total > 0; });
+
+    res.json(bestCells);
+  } catch (err) {
+    console.error("Error fetching best performing cells:", err);
     res.status(500).json({ error: err.message });
   }
 });

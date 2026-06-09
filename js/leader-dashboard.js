@@ -139,6 +139,12 @@ function setupNavigation() {
 
         // Ensure the newly-activated content is visible
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Load analytics data when section 4 is activated
+        if (sectionId === 'analytics') {
+            loadUmugandaAnalytics();
+            loadIntekoAnalytics();
+        }
     }
 
     // Delegate clicks so it works even if menu is re-rendered
@@ -281,7 +287,8 @@ function setupForms() {
     document.getElementById('violenceForm').addEventListener('submit', handleViolenceSubmit);
 
     // Case form
-    document.getElementById('caseForm').addEventListener('submit', handleCaseSubmit);
+    const caseForm = document.getElementById('caseForm');
+    if (caseForm) caseForm.addEventListener('submit', handleCaseSubmit);
 
     // Infrastructure form (leader)
     const leaderInfraForm = document.getElementById('leaderInfrastructureForm');
@@ -755,7 +762,7 @@ function setupIntekoDynamicFields() {
     });
 }
 
-function handleIntekoSubmit(e) {
+async function handleIntekoSubmit(e) {
     e.preventDefault();
 
     // Collect attendees
@@ -807,50 +814,76 @@ function handleIntekoSubmit(e) {
     });
 
     const record = {
-        id: Date.now(),
         meetingTitle: document.getElementById('meetingTitle').value,
         meetingType: document.getElementById('meetingType').value,
         meetingDate: document.getElementById('meetingDate').value,
         startTime: document.getElementById('startTime').value,
         endTime: document.getElementById('endTime').value,
-        venue: document.getElementById('venue').value,
-        meetingNumber: document.getElementById('meetingNumber').value,
-        chairperson: document.getElementById('chairperson').value,
-        attendees,
-        apologies: document.getElementById('apologies').value,
-        quorumStatus: document.getElementById('quorumStatus').value,
-        agendaItems,
-        discussionSummary: document.getElementById('discussionSummary').value,
-        decisions,
-        actions,
+        location: document.getElementById('venue').value || '',
+        attendees: attendees.length,
+        agenda: JSON.stringify(agendaItems),
+        decisions: JSON.stringify(decisions),
+        actionItems: JSON.stringify(actions),
         reportSummary: document.getElementById('reportSummary').value,
         keyOutcomes: document.getElementById('keyOutcomes').value,
         challenges: document.getElementById('challenges').value,
         recommendations: document.getElementById('recommendations').value,
-        attachedFiles: document.getElementById('attachedFiles').value,
-        preparedBy: document.getElementById('preparedBy').value,
-        reviewedBy: document.getElementById('reviewedBy').value,
-        approvedBy: document.getElementById('approvedBy').value,
-        approvalDate: document.getElementById('approvalDate').value,
-        nextMeetingDate: document.getElementById('nextMeetingDate').value,
-        followUpNotes: document.getElementById('followUpNotes').value,
-        minutesStatus: document.getElementById('minutesStatus').value,
-        archiveRef: document.getElementById('archiveRef').value,
-        createdAt: new Date().toISOString()
+        attachedFiles: [document.getElementById('attachedFiles').value || ''],
+        leaderName: document.getElementById('preparedBy').value || 'Leader'
     };
 
-    const records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
-    records.push(record);
-    localStorage.setItem('intekoRecords', JSON.stringify(records));
+    try {
+        const api = new ApiService();
+        await api.createIntekoRecord(record);
+    } catch (err) {
+        console.warn('Failed to save Inteko record to MongoDB, falling back to local storage:', err);
+        const fallback = {
+            id: Date.now(),
+            ...record,
+            chairperson: document.getElementById('chairperson').value,
+            minutesStatus: document.getElementById('minutesStatus').value,
+            createdAt: new Date().toISOString()
+        };
+        const records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+        records.push(fallback);
+        localStorage.setItem('intekoRecords', JSON.stringify(records));
+    }
 
     e.target.reset();
-    loadIntekoRecords();
+    await loadIntekoRecords();
     showNotification('Inteko minutes saved successfully!', 'success');
 }
 
 async function loadIntekoRecords() {
-    const records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
     const container = document.getElementById('intekoRecords');
+    if (!container) return;
+
+    let records = [];
+    try {
+        const api = new ApiService();
+        const serverRecords = await api.getIntekoRecords();
+        records = serverRecords.map(r => ({
+            id: r._id,
+            meetingTitle: r.meetingTitle || '—',
+            meetingType: r.meetingType || '—',
+            meetingDate: r.meetingDate || r.createdAt,
+            chairperson: r.leaderName || '—',
+            minutesStatus: r.reportSummary ? 'Final' : 'Pending',
+            attendees: r.attendees || 0
+        }));
+    } catch (err) {
+        console.warn('Failed to load Inteko records from server, falling back to local storage:', err);
+        const localRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+        records = localRecords.map(r => ({
+            id: r.id,
+            meetingTitle: r.meetingTitle || '—',
+            meetingType: r.meetingType || '—',
+            meetingDate: r.meetingDate || r.createdAt,
+            chairperson: r.chairperson || '—',
+            minutesStatus: r.minutesStatus || '—',
+            attendees: r.attendees?.length || 0
+        }));
+    }
 
     container.innerHTML = records.map(record => `
         <div class="inteko-record-card" style="background: white; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -859,7 +892,7 @@ async function loadIntekoRecords() {
             <p><strong>Date:</strong> ${formatDate(record.meetingDate)}</p>
             <p><strong>Chairperson:</strong> ${record.chairperson}</p>
             <p><strong>Status:</strong> ${record.minutesStatus}</p>
-            <button class="btn btn-secondary" onclick="viewIntekoDetails(${record.id})">View Details</button>
+            <button class="btn btn-secondary" onclick="viewIntekoDetails('${record.id}')">View Details</button>
         </div>
     `).join('');
 }
@@ -4224,29 +4257,47 @@ async function loadInsuranceTable() {
 }
 
 // Report Drugs
-function handleDrugsSubmit(e) {
+async function handleDrugsSubmit(e) {
     e.preventDefault();
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const record = {
-        id: Date.now(),
+    const caseData = {
         name: document.getElementById('drugsName').value,
         sector: document.getElementById('drugsSector').value,
         cell: document.getElementById('drugsCell').value,
         village: document.getElementById('drugsVillage').value,
-        description: (document.getElementById('drugsDescription') && document.getElementById('drugsDescription').value) ? document.getElementById('drugsDescription').value.trim() : '',
+        description: (document.getElementById('drugsDescription') && document.getElementById('drugsDescription').value) ? document.getElementById('drugsDescription').value.trim() : ''
+    };
+
+    const payload = {
+        type: 'drugs',
+        data: caseData,
         reportedBy: (currentUser && currentUser.name) ? currentUser.name : 'Village Leader',
         reportedByEmail: (currentUser && currentUser.email) ? currentUser.email : '',
         reportedByPhone: (currentUser && currentUser.phone) ? currentUser.phone : '',
-        date: new Date().toISOString()
+        dateReported: new Date().toISOString()
     };
 
-    const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
-    records.push(record);
-    localStorage.setItem('drugsRecords', JSON.stringify(records));
+    try {
+        const api = new ApiService();
+        await api.createLeaderReport(payload);
+    } catch (err) {
+        console.warn('Failed to save leader drug report to server, falling back to local storage:', err);
+        const fallback = {
+            id: Date.now(),
+            ...caseData,
+            reportedBy: payload.reportedBy,
+            reportedByEmail: payload.reportedByEmail,
+            reportedByPhone: payload.reportedByPhone,
+            date: new Date().toISOString()
+        };
+        const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
+        records.push(fallback);
+        localStorage.setItem('drugsRecords', JSON.stringify(records));
+    }
 
     e.target.reset();
-    loadDrugsTable();
-    alert('Drug report sent successfully! Visible on village, cell and sector pages.');
+    await loadDrugsTable();
+    alert('Drug report sent successfully! Saved in database and visible on dashboards.');
 }
 
 function truncateDesc(text, len) {
@@ -4255,8 +4306,38 @@ function truncateDesc(text, len) {
 }
 
 async function loadDrugsTable() {
-    const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
     const tbody = document.getElementById('drugsTableBody');
+    if (!tbody) return;
+
+    let records = [];
+    try {
+        const api = new ApiService();
+        const serverRecords = await api.getLeaderReports({ type: 'drugs' });
+        records = serverRecords.map(r => ({
+            id: r._id,
+            name: r.data?.name || '—',
+            sector: r.data?.sector || '—',
+            cell: r.data?.cell || '—',
+            village: r.data?.village || '—',
+            description: r.data?.description || '—',
+            reportedBy: r.reportedBy,
+            date: r.dateReported || r.createdAt
+        }));
+    } catch (err) {
+        console.warn('Failed to load leader drug reports from server, falling back to local storage:', err);
+        const localRecords = JSON.parse(localStorage.getItem('drugsRecords')) || [];
+        records = localRecords.map(r => ({
+            id: r.id,
+            name: r.name || '—',
+            sector: r.sector || '—',
+            cell: r.cell || '—',
+            village: r.village || '—',
+            description: r.description || '—',
+            reportedBy: r.reportedBy,
+            date: r.date || r.createdAt
+        }));
+    }
+
     const reportedByLabel = (r) => r.reportedBy || '—';
     tbody.innerHTML = records.map(record => `
         <tr>
@@ -4267,41 +4348,91 @@ async function loadDrugsTable() {
             <td>${truncateDesc(record.description, 40)}</td>
             <td>${escapeHtml(reportedByLabel(record))}</td>
             <td>${formatDate(record.date)}</td>
-            <td><button class="btn btn-secondary" onclick="viewDrugsDetails(${record.id})">View details</button></td>
+            <td><button class="btn btn-secondary" onclick="viewDrugsDetails('${record.id}')">View details</button></td>
         </tr>
     `).join('');
 }
 
 // Report Sexual Violence
-function handleViolenceSubmit(e) {
+async function handleViolenceSubmit(e) {
     e.preventDefault();
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const record = {
-        id: Date.now(),
+    const caseData = {
         victimName: document.getElementById('violenceVictimName').value,
         telephone: document.getElementById('violenceTelephone').value,
         sector: document.getElementById('violenceSector').value,
         cell: document.getElementById('violenceCell').value,
         village: document.getElementById('violenceVillage').value,
-        description: document.getElementById('violenceDescription').value,
+        description: document.getElementById('violenceDescription').value
+    };
+
+    const payload = {
+        type: 'violence',
+        data: caseData,
         reportedBy: (currentUser && currentUser.name) ? currentUser.name : 'Village Leader',
         reportedByEmail: (currentUser && currentUser.email) ? currentUser.email : '',
         reportedByPhone: (currentUser && currentUser.phone) ? currentUser.phone : '',
-        date: new Date().toISOString()
+        dateReported: new Date().toISOString()
     };
 
-    const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
-    records.push(record);
-    localStorage.setItem('violenceRecords', JSON.stringify(records));
+    try {
+        const api = new ApiService();
+        await api.createLeaderReport(payload);
+    } catch (err) {
+        console.warn('Failed to save leader violence report to server, falling back to local storage:', err);
+        const fallback = {
+            id: Date.now(),
+            ...caseData,
+            reportedBy: payload.reportedBy,
+            reportedByEmail: payload.reportedByEmail,
+            reportedByPhone: payload.reportedByPhone,
+            date: new Date().toISOString()
+        };
+        const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
+        records.push(fallback);
+        localStorage.setItem('violenceRecords', JSON.stringify(records));
+    }
 
     e.target.reset();
-    loadViolenceTable();
-    alert('Sexual violence report sent successfully! Visible on village, cell and sector pages.');
+    await loadViolenceTable();
+    alert('Sexual violence report sent successfully! Saved in database and visible on dashboards.');
 }
 
 async function loadViolenceTable() {
-    const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
     const tbody = document.getElementById('violenceTableBody');
+    if (!tbody) return;
+
+    let records = [];
+    try {
+        const api = new ApiService();
+        const serverRecords = await api.getLeaderReports({ type: 'violence' });
+        records = serverRecords.map(r => ({
+            id: r._id,
+            victimName: r.data?.victimName || '—',
+            telephone: r.data?.telephone || '—',
+            sector: r.data?.sector || '—',
+            cell: r.data?.cell || '—',
+            village: r.data?.village || '—',
+            description: r.data?.description || '—',
+            reportedBy: r.reportedBy,
+            date: r.dateReported || r.createdAt
+        }));
+    } catch (err) {
+        console.warn('Failed to load leader violence reports from server, falling back to local storage:', err);
+        const localRecords = JSON.parse(localStorage.getItem('violenceRecords')) || [];
+        records = localRecords.map(r => ({
+            id: r.id,
+            victimName: r.victimName || '—',
+            telephone: r.telephone || '—',
+            sector: r.sector || '—',
+            cell: r.cell || '—',
+            village: r.village || '—',
+            description: r.description || '—',
+            reportedBy: r.reportedBy,
+            date: r.date || r.createdAt
+        }));
+    }
+
     const reportedByLabel = (r) => r.reportedBy || '—';
     tbody.innerHTML = records.map(record => `
         <tr>
@@ -4313,7 +4444,7 @@ async function loadViolenceTable() {
             <td>${truncateDesc(record.description, 40)}</td>
             <td>${escapeHtml(reportedByLabel(record))}</td>
             <td>${formatDate(record.date)}</td>
-            <td><button class="btn btn-secondary" onclick="viewViolenceDetails(${record.id})">View details</button></td>
+            <td><button class="btn btn-secondary" onclick="viewViolenceDetails('${record.id}')">View details</button></td>
         </tr>
     `).join('');
 }
@@ -4329,25 +4460,43 @@ function handleLeaderInfrastructureSubmit(e) {
     const fileInput = document.getElementById('leaderInfrastructureImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    function saveReport(imageData) {
-        const record = {
-            id: Date.now(),
+    async function saveReport(imageData) {
+        const caseData = {
             place: place,
             date: dateVal,
             image: imageData || null,
-            description: desc,
+            description: desc
+        };
+
+        const payload = {
+            type: 'infrastructure',
+            data: caseData,
             reportedBy: currentUser.name || 'Village Leader',
             reportedByEmail: currentUser.email || '',
+            reportedByPhone: currentUser.phone || '',
             dateReported: new Date().toISOString()
         };
 
-        const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
-        records.push(record);
-        localStorage.setItem('infrastructureReports', JSON.stringify(records));
+        try {
+            const api = new ApiService();
+            await api.createLeaderReport(payload);
+        } catch (err) {
+            console.warn('Failed to save leader infrastructure report to server, falling back to local storage:', err);
+            const fallback = {
+                id: Date.now(),
+                ...caseData,
+                reportedBy: payload.reportedBy,
+                reportedByEmail: payload.reportedByEmail,
+                dateReported: new Date().toISOString()
+            };
+            const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
+            records.push(fallback);
+            localStorage.setItem('infrastructureReports', JSON.stringify(records));
+        }
 
         e.target.reset();
-        loadLeaderInfrastructureTable();
-        alert('Infrastructure report submitted successfully!');
+        await loadLeaderInfrastructureTable();
+        alert('Infrastructure report submitted successfully! Saved in database.');
     }
 
     if (file) {
@@ -4362,14 +4511,38 @@ function handleLeaderInfrastructureSubmit(e) {
 }
 
 async function loadLeaderInfrastructureTable() {
-    const records = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
     const tbody = document.getElementById('leaderInfrastructureTableBody');
     if (!tbody) return;
+
+    let records = [];
+    try {
+        const api = new ApiService();
+        const serverRecords = await api.getLeaderReports({ type: 'infrastructure' });
+        records = serverRecords.map(r => ({
+            id: r._id,
+            place: r.data?.place || '—',
+            date: r.data?.date || r.dateReported,
+            image: r.data?.image,
+            description: r.data?.description || '—',
+            dateReported: r.dateReported || r.createdAt
+        }));
+    } catch (err) {
+        console.warn('Failed to load leader infrastructure reports from server, falling back to local storage:', err);
+        const localRecords = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
+        records = localRecords.map(r => ({
+            id: r.id,
+            place: r.place || '—',
+            date: r.date || r.dateReported,
+            image: r.image,
+            description: r.description || '—',
+            dateReported: r.dateReported || r.createdAt
+        }));
+    }
 
     tbody.innerHTML = records.length > 0 ? records.map(r => `
         <tr>
             <td>${escapeHtml(r.place)}</td>
-            <td>${formatDate(r.date || r.dateReported)}</td>
+            <td>${formatDate(r.date)}</td>
             <td>${r.image ? `<img src="${r.image}" alt="img" style="width:100px;height:60px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
             <td>${truncateDesc(r.description, 80)}</td>
             <td>${formatDate(r.dateReported)}</td>
@@ -4377,261 +4550,480 @@ async function loadLeaderInfrastructureTable() {
     `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
 }
 
-// Load visitor reports for this leader (filter by leader area when available)
-function loadVisitorReports() {
+// Shift Automate Citizen Cases
+function handleCaseSubmit(e) {
+    e.preventDefault();
+    // Case submission is handled on citizen side. Stabbing function.
+}
+
+async function loadCaseTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
     const leaderSector = currentUser.sector || currentUser.leaderSector || '';
     const leaderCell = currentUser.cell || currentUser.leaderCell || '';
     const leaderVillage = currentUser.village || currentUser.leaderVillage || '';
 
-    const records = JSON.parse(localStorage.getItem('visitorReports')) || [];
-    const tbody = document.getElementById('visitorReportsTableBody');
+    const tbody = document.getElementById('caseTableBody');
     if (!tbody) return;
 
-    // If leader area known, filter to visitor reports where host matches leader's area
-    let visible = records;
-    if (leaderVillage || leaderCell || leaderSector) {
-        visible = records.filter(r => (
-            (leaderVillage && r.yourVillage && r.yourVillage === leaderVillage) ||
-            (leaderCell && r.yourCell && r.yourCell === leaderCell) ||
-            (leaderSector && r.yourSector && r.yourSector === leaderSector)
-        ));
+    let records = [];
+    try {
+        const res = await fetch('/api/citizen-reports?type=case');
+        if (!res.ok) throw new Error('Failed to fetch from MongoDB');
+        records = await res.json();
+    } catch (err) {
+        console.warn('Could not fetch citizen reports from backend, fallback to local storage:', err);
+        const localCases = JSON.parse(localStorage.getItem('citizenCases')) || [];
+        records = localCases.map(c => ({
+            _id: c._id || String(c.id),
+            type: 'case',
+            reportedBy: 'Citizen',
+            reportedByEmail: '',
+            reportedByPhone: '',
+            dateReported: c.createdAt || new Date().toISOString(),
+            data: c
+        }));
     }
 
-    // If no leader area specified, show all reports
-    tbody.innerHTML = visible.length > 0 ? visible.map(r => `
-        <tr>
-            <td>${escapeHtml([r.yourSector, r.yourCell, r.yourVillage].filter(Boolean).join(' / '))}</td>
-            <td>${escapeHtml(r.visitorNames)}</td>
-            <td>${r.visitorCount}</td>
-            <td>${escapeHtml([r.fromProvince, r.fromDistrict, r.fromSector, r.fromCell, r.fromVillage].filter(Boolean).join(' / '))}</td>
-            <td>${escapeHtml(r.reason || '—')}</td>
-            <td>${r.returnDate ? formatDate(r.returnDate) : '—'}</td>
-            <td>${escapeHtml(r.reportedBy || '—')}</td>
-            <td>${formatDate(r.dateReported)}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="8">No visitor reports.</td></tr>';
-}
+    // Filter to leader's location
+    let visible = records;
+    if (leaderVillage || leaderCell || leaderSector) {
+        visible = records.filter(r => {
+            const d = r.data || {};
+            return (
+                (leaderVillage && d.village && d.village === leaderVillage) ||
+                (leaderCell && d.cell && d.cell === leaderCell) ||
+                (leaderSector && d.sector && d.sector === leaderSector)
+            );
+        });
+    }
 
-// Shift Automate Case
-function handleCaseSubmit(e) {
-    e.preventDefault();
+    // Check for auto-escalations and shift case level
+    let hasEscalatedAny = false;
+    for (let r of visible) {
+        const escalated = await checkAndEscalate(r);
+        if (escalated) hasEscalatedAny = true;
+    }
+    if (hasEscalatedAny) {
+        try {
+            const res = await fetch('/api/citizen-reports?type=case');
+            if (res.ok) {
+                const fresh = await res.json();
+                if (leaderVillage || leaderCell || leaderSector) {
+                    visible = fresh.filter(r => {
+                        const d = r.data || {};
+                        return (
+                            (leaderVillage && d.village && d.village === leaderVillage) ||
+                            (leaderCell && d.cell && d.cell === leaderCell) ||
+                            (leaderSector && d.sector && d.sector === leaderSector)
+                        );
+                    });
+                } else {
+                    visible = fresh;
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to refresh after auto-escalation:', err);
+        }
+    }
 
-    const resolutionDays = parseInt(document.getElementById('caseResolutionDays').value);
-    const caseDate = new Date(document.getElementById('caseDate').value);
-    const resolutionDate = new Date(caseDate);
-    resolutionDate.setDate(resolutionDate.getDate() + resolutionDays);
+    if (visible.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12" style="text-align: center; color: #666; padding: 20px;">No citizen cases reported yet</td>
+            </tr>
+        `;
+        return;
+    }
 
-    const record = {
-        id: Date.now(),
-        leaderName: document.getElementById('caseLeaderName').value,
-        leaderTelephone: document.getElementById('caseLeaderTelephone').value,
-        sector: document.getElementById('caseSector').value,
-        cell: document.getElementById('caseCell').value,
-        village: document.getElementById('caseVillage').value,
-        plaintiff: document.getElementById('casePlaintiff').value,
-        defendant: document.getElementById('caseDefendant').value,
-        description: document.getElementById('caseDescription').value,
-        caseDate: caseDate.toISOString(),
-        resolutionDays,
-        expectedResolutionDate: resolutionDate.toISOString(),
-        status: 'Pending',
-        level: 'Village',
-        date: new Date().toISOString()
-    };
+    tbody.innerHTML = visible.reverse().map(r => {
+        const c = r.data || {};
+        const caseId = r._id;
+        const status = c.status || 'pending';
+        const priority = c.priority || 'medium';
+        const level = c.level || 'Village';
 
-    const records = JSON.parse(localStorage.getItem('caseRecords')) || [];
-    records.push(record);
-    localStorage.setItem('caseRecords', JSON.stringify(records));
+        const statusClass = status === 'resolved' ? 'status-solved' :
+            status === 'under-review' ? 'status-escalated' : 'status-pending';
 
-    e.target.reset();
-    loadCaseTable();
-    alert('Case recorded successfully! The countdown timer has started.');
-}
+        const priorityClass = priority === 'emergency' ? 'status-escalated' :
+            priority === 'high' ? 'status-escalated' : 
+            priority === 'medium' ? 'status-pending' : 'status-solved';
 
-async function loadCaseTable() {
-    const records = JSON.parse(localStorage.getItem('caseRecords')) || [];
-    const tbody = document.getElementById('caseTableBody');
-
-    tbody.innerHTML = records.map(record => {
-        const statusClass = record.status === 'Solved' ? 'status-solved' :
-            record.status === 'Escalated' ? 'status-escalated' : 'status-pending';
-
-        // Calculate countdown
-        const countdown = calculateCountdown(record);
+        const locationText = [c.sector, c.cell, c.village].filter(Boolean).join(' / ');
+        const accusedText = `${c.accusedName || '—'} (${c.accusedPhone || '—'})`;
+        const evidenceImg = c.image ? `<img src="${c.image}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="viewEvidenceModal('${c.image}')" />` : 'No Image';
+        const countdownHtml = getCaseCountdownHtml(r);
 
         return `
             <tr>
-                <td>#${record.id}</td>
-                <td>${record.plaintiff}</td>
-                <td>${record.defendant}</td>
-                <td>${record.sector}</td>
-                <td>${record.cell}</td>
-                <td>${record.village}</td>
-                <td><span class="status-badge ${statusClass}">${record.status}</span></td>
-                <td>${formatDate(record.caseDate)}</td>
+                <td>${escapeHtml(c.caseType || c.type || '—')}</td>
                 <td>
-                    <div class="countdown-timer" data-case-id="${record.id}" data-resolution-date="${record.expectedResolutionDate}">
-                        ${countdown}
-                    </div>
+                    <span style="font-weight:bold;">${escapeHtml(c.caseTitle || c.title || '—')}</span><br/>
+                    <small style="color:#666;" title="${escapeHtml(c.caseDescription || c.description || '')}">${truncateDesc(c.caseDescription || c.description, 45)}</small>
                 </td>
                 <td>
-                    ${record.status === 'Pending' ?
-                `<button class="btn btn-primary" onclick="markCaseSolved(${record.id})">Mark Solved</button>` :
-                ''}
+                    ${escapeHtml(r.reportedBy || '—')}<br/>
+                    <small style="color:#666;">${escapeHtml(r.reportedByEmail || '')}</small>
+                </td>
+                <td>${escapeHtml(accusedText)}</td>
+                <td>${escapeHtml(locationText)}</td>
+                <td><span class="status-badge ${priorityClass}">${capitalize(priority)}</span></td>
+                <td><span class="status-badge status-pending" style="background: #e2f0fe; color: #1f4e79; border: 1px solid #b8daff;">${level}</span></td>
+                <td>
+                    <span class="status-badge ${statusClass}">
+                        ${capitalize(status)}
+                    </span>
+                </td>
+                <td>${countdownHtml}</td>
+                <td>${evidenceImg}</td>
+                <td>${formatDate(c.incidentDate || r.dateReported)}</td>
+                <td>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <button class="btn btn-secondary btn-sm" onclick="readCaseDetails('${caseId}')" style="background: #1f4e79; border-color: #1f4e79;"><i class="fa-solid fa-eye"></i> Read</button>
+                        <select onchange="updateCaseStatus('${caseId}', this.value)" style="padding:6px; border-radius:4px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; font-weight: bold;">
+                            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="under-review" ${status === 'under-review' ? 'selected' : ''}>Under Review</option>
+                            <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                        </select>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 
-    // Start countdown updates
-    startCountdownUpdates();
+    if (!casesRefreshInterval) {
+        startCountdownUpdates();
+    }
 }
 
-// Calculate countdown timer
-function calculateCountdown(record) {
-    if (record.status === 'Solved' || record.status === 'Escalated') {
-        return '<span class="countdown-expired">N/A</span>';
-    }
-
-    if (!record.expectedResolutionDate) {
-        return '<span class="countdown-error">No date set</span>';
-    }
-
-    const now = new Date();
-    const resolutionDate = new Date(record.expectedResolutionDate);
-    const diff = resolutionDate - now;
-
-    if (diff <= 0) {
-        return '<span class="countdown-expired">Time Expired</span>';
-    }
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    let countdownHtml = '';
-    if (days > 0) {
-        countdownHtml = `<span class="countdown-days">${days}d</span> `;
-    }
-    if (hours > 0 || days > 0) {
-        countdownHtml += `<span class="countdown-hours">${hours}h</span> `;
-    }
-    if (minutes > 0 || hours > 0 || days > 0) {
-        countdownHtml += `<span class="countdown-minutes">${minutes}m</span> `;
-    }
-    countdownHtml += `<span class="countdown-seconds">${seconds}s</span>`;
-
-    // Add warning class if less than 24 hours remaining
-    const warningClass = diff < (24 * 60 * 60 * 1000) ? 'countdown-warning' : '';
-
-    return `<div class="countdown-display ${warningClass}">${countdownHtml}</div>`;
+// Injects custom slide down styles for our case detail viewer
+if (!document.getElementById('modalAnimationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'modalAnimationStyles';
+    style.innerHTML = `
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
-// Start countdown updates
-let countdownInterval = null;
-function startCountdownUpdates() {
-    // Clear existing interval
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
+window.readCaseDetails = async function (id) {
+    try {
+        const getRes = await fetch(`/api/citizen-reports`);
+        if (!getRes.ok) throw new Error('Could not fetch reports');
+        const reports = await getRes.json();
+        const report = reports.find(r => r._id === id);
+        if (!report) {
+            alert('Case record not found in MongoDB');
+            return;
+        }
 
-    // Update countdown every second
-    countdownInterval = setInterval(() => {
-        const timers = document.querySelectorAll('.countdown-timer');
-        timers.forEach(timer => {
-            const caseId = parseInt(timer.dataset.caseId);
-            const resolutionDate = timer.dataset.resolutionDate;
+        const c = report.data || {};
+        const status = c.status || 'pending';
+        const level = c.level || 'Village';
+        const priority = c.priority || 'medium';
+        const reporterName = report.reportedBy || 'Citizen';
+        const reporterEmail = report.reportedByEmail || '—';
+        const reporterPhone = report.reportedByPhone || '—';
 
-            // Get record to check status
-            const records = JSON.parse(localStorage.getItem('caseRecords')) || [];
-            const record = records.find(r => r.id === caseId);
+        const evidenceHtml = c.image ? `
+            <div style="margin-top: 15px; text-align: center;">
+                <strong>Evidence Image:</strong><br/>
+                <img src="${c.image}" style="max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 8px; border: 1px solid #ccc; cursor: pointer;" onclick="viewEvidenceModal('${c.image}')" />
+            </div>
+        ` : '<p style="color: #666; font-style: italic; margin-top: 15px;">No evidence image uploaded.</p>';
 
-            if (record && (record.status === 'Pending')) {
-                const now = new Date();
-                const resolutionDateObj = new Date(resolutionDate);
-                const diff = resolutionDateObj - now;
+        const modal = document.createElement('div');
+        modal.id = 'caseDetailsModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
 
-                if (diff <= 0) {
-                    timer.innerHTML = '<span class="countdown-expired">Time Expired</span>';
-                } else {
-                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        modal.innerHTML = `
+            <div style="background: white; width: 620px; max-width: 95%; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); overflow: hidden; animation: slideDown 0.25s cubic-bezier(0.1, 0.8, 0.3, 1);">
+                <div style="background: #1f4e79; color: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;"><i class="fa-solid fa-scale-balanced"></i> Read Case Details</h3>
+                    <span style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;" onclick="document.getElementById('caseDetailsModal').remove()">&times;</span>
+                </div>
+                <div style="padding: 24px; max-height: 65vh; overflow-y: auto; font-size: 14px; color: #333; line-height: 1.6;">
+                    <div style="margin-bottom: 12px;"><strong>Case Type:</strong> ${escapeHtml(c.caseType || c.type || '—')}</div>
+                    <div style="margin-bottom: 12px;"><strong>Case Title:</strong> <span style="font-weight: bold; color: #1f4e79; font-size: 15px;">${escapeHtml(c.caseTitle || c.title || '—')}</span></div>
+                    <div style="margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+                        <strong>Description:</strong>
+                        <p style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #1f4e79; margin: 6px 0 0 0; white-space: pre-wrap;">${escapeHtml(c.caseDescription || c.description || '—')}</p>
+                    </div>
 
-                    let countdownHtml = '';
-                    if (days > 0) {
-                        countdownHtml = `<span class="countdown-days">${days}d</span> `;
-                    }
-                    if (hours > 0 || days > 0) {
-                        countdownHtml += `<span class="countdown-hours">${hours}h</span> `;
-                    }
-                    if (minutes > 0 || hours > 0 || days > 0) {
-                        countdownHtml += `<span class="countdown-minutes">${minutes}m</span> `;
-                    }
-                    countdownHtml += `<span class="countdown-seconds">${seconds}s</span>`;
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+                        <div>
+                            <strong style="color:#1f4e79;">Reporter (Plaintiff):</strong><br/>
+                            Name: ${escapeHtml(reporterName)}<br/>
+                            Phone: ${escapeHtml(reporterPhone)}<br/>
+                            Email: ${escapeHtml(reporterEmail)}
+                        </div>
+                        <div>
+                            <strong style="color:#1f4e79;">Accused (Defendant):</strong><br/>
+                            Name: ${escapeHtml(c.accusedName || '—')}<br/>
+                            Phone: ${escapeHtml(c.accusedPhone || '—')}
+                        </div>
+                    </div>
 
-                    const warningClass = diff < (24 * 60 * 60 * 1000) ? 'countdown-warning' : '';
-                    timer.innerHTML = `<div class="countdown-display ${warningClass}">${countdownHtml}</div>`;
-                }
-            } else {
-                timer.innerHTML = '<span class="countdown-expired">N/A</span>';
-            }
-        });
-    }, 1000); // Update every second
-}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+                        <div>
+                            <strong>Incident Date:</strong><br/>
+                            ${formatDate(c.incidentDate || report.dateReported)}
+                        </div>
+                        <div>
+                            <strong>Location Details:</strong><br/>
+                            ${escapeHtml([c.sector, c.cell, c.village].filter(Boolean).join(' / '))}
+                        </div>
+                    </div>
 
-// Mark case as solved
-window.markCaseSolved = function (caseId) {
-    const records = JSON.parse(localStorage.getItem('caseRecords')) || [];
-    const record = records.find(r => r.id === caseId);
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div>
+                            <strong>Priority:</strong><br/>
+                            <span class="status-badge ${priority === 'high' || priority === 'emergency' ? 'status-escalated' : priority === 'medium' ? 'status-pending' : 'status-solved'}">${capitalize(priority)}</span>
+                        </div>
+                        <div>
+                            <strong>Current Level:</strong><br/>
+                            <span class="status-badge status-pending" style="background: #e2f0fe; color: #1f4e79; border: 1px solid #b8daff;">${level}</span>
+                        </div>
+                        <div>
+                            <strong>Status:</strong><br/>
+                            <span class="status-badge ${status === 'resolved' ? 'status-solved' : status === 'under-review' ? 'status-escalated' : 'status-pending'}">${capitalize(status)}</span>
+                        </div>
+                    </div>
 
-    if (record) {
-        record.status = 'Solved';
-        record.solvedDate = new Date().toISOString();
-        localStorage.setItem('caseRecords', JSON.stringify(records));
-        loadCaseTable();
-        alert('Case marked as solved! Countdown stopped.');
+                    ${evidenceHtml}
+                </div>
+                <div style="background: #f8f9fa; padding: 18px 24px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <strong>Update Status:</strong>
+                        <select id="modalStatusSelect" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; cursor: pointer;">
+                            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="under-review" ${status === 'under-review' ? 'selected' : ''}>Under Review</option>
+                            <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('caseDetailsModal').remove()">Close</button>
+                        <button class="btn btn-primary" onclick="saveModalStatus('${id}')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+    } catch (err) {
+        console.error('Error viewing case details:', err);
+        alert('Failed to read case details.');
     }
 };
 
-// Case auto-escalation
-function setupCaseAutoEscalation() {
-    setInterval(() => {
-        const records = JSON.parse(localStorage.getItem('caseRecords')) || [];
-        const now = new Date();
-        let updated = false;
+window.saveModalStatus = async function (id) {
+    const newStatus = document.getElementById('modalStatusSelect').value;
+    document.getElementById('caseDetailsModal').remove();
+    await updateCaseStatus(id, newStatus);
+};
 
-        records.forEach(record => {
-            if (record.status === 'Pending' && record.level === 'Village') {
-                const expectedDate = new Date(record.expectedResolutionDate);
-                if (now > expectedDate) {
-                    // Auto-escalate from Village to Cell
-                    record.status = 'Escalated';
-                    record.escalatedDate = now.toISOString();
-                    record.level = 'Cell';
-                    // Set new resolution date for cell (default 7 days)
-                    const cellResolutionDate = new Date(now);
-                    cellResolutionDate.setDate(cellResolutionDate.getDate() + 7);
-                    record.cellResolutionDate = cellResolutionDate.toISOString();
-                    updated = true;
-                    console.log(`Case #${record.id} has been automatically escalated to Cell level!`);
-                }
-            }
+async function checkAndEscalate(r) {
+    const c = r.data || {};
+    const caseId = r._id;
+    if (c.status === 'resolved') return false; 
+
+    const now = new Date();
+    const createdAtTime = new Date(c.createdAt || r.dateReported).getTime();
+    const ESCALATION_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+    
+    if (c.level === 'Village' || !c.level) {
+        const timeDiff = now.getTime() - createdAtTime;
+        if (timeDiff >= ESCALATION_PERIOD_MS) {
+            c.level = 'Cell';
+            c.escalatedToCellAt = now.toISOString();
+            await updateCaseOnServer(caseId, r);
+            return true;
+        }
+    } else if (c.level === 'Cell') {
+        const escalatedToCellTime = new Date(c.escalatedToCellAt || c.createdAt || r.dateReported).getTime();
+        const timeDiff = now.getTime() - escalatedToCellTime;
+        if (timeDiff >= ESCALATION_PERIOD_MS) {
+            c.level = 'Sector';
+            c.escalatedToSectorAt = now.toISOString();
+            await updateCaseOnServer(caseId, r);
+            return true;
+        }
+    }
+    return false;
+}
+
+async function updateCaseOnServer(id, report) {
+    try {
+        await fetch(`/api/citizen-reports/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(report)
+        });
+    } catch (err) {
+        console.error('Failed to auto-escalate case on server:', err);
+    }
+}
+
+function getCaseCountdownHtml(r) {
+    const c = r.data || {};
+    if (c.status === 'resolved') {
+        return `<span style="color: #28a745; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Solved</span>`;
+    }
+
+    const now = new Date();
+    const createdAtTime = new Date(c.createdAt || r.dateReported).getTime();
+    const ESCALATION_PERIOD_MS = 14 * 24 * 60 * 60 * 1000;
+
+    let deadline = createdAtTime + ESCALATION_PERIOD_MS;
+    if (c.level === 'Cell') {
+        const escalatedToCellTime = new Date(c.escalatedToCellAt || c.createdAt || r.dateReported).getTime();
+        deadline = escalatedToCellTime + ESCALATION_PERIOD_MS;
+    } else if (c.level === 'Sector') {
+        return `<span style="color: #dc3545; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> Sector (Max)</span>`;
+    }
+
+    const timeLeft = deadline - now.getTime();
+    if (timeLeft <= 0) {
+        return `<span style="color: #dc3545; font-weight: bold; animation: pulse 1s infinite;">Escalating...</span>`;
+    }
+
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+    let displayStr = '';
+    if (days > 0) displayStr += `${days}d `;
+    if (hours > 0 || days > 0) displayStr += `${hours}h `;
+    displayStr += `${minutes}m`;
+
+    let color = '#28a745'; 
+    if (days < 2) {
+        color = '#dc3545'; 
+    } else if (days < 5) {
+        color = '#fd7e14'; 
+    }
+
+    return `<span style="color: ${color}; font-weight: bold;" title="Time remaining before cell escalation"><i class="fa-regular fa-clock"></i> ${displayStr}</span>`;
+}
+
+window.updateCaseStatus = async function (id, newStatus) {
+    if (!confirm(`Are you sure you want to update this case status to "${newStatus}"?`)) {
+        loadCaseTable();
+        return;
+    }
+
+    try {
+        const getRes = await fetch(`/api/citizen-reports`);
+        if (!getRes.ok) throw new Error('Could not fetch existing reports');
+        const reports = await getRes.json();
+        const report = reports.find(r => r._id === id);
+        if (!report) {
+            alert('Case record not found in MongoDB');
+            return;
+        }
+
+        report.data.status = newStatus;
+
+        const putRes = await fetch(`/api/citizen-reports/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(report)
         });
 
-        if (updated) {
-            localStorage.setItem('caseRecords', JSON.stringify(records));
-            loadCaseTable(); // Reload table to update countdown
+        if (!putRes.ok) {
+            const errBody = await putRes.text();
+            throw new Error(`Server failed to update: ${errBody}`);
         }
-    }, 60000); // Check every minute
+
+        showNotification(`Case status updated to ${newStatus} successfully!`, 'success');
+        loadCaseTable();
+    } catch (err) {
+        console.error('Error updating case status in MongoDB:', err);
+        const localCases = JSON.parse(localStorage.getItem('citizenCases')) || [];
+        const cIndex = localCases.findIndex(c => String(c.id) === id || c._id === id);
+        if (cIndex !== -1) {
+            localCases[cIndex].status = newStatus;
+            localStorage.setItem('citizenCases', JSON.stringify(localCases));
+            showNotification(`Case status updated to ${newStatus} locally.`, 'success');
+            loadCaseTable();
+        } else {
+            alert(`Failed to update case status: ${err.message}`);
+        }
+    }
+};
+
+window.viewEvidenceModal = function (imgSrc) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    `;
+    modal.onclick = () => modal.remove();
+
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    img.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+        border: 2px solid white;
+    `;
+    modal.appendChild(img);
+    document.body.appendChild(modal);
+};
+
+function capitalize(text) {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+let casesRefreshInterval = null;
+function startCountdownUpdates() {
+    if (casesRefreshInterval) clearInterval(casesRefreshInterval);
+    casesRefreshInterval = setInterval(() => {
+        const caseTable = document.getElementById('caseTable');
+        if (caseTable && caseTable.getBoundingClientRect().width > 0) {
+            loadCaseTable();
+        }
+    }, 30000);
+}
+function setupCaseAutoEscalation() {}
 
 // Load notifications
 function loadNotifications() {
-    // Inteko notifications - people who should attend but didn't
     const intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
     const registerRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
 
@@ -4687,6 +5079,7 @@ async function loadAllTables() {
         await loadLeaderInfrastructureTable();
         await loadCaseTable();
         await loadLeaderHomeUpdatesList();
+        await loadVisitorReports();
     } catch (error) {
         console.warn('Some tables failed to load:', error);
     }
@@ -4703,9 +5096,45 @@ function formatDate(dateString) {
 }
 
 // View details functions
-window.viewIntekoDetails = function (id) {
-    const records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
-    const record = records.find(r => r.id === id);
+window.viewIntekoDetails = async function (id) {
+    let record = null;
+    try {
+        const api = new ApiService();
+        const res = await fetch(`${api.baseURL}/inteko`);
+        if (res.ok) {
+            const records = await res.json();
+            const r = records.find(item => String(item._id) === String(id));
+            if (r) {
+                record = {
+                    meetingTitle: r.meetingTitle || '—',
+                    meetingType: r.meetingType || '—',
+                    meetingDate: r.meetingDate || r.createdAt,
+                    chairperson: r.leaderName || '—',
+                    attendeesCount: r.attendees || 0,
+                    decisionsCount: r.decisions ? JSON.parse(r.decisions).length : 0,
+                    minutesStatus: r.reportSummary ? 'Final' : 'Pending'
+                };
+            }
+        }
+    } catch (err) {
+        console.warn('Failed to fetch Inteko details from server:', err);
+    }
+
+    if (!record) {
+        const records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+        const r = records.find(item => String(item.id) === String(id));
+        if (r) {
+            record = {
+                meetingTitle: r.meetingTitle || '—',
+                meetingType: r.meetingType || '—',
+                meetingDate: r.meetingDate || r.createdAt,
+                chairperson: r.chairperson || '—',
+                attendeesCount: r.attendees?.length || 0,
+                decisionsCount: r.decisions?.length || 0,
+                minutesStatus: r.minutesStatus || '—'
+            };
+        }
+    }
 
     if (record) {
         const details = `
@@ -4713,26 +5142,78 @@ Meeting Title: ${record.meetingTitle}
 Type: ${record.meetingType}
 Date: ${formatDate(record.meetingDate)}
 Chairperson: ${record.chairperson}
-Attendees: ${record.attendees.length}
-Decisions: ${record.decisions.length}
+Attendees: ${record.attendeesCount}
+Decisions: ${record.decisionsCount}
 Status: ${record.minutesStatus}
         `;
         alert(details);
+    } else {
+        alert('Details not found');
     }
 };
 
-window.viewDrugsDetails = function (id) {
-    const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
-    const record = records.find(r => r.id === id);
+window.viewDrugsDetails = async function (id) {
+    let record = null;
+    try {
+        const api = new ApiService();
+        const res = await fetch(`${api.baseURL}/leader-reports/${id}`);
+        if (res.ok) {
+            const r = await res.json();
+            record = {
+                id: r._id,
+                name: r.data?.name || '—',
+                sector: r.data?.sector || '—',
+                cell: r.data?.cell || '—',
+                village: r.data?.village || '—',
+                description: r.data?.description || '—',
+                reportedBy: r.reportedBy,
+                date: r.dateReported || r.createdAt
+            };
+        }
+    } catch (err) {
+        console.warn('Failed to fetch details from server:', err);
+    }
+
+    if (!record) {
+        const records = JSON.parse(localStorage.getItem('drugsRecords')) || [];
+        record = records.find(r => String(r.id) === String(id));
+    }
+
     if (record) {
         const details = `Name(s): ${record.name}\nLocation: ${record.village}, ${record.cell}, ${record.sector}\nReported by: ${record.reportedBy || '—'}\nDescription: ${record.description || '—'}\nDate: ${formatDate(record.date)}`;
         alert(details);
+    } else {
+        alert('Details not found');
     }
 };
 
-window.viewViolenceDetails = function (id) {
-    const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
-    const record = records.find(r => r.id === id);
+window.viewViolenceDetails = async function (id) {
+    let record = null;
+    try {
+        const api = new ApiService();
+        const res = await fetch(`${api.baseURL}/leader-reports/${id}`);
+        if (res.ok) {
+            const r = await res.json();
+            record = {
+                id: r._id,
+                victimName: r.data?.victimName || '—',
+                telephone: r.data?.telephone || '—',
+                sector: r.data?.sector || '—',
+                cell: r.data?.cell || '—',
+                village: r.data?.village || '—',
+                description: r.data?.description || '—',
+                reportedBy: r.reportedBy,
+                date: r.dateReported || r.createdAt
+            };
+        }
+    } catch (err) {
+        console.warn('Failed to fetch details from server:', err);
+    }
+
+    if (!record) {
+        const records = JSON.parse(localStorage.getItem('violenceRecords')) || [];
+        record = records.find(r => String(r.id) === String(id));
+    }
 
     if (record) {
         const details = `
@@ -4744,6 +5225,8 @@ Description: ${record.description || '—'}
 Date Reported: ${formatDate(record.date)}
         `;
         alert(details);
+    } else {
+        alert('Details not found');
     }
 };
 
@@ -5614,21 +6097,75 @@ function exportFaceDatabase() {
 }
 
 // Visitor Reports Functions
-function loadVisitorReports() {
-    const visitorReports = JSON.parse(localStorage.getItem('visitorReports')) || [];
+async function loadVisitorReports() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+    const leaderSector = currentUser.sector || currentUser.leaderSector || '';
+    const leaderCell = currentUser.cell || currentUser.leaderCell || '';
+    const leaderVillage = currentUser.village || currentUser.leaderVillage || '';
+
     const tableBody = document.getElementById('visitorReportsTableBody');
     const noDataMessage = document.getElementById('noVisitorReports');
+    if (!tableBody) return;
+
+    let serverRecords = [];
+    try {
+        const api = new ApiService();
+        serverRecords = await api.getCitizenReports({ type: 'visitors' });
+    } catch (err) {
+        console.warn('Failed to load visitor reports from server, falling back to local storage:', err);
+        serverRecords = JSON.parse(localStorage.getItem('visitorReports')) || [];
+    }
+
+    // Map database records to a flat structure
+    const visitorReports = serverRecords.map(r => {
+        const d = r.data || {};
+        return {
+            id: r._id || r.id,
+            visitorNames: d.visitorNames || r.visitorNames || 'N/A',
+            visitorCount: d.visitorCount || r.visitorCount || 1,
+            visitorIDs: d.visitorIDs || r.visitorIDs || 'N/A',
+            visitorTelephone: d.visitorTelephone || r.visitorTelephone || 'N/A',
+            fromProvince: d.fromProvince || r.fromProvince || '',
+            fromDistrict: d.fromDistrict || r.fromDistrict || '',
+            fromSector: d.fromSector || r.fromSector || '',
+            fromCell: d.fromCell || r.fromCell || '',
+            fromVillage: d.fromVillage || r.fromVillage || '',
+            yourSector: d.yourSector || r.yourSector || '',
+            yourCell: d.yourCell || r.yourCell || '',
+            yourVillage: d.yourVillage || r.yourVillage || '',
+            yourTelephone: d.yourTelephone || r.yourTelephone || 'N/A',
+            reason: d.reason || r.reason || 'N/A',
+            returnDate: d.returnDate || r.returnDate,
+            reportedBy: r.reportedBy || d.reportedBy || 'N/A',
+            reportedByEmail: r.reportedByEmail || d.reportedByEmail || 'N/A',
+            dateReported: r.dateReported || r.createdAt || new Date().toISOString(),
+            status: d.status || r.status || 'pending'
+        };
+    });
+
+    // Filter to leader's location
+    let visibleReports = visitorReports;
+    if (leaderVillage || leaderCell || leaderSector) {
+        visibleReports = visitorReports.filter(r => (
+            (leaderVillage && r.yourVillage && r.yourVillage === leaderVillage) ||
+            (leaderCell && r.yourCell && r.yourCell === leaderCell) ||
+            (leaderSector && r.yourSector && r.yourSector === leaderSector)
+        ));
+    }
+
+    // Cache the visible visitor reports globally to avoid extra lookups
+    window.currentVisitorReports = visibleReports;
 
     // Update summary cards
-    updateVisitorSummaryCards(visitorReports);
+    updateVisitorSummaryCards(visibleReports);
 
     // Get filter values
     const searchTerm = document.getElementById('searchVisitors')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('filterVisitorStatus')?.value || '';
     const dateFilter = document.getElementById('filterVisitorDate')?.value || '';
 
-    // Filter reports
-    let filteredReports = visitorReports.filter(report => {
+    // Filter reports by search, status, and date
+    let filteredReports = visibleReports.filter(report => {
         // Search filter
         const matchesSearch = !searchTerm ||
             report.visitorNames?.toLowerCase().includes(searchTerm) ||
@@ -5674,16 +6211,16 @@ function loadVisitorReports() {
 
     noDataMessage.style.display = 'none';
 
-    tableBody.innerHTML = filteredReports.map((report, index) => `
+    tableBody.innerHTML = filteredReports.map((report) => `
         <tr>
             <td>${formatDate(report.dateReported)}</td>
-            <td>${report.visitorNames || 'N/A'}</td>
-            <td>${report.reason || 'N/A'}</td>
-            <td>${report.reportedBy || 'N/A'}</td>
-            <td>${[report.fromProvince, report.fromDistrict, report.fromSector, report.fromCell, report.fromVillage].filter(Boolean).join(', ') || 'N/A'}</td>
+            <td>${escapeHtml(report.visitorNames)}</td>
+            <td>${escapeHtml(report.reason)}</td>
+            <td>${escapeHtml(report.reportedBy)}</td>
+            <td>${escapeHtml([report.fromProvince, report.fromDistrict, report.fromSector, report.fromCell, report.fromVillage].filter(Boolean).join(', ') || 'N/A')}</td>
             <td>${report.returnDate ? formatDate(report.returnDate) : 'N/A'}</td>
-            <td>${[report.yourSector, report.yourCell, report.yourVillage].filter(Boolean).join(', ') || 'N/A'}</td>
-            <td><span class="status-badge status-${report.status || 'pending'}">${report.status || 'pending'}</span></td>
+            <td>${escapeHtml([report.yourSector, report.yourCell, report.yourVillage].filter(Boolean).join(', ') || 'N/A')}</td>
+            <td><span class="status-badge status-${report.status}">${report.status}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-action btn-view" onclick="viewVisitorDetails('${report.id}')" title="View Details">
@@ -5718,8 +6255,8 @@ function updateVisitorSummaryCards(visitorReports) {
 }
 
 function viewVisitorDetails(visitorId) {
-    const visitorReports = JSON.parse(localStorage.getItem('visitorReports')) || [];
-    const report = visitorReports.find(r => r.id === visitorId);
+    const reports = window.currentVisitorReports || [];
+    const report = reports.find(r => r.id === visitorId);
 
     if (!report) {
         showNotification('Visitor report not found', 'error');
@@ -5761,23 +6298,46 @@ Visit Details:
     console.log(details);
 }
 
-function updateVisitorStatus(visitorId, newStatus) {
-    const visitorReports = JSON.parse(localStorage.getItem('visitorReports')) || [];
-    const reportIndex = visitorReports.findIndex(r => r.id === visitorId);
+async function updateVisitorStatus(visitorId, newStatus) {
+    try {
+        const api = new ApiService();
+        // Fetch all visitor reports to get the database schema structure
+        const serverRecords = await api.getCitizenReports({ type: 'visitors' });
+        const report = serverRecords.find(r => r._id === visitorId);
+        if (!report) {
+            showNotification('Visitor report not found in database', 'error');
+            return;
+        }
 
-    if (reportIndex === -1) {
-        showNotification('Visitor report not found', 'error');
-        return;
+        // Initialize report.data if not present
+        if (!report.data) {
+            report.data = {};
+        }
+
+        report.data.status = newStatus;
+        report.data.reviewedDate = new Date().toISOString();
+        report.data.reviewedBy = 'Village Leader';
+
+        await api.updateCitizenReport(visitorId, report);
+
+        showNotification(`Visitor report ${newStatus} successfully`, 'success');
+        await loadVisitorReports();
+    } catch (err) {
+        console.error('Failed to update visitor report status on MongoDB:', err);
+        // Fallback to localStorage
+        const visitorReports = JSON.parse(localStorage.getItem('visitorReports')) || [];
+        const reportIndex = visitorReports.findIndex(r => r.id === visitorId);
+        if (reportIndex !== -1) {
+            visitorReports[reportIndex].status = newStatus;
+            visitorReports[reportIndex].reviewedDate = new Date().toISOString();
+            visitorReports[reportIndex].reviewedBy = 'Village Leader';
+            localStorage.setItem('visitorReports', JSON.stringify(visitorReports));
+            showNotification(`Visitor report ${newStatus} locally`, 'success');
+            loadVisitorReports();
+        } else {
+            showNotification('Failed to update visitor report status', 'error');
+        }
     }
-
-    visitorReports[reportIndex].status = newStatus;
-    visitorReports[reportIndex].reviewedDate = new Date().toISOString();
-    visitorReports[reportIndex].reviewedBy = 'Village Leader';
-
-    localStorage.setItem('visitorReports', JSON.stringify(visitorReports));
-
-    showNotification(`Visitor report ${newStatus} successfully`, 'success');
-    loadVisitorReports();
 }
 
 // Add event listeners for visitor filters
@@ -5798,3 +6358,717 @@ document.addEventListener('DOMContentLoaded', () => {
         dateFilter.addEventListener('change', loadVisitorReports);
     }
 });
+
+// ============================================================
+// INTEKO ATTENDANCE — separate performance + DB save
+// ============================================================
+
+let currentIntekoLocation = null;
+
+// --- Inteko-specific performance store (separate from umuganda) ---
+function loadIntekoPerformanceStore() {
+    try {
+        return JSON.parse(localStorage.getItem('intekoPerformanceByYear')) || {};
+    } catch {
+        return {};
+    }
+}
+
+function saveIntekoPerformanceStore(store) {
+    try {
+        localStorage.setItem('intekoPerformanceByYear', JSON.stringify(store));
+    } catch (e) {
+        console.warn('Failed to save inteko performance store', e);
+    }
+}
+
+function ensureIntekoMemberPerformance(memberId) {
+    const year = getPerformanceYear();
+    const store = loadIntekoPerformanceStore();
+    store[year] ||= {};
+    store[year][memberId] ||= { score: 100, absences: 0, updatedAt: new Date().toISOString() };
+    saveIntekoPerformanceStore(store);
+    return store[year][memberId];
+}
+
+function applyIntekoAbsentPenalty(memberId) {
+    const year = getPerformanceYear();
+    const store = loadIntekoPerformanceStore();
+    store[year] ||= {};
+    const entry = store[year][memberId] || { score: 100, absences: 0 };
+    entry.score = Math.max(0, (Number(entry.score) || 100) - 1);
+    entry.absences = (Number(entry.absences) || 0) + 1;
+    entry.updatedAt = new Date().toISOString();
+    store[year][memberId] = entry;
+    saveIntekoPerformanceStore(store);
+    return entry;
+}
+
+function renderIntekoPerformanceText(memberId) {
+    const entry = ensureIntekoMemberPerformance(memberId);
+    const present = Math.max(0, Math.min(100, Number(entry.score) || 0));
+    const absent = 100 - present;
+    return `Present: ${present}% | Absent: ${absent}%`;
+}
+
+function updateIntekoPerformanceUI(memberId) {
+    const el = document.getElementById(`inteko-perf-${memberId}`);
+    if (el) el.textContent = renderIntekoPerformanceText(memberId);
+}
+
+// --- Location dropdowns ---
+function updateIntekoLeaderCells() {
+    const selectedSector = document.getElementById('intekoSector').value;
+    const cellSelect = document.getElementById('intekoCell');
+    const villageSelect = document.getElementById('intekoVillage');
+
+    cellSelect.innerHTML = '<option value="">Select your cell</option>';
+    cellSelect.disabled = !selectedSector;
+    villageSelect.innerHTML = '<option value="">Select your village</option>';
+    villageSelect.disabled = true;
+
+    if (!selectedSector) return;
+
+    let locations;
+    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
+    if (!locations) locations = initializeDefaultLocations();
+
+    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const memberCells = [...new Set(memberRecords.filter(r => r.sector === selectedSector).map(r => r.cell).filter(c => c))];
+    const systemCells = Array.isArray(locations.cells) ? locations.cells : [];
+    const allCells = [...new Set([...systemCells, ...memberCells])];
+
+    cellSelect.innerHTML = '<option value="">Select your cell</option>' +
+        allCells.map(cell => `<option value="${cell}">${cell}</option>`).join('');
+}
+
+function updateIntekoLeaderVillages() {
+    const selectedSector = document.getElementById('intekoSector').value;
+    const selectedCell = document.getElementById('intekoCell').value;
+    const villageSelect = document.getElementById('intekoVillage');
+
+    villageSelect.innerHTML = '<option value="">Select your village</option>';
+    villageSelect.disabled = !selectedCell;
+
+    if (!selectedSector || !selectedCell) return;
+
+    let locations;
+    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
+    if (!locations) locations = initializeDefaultLocations();
+
+    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const memberVillages = [...new Set(memberRecords
+        .filter(r => r.sector === selectedSector && r.cell === selectedCell)
+        .map(r => r.village).filter(v => v))];
+    const systemVillages = Array.isArray(locations.villages) ? locations.villages : [];
+    const allVillages = [...new Set([...systemVillages, ...memberVillages])];
+
+    villageSelect.innerHTML = '<option value="">Select your village</option>' +
+        allVillages.map(village => `<option value="${village}">${village}</option>`).join('');
+}
+
+function updateIntekoAttendanceDate() {
+    const monthSelect = document.getElementById('intekoAttendanceMonth');
+    const dateInput = document.getElementById('intekoAttendanceDate');
+
+    if (monthSelect && dateInput) {
+        const selectedMonth = parseInt(monthSelect.value);
+        const currentYear = new Date().getFullYear();
+
+        if (selectedMonth !== '' && !isNaN(selectedMonth)) {
+            const currentDateValue = dateInput.value;
+            const currentMonthSet = currentDateValue ? new Date(currentDateValue).getMonth() : null;
+            if (!currentDateValue || currentMonthSet !== selectedMonth) {
+                dateInput.value = new Date(currentYear, selectedMonth, 1).toISOString().split('T')[0];
+            }
+        } else {
+            dateInput.value = '';
+        }
+    }
+}
+
+function confirmIntekoLocation() {
+    const sector = document.getElementById('intekoSector').value;
+    const cell = document.getElementById('intekoCell').value;
+    const village = document.getElementById('intekoVillage').value;
+
+    if (!sector || !cell || !village) {
+        showNotification('Please select all location fields (Sector, Cell, and Village)', 'error');
+        return;
+    }
+
+    const monthSelect = document.getElementById('intekoAttendanceMonth');
+    if (monthSelect && (!monthSelect.value || monthSelect.value === '')) {
+        monthSelect.value = new Date().getMonth().toString();
+        updateIntekoAttendanceDate();
+    }
+
+    currentIntekoLocation = { sector, cell, village };
+    try { localStorage.setItem('intekoLastLocation', JSON.stringify(currentIntekoLocation)); } catch (e) {}
+
+    const locationDisplay = document.getElementById('intekoSelectedLocation');
+    if (locationDisplay) locationDisplay.textContent = `${village}, ${cell}, ${sector}`;
+
+    document.getElementById('intekoAttendanceMarkingSection').style.display = 'block';
+    loadIntekoLeaderAttendance();
+    showNotification(`Location confirmed: ${village}, ${cell}, ${sector}`, 'success');
+}
+
+function loadIntekoLeaderAttendance() {
+    if (!currentIntekoLocation) {
+        document.getElementById('intekoAttendanceTableBody').innerHTML =
+            '<tr><td colspan="7" style="text-align:center;color:#666;">Please select your location first</td></tr>';
+        return;
+    }
+
+    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const tbody = document.getElementById('intekoAttendanceTableBody');
+
+    const locationMembers = records.filter(m =>
+        m.sector === currentIntekoLocation.sector &&
+        m.cell === currentIntekoLocation.cell &&
+        m.village === currentIntekoLocation.village
+    );
+
+    if (locationMembers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;">No members found in your location</td></tr>';
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('intekoAttendanceDate');
+    if (!dateInput.value) {
+        dateInput.value = today;
+    }
+
+    tbody.innerHTML = locationMembers.map(record => {
+        const originalIndex = records.findIndex(r => r.telephone === record.telephone);
+        return `
+            <tr data-inteko-member-id="${record.telephone}" data-index="${originalIndex}">
+                <td>${record.name}</td>
+                <td>${record.sector}</td>
+                <td>${record.cell}</td>
+                <td>${record.village}</td>
+                <td>${record.telephone}</td>
+                <td>
+                    <div class="attendance-status">
+                        <button class="status-btn present" onclick="markIntekoMemberAttendance('${record.telephone}', 'present', ${originalIndex})">
+                            <i class="fa-solid fa-check"></i> Present
+                        </button>
+                        <button class="status-btn absent" onclick="markIntekoMemberAttendance('${record.telephone}', 'absent', ${originalIndex})">
+                            <i class="fa-solid fa-times"></i> Absent
+                        </button>
+                    </div>
+                </td>
+                <td><span id="inteko-perf-${record.telephone}">${renderIntekoPerformanceText(record.telephone)}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    updateIntekoAttendanceSummary();
+}
+
+function changeIntekoLocation() {
+    currentIntekoLocation = null;
+
+    document.getElementById('intekoSector').value = '';
+    document.getElementById('intekoCell').value = '';
+    document.getElementById('intekoCell').disabled = true;
+    document.getElementById('intekoVillage').value = '';
+    document.getElementById('intekoVillage').disabled = true;
+
+    document.getElementById('intekoAttendanceMarkingSection').style.display = 'none';
+    sessionStorage.removeItem('intekoTempAttendance');
+
+    showNotification('Location selection reset. Please select your new location.', 'info');
+}
+
+function markIntekoMemberAttendance(memberId, status, index) {
+    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const member = records[index];
+
+    const row = document.querySelector(`tr[data-inteko-member-id="${memberId}"]`);
+    if (row) {
+        const buttons = row.querySelectorAll('.status-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        if (status === 'present') {
+            buttons[0].classList.add('active');
+        } else {
+            buttons[1].classList.add('active');
+        }
+    }
+
+    const tempAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
+    const prevStatus = tempAttendance[memberId]?.status;
+
+    if (status === 'absent' && prevStatus !== 'absent') {
+        applyIntekoAbsentPenalty(memberId);
+    } else {
+        ensureIntekoMemberPerformance(memberId);
+    }
+    updateIntekoPerformanceUI(memberId);
+
+    tempAttendance[memberId] = {
+        status,
+        name: member ? member.name : memberId,
+        timestamp: new Date().toISOString()
+    };
+    sessionStorage.setItem('intekoTempAttendance', JSON.stringify(tempAttendance));
+
+    if (member) {
+        showNotification(`${member.name} marked as ${status}`, status === 'present' ? 'success' : 'info');
+    }
+
+    updateIntekoAttendanceSummary();
+}
+
+function markAllIntekoPresent() {
+    if (!currentIntekoLocation) {
+        showNotification('Please select your location first', 'error');
+        return;
+    }
+
+    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const locationMembers = records.filter(m =>
+        m.sector === currentIntekoLocation.sector &&
+        m.cell === currentIntekoLocation.cell &&
+        m.village === currentIntekoLocation.village
+    );
+
+    const allPresentAttendance = {};
+    locationMembers.forEach(record => {
+        const row = document.querySelector(`tr[data-inteko-member-id="${record.telephone}"]`);
+        if (row) {
+            const buttons = row.querySelectorAll('.status-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttons[0].classList.add('active');
+        }
+        allPresentAttendance[record.telephone] = {
+            status: 'present',
+            name: record.name,
+            timestamp: new Date().toISOString()
+        };
+        ensureIntekoMemberPerformance(record.telephone);
+        updateIntekoPerformanceUI(record.telephone);
+    });
+
+    sessionStorage.setItem('intekoTempAttendance', JSON.stringify(allPresentAttendance));
+    updateIntekoAttendanceSummary();
+    showNotification(`All ${locationMembers.length} members marked as present`, 'success');
+}
+
+function markAllIntekoAbsent() {
+    if (!currentIntekoLocation) {
+        showNotification('Please select your location first', 'error');
+        return;
+    }
+
+    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const locationMembers = records.filter(m =>
+        m.sector === currentIntekoLocation.sector &&
+        m.cell === currentIntekoLocation.cell &&
+        m.village === currentIntekoLocation.village
+    );
+    const tempAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
+    const allAbsentAttendance = {};
+
+    locationMembers.forEach(record => {
+        const row = document.querySelector(`tr[data-inteko-member-id="${record.telephone}"]`);
+        if (row) {
+            const buttons = row.querySelectorAll('.status-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttons[1].classList.add('active');
+        }
+
+        const prevStatus = tempAttendance[record.telephone]?.status;
+        if (prevStatus !== 'absent') {
+            applyIntekoAbsentPenalty(record.telephone);
+        } else {
+            ensureIntekoMemberPerformance(record.telephone);
+        }
+        updateIntekoPerformanceUI(record.telephone);
+
+        allAbsentAttendance[record.telephone] = {
+            status: 'absent',
+            name: record.name,
+            timestamp: new Date().toISOString()
+        };
+    });
+
+    sessionStorage.setItem('intekoTempAttendance', JSON.stringify(allAbsentAttendance));
+    updateIntekoAttendanceSummary();
+    showNotification(`All ${locationMembers.length} members marked as absent`, 'info');
+}
+
+function updateIntekoAttendanceSummary() {
+    const tempAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
+    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+
+    const locationMembers = currentIntekoLocation ? records.filter(m =>
+        m.sector === currentIntekoLocation.sector &&
+        m.cell === currentIntekoLocation.cell &&
+        m.village === currentIntekoLocation.village
+    ) : [];
+
+    const presentCount = Object.values(tempAttendance).filter(a => a.status === 'present').length;
+    const absentCount = Object.values(tempAttendance).filter(a => a.status === 'absent').length;
+
+    const totalEl = document.getElementById('intekoTotalMembersCount');
+    const presentEl = document.getElementById('intekoPresentCount');
+    const absentEl = document.getElementById('intekoAbsentCount');
+    if (totalEl) totalEl.textContent = locationMembers.length;
+    if (presentEl) presentEl.textContent = presentCount;
+    if (absentEl) absentEl.textContent = absentCount;
+}
+
+async function saveIntekoAttendance() {
+    const currentAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
+    const dateInput = document.getElementById('intekoAttendanceDate');
+
+    if (!dateInput || !dateInput.value) {
+        showNotification('Please select a date for attendance', 'error');
+        return;
+    }
+    if (Object.keys(currentAttendance).length === 0) {
+        showNotification('Please mark attendance for at least one member', 'error');
+        return;
+    }
+
+    const attendanceDate = dateInput.value;
+    const allRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    let intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+
+    try {
+        if (typeof ApiService === 'undefined') {
+            throw new Error('ApiService not available');
+        }
+
+        const api = new ApiService();
+
+        for (const [memberId, attendance] of Object.entries(currentAttendance)) {
+            const memberRecord = allRecords.find(r => r.telephone === memberId);
+            if (!memberRecord) continue;
+
+            const attendanceRecord = {
+                name: attendance.name,
+                age: memberRecord.age,
+                sex: memberRecord.sex,
+                sector: memberRecord.sector,
+                cell: memberRecord.cell,
+                village: memberRecord.village,
+                telephone: memberId,
+                citizenId: memberId,
+                date: new Date(attendanceDate).toISOString(),
+                attendanceDate,
+                checkInMethod: 'manual',
+                status: attendance.status
+            };
+
+            await api.saveIntekoAttendanceRecord(attendanceRecord);
+
+            // Mirror to localStorage for offline/analytics use
+            const existingIndex = intekoRecords.findIndex(r =>
+                r.citizenId === memberId && r.attendanceDate === attendanceDate
+            );
+            if (existingIndex !== -1) {
+                intekoRecords[existingIndex] = attendanceRecord;
+            } else {
+                intekoRecords.push(attendanceRecord);
+            }
+        }
+
+        showNotification(`Inteko attendance saved to database for ${Object.keys(currentAttendance).length} members!`, 'success');
+
+    } catch (error) {
+        console.error('Error saving inteko attendance to DB:', error);
+        showNotification('Saved to local storage (DB unavailable): ' + error.message, 'warning');
+
+        // Fallback: save only to localStorage
+        Object.entries(currentAttendance).forEach(([memberId, attendance]) => {
+            const memberRecord = allRecords.find(r => r.telephone === memberId);
+            if (!memberRecord) return;
+
+            const attendanceRecord = {
+                name: attendance.name,
+                age: memberRecord.age,
+                sex: memberRecord.sex,
+                sector: memberRecord.sector,
+                cell: memberRecord.cell,
+                village: memberRecord.village,
+                telephone: memberId,
+                citizenId: memberId,
+                date: new Date(attendanceDate).toISOString(),
+                attendanceDate,
+                status: attendance.status
+            };
+
+            const existingIndex = intekoRecords.findIndex(r =>
+                r.citizenId === memberId && r.attendanceDate === attendanceDate
+            );
+            if (existingIndex !== -1) {
+                intekoRecords[existingIndex] = attendanceRecord;
+            } else {
+                intekoRecords.push(attendanceRecord);
+            }
+        });
+    }
+
+    localStorage.setItem('intekoRecords', JSON.stringify(intekoRecords));
+    sessionStorage.removeItem('intekoTempAttendance');
+    loadIntekoSavedRecordsTable();
+}
+
+function loadIntekoSavedRecordsTable() {
+    const tbody = document.getElementById('intekoSavedTableBody');
+    const wrapper = document.getElementById('intekoSavedRecordsWrap');
+    if (!tbody || !wrapper) return;
+
+    const intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+    const allRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+
+    const combined = allRecords.map(reg => {
+        const saved = intekoRecords.find(r => r.telephone === reg.telephone);
+        return {
+            name: reg.name,
+            sex: reg.sex,
+            age: reg.age,
+            telephone: reg.telephone,
+            sector: reg.sector,
+            cell: reg.cell,
+            village: reg.village,
+            status: saved ? saved.status : 'Not recorded',
+            attendanceDate: saved ? saved.attendanceDate : ''
+        };
+    });
+
+    if (combined.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+    }
+
+    wrapper.style.display = 'block';
+    populateIntekoSavedRecordsFilters(combined);
+
+    tbody.innerHTML = combined.map(m => `
+        <tr>
+            <td>${m.name}</td>
+            <td>${m.sex || '-'}</td>
+            <td>${m.age || '-'}</td>
+            <td>${m.telephone}</td>
+            <td>${m.sector}</td>
+            <td>${m.cell}</td>
+            <td>${m.village}</td>
+            <td>
+                <span class="status-badge ${m.status === 'present' ? 'present' : m.status === 'absent' ? 'absent' : 'pending'}">
+                    ${m.status}
+                </span>
+            </td>
+            <td>${renderIntekoPerformanceText(m.telephone)}</td>
+        </tr>
+    `).join('');
+}
+
+function populateIntekoSavedRecordsFilters(members) {
+    const sectorSelect = document.getElementById('intekoFilterSector');
+    const cellSelect = document.getElementById('intekoFilterCell');
+    const villageSelect = document.getElementById('intekoFilterVillage');
+    if (!sectorSelect || !cellSelect || !villageSelect) return;
+
+    const sectors = [...new Set(members.map(m => m.sector).filter(Boolean))];
+    const cells = [...new Set(members.map(m => m.cell).filter(Boolean))];
+    const villages = [...new Set(members.map(m => m.village).filter(Boolean))];
+
+    sectorSelect.innerHTML = '<option value="">All Sectors</option>' + sectors.map(s => `<option value="${s}">${s}</option>`).join('');
+    cellSelect.innerHTML = '<option value="">All Cells</option>' + cells.map(c => `<option value="${c}">${c}</option>`).join('');
+    villageSelect.innerHTML = '<option value="">All Villages</option>' + villages.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
+function filterIntekoSavedRecords() {
+    const tbody = document.getElementById('intekoSavedTableBody');
+    if (!tbody) return;
+
+    const search = (document.getElementById('intekoSearchName')?.value || '').toLowerCase();
+    const sector = document.getElementById('intekoFilterSector')?.value || '';
+    const cell = document.getElementById('intekoFilterCell')?.value || '';
+    const village = document.getElementById('intekoFilterVillage')?.value || '';
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (!cells.length) return;
+        const name = (cells[0]?.textContent || '').toLowerCase();
+        const rowSector = cells[4]?.textContent || '';
+        const rowCell = cells[5]?.textContent || '';
+        const rowVillage = cells[6]?.textContent || '';
+
+        const visible =
+            (!search || name.includes(search)) &&
+            (!sector || rowSector === sector) &&
+            (!cell || rowCell === cell) &&
+            (!village || rowVillage === village);
+
+        row.style.display = visible ? '' : 'none';
+    });
+}
+
+// ============================================================
+// SECTION 4 — ATTENDANCE ANALYTICS (Umuganda + Inteko)
+// ============================================================
+
+// Wire up the two sub-tabs inside section 4
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-atab]').forEach(tab => {
+        tab.addEventListener('click', e => {
+            e.preventDefault();
+            const target = tab.dataset.atab;
+            document.querySelectorAll('[data-atab]').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('[id^="atab-"]').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            const panel = document.getElementById(`atab-${target}`);
+            if (panel) panel.classList.add('active');
+        });
+    });
+
+    // Load both panels whenever section 4 is activated
+    const analyticsLink = document.querySelector('[data-section="analytics"]');
+    if (analyticsLink) {
+        analyticsLink.addEventListener('click', () => {
+            setTimeout(() => {
+                loadUmugandaAnalytics();
+                loadIntekoAnalytics();
+            }, 50);
+        });
+    }
+});
+
+function _buildAttendanceRows(records, status) {
+    const filtered = records.filter(r => r.status === status);
+    if (!filtered.length) {
+        return `<tr><td colspan="9" style="text-align:center;color:#999;">No ${status} records found.</td></tr>`;
+    }
+    return filtered.map((r, i) => {
+        const date = r.attendanceDate || (r.date ? r.date.split('T')[0] : '—');
+        return `<tr>
+            <td>${i + 1}</td>
+            <td>${r.name || '—'}</td>
+            <td>${r.sex || '—'}</td>
+            <td>${r.age || '—'}</td>
+            <td>${r.sector || '—'}</td>
+            <td>${r.cell || '—'}</td>
+            <td>${r.village || '—'}</td>
+            <td>${r.telephone || r.citizenId || '—'}</td>
+            <td>${date}</td>
+        </tr>`;
+    }).join('');
+}
+
+function _applyDateFilter(records, dateValue) {
+    if (!dateValue) return records;
+    return records.filter(r => {
+        const d = r.attendanceDate || (r.date ? r.date.split('T')[0] : '');
+        return d === dateValue;
+    });
+}
+
+function _renderAnalyticsPanel(prefix, records) {
+    const allMembers = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const present = records.filter(r => r.status === 'present').length;
+    const absent  = records.filter(r => r.status === 'absent').length;
+    const total   = records.length;
+    const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
+
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl(`${prefix}-totalMembers`, allMembers.length);
+    setEl(`${prefix}-present`, present);
+    setEl(`${prefix}-absent`, absent);
+    setEl(`${prefix}-rate`, `${rate}%`);
+    setEl(`${prefix}-present-count`, `(${present} records)`);
+    setEl(`${prefix}-absent-count`, `(${absent} records)`);
+
+    const presentTbody = document.getElementById(`${prefix}-present-tbody`);
+    const absentTbody  = document.getElementById(`${prefix}-absent-tbody`);
+    if (presentTbody) presentTbody.innerHTML = _buildAttendanceRows(records, 'present');
+    if (absentTbody)  absentTbody.innerHTML  = _buildAttendanceRows(records, 'absent');
+}
+
+async function loadUmugandaAnalytics() {
+    const dateFilter = document.getElementById('uga-dateFilter')?.value || '';
+    let records = [];
+
+    // Try API first, fall back to localStorage
+    try {
+        if (typeof ApiService !== 'undefined') {
+            const api = new ApiService();
+            const params = dateFilter ? { attendanceDate: dateFilter } : {};
+            records = await api.getAttendance(params);
+        }
+    } catch (e) { /* fall through */ }
+
+    if (!records.length) {
+        records = [
+            ...(JSON.parse(localStorage.getItem('umugandaRecords')) || []),
+            ...(JSON.parse(localStorage.getItem('umugandaData'))    || [])
+        ];
+    }
+
+    records = _applyDateFilter(records, dateFilter);
+    _renderAnalyticsPanel('uga', records);
+}
+
+async function loadIntekoAnalytics() {
+    const dateFilter = document.getElementById('int-dateFilter')?.value || '';
+    let records = [];
+
+    // Try dedicated IntekoAttendance API first
+    try {
+        if (typeof ApiService !== 'undefined') {
+            const api = new ApiService();
+            const params = dateFilter ? { attendanceDate: dateFilter } : {};
+            records = await api.getIntekoAttendance(params);
+        }
+    } catch (e) { /* fall through */ }
+
+    if (!records.length) {
+        records = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+    }
+
+    records = _applyDateFilter(records, dateFilter);
+    _renderAnalyticsPanel('int', records);
+}
+
+function downloadAttendanceCSV(type) {
+    const prefix    = type === 'umuganda' ? 'uga' : 'int';
+    const typeName  = type === 'umuganda' ? 'Umuganda' : 'Inteko';
+    const headers   = ['#','Name','Sex','Age','Sector','Cell','Village','Telephone','Date','Status'];
+
+    const presentTbody = document.getElementById(`${prefix}-present-tbody`);
+    const absentTbody  = document.getElementById(`${prefix}-absent-tbody`);
+
+    const rowsFromTable = tbody => {
+        if (!tbody) return [];
+        return Array.from(tbody.querySelectorAll('tr'))
+            .filter(tr => tr.querySelectorAll('td').length > 1)
+            .map(tr => Array.from(tr.querySelectorAll('td')).map(td => `"${td.textContent.trim()}"`));
+    };
+
+    const presentRows = rowsFromTable(presentTbody).map(r => [...r, '"Present"']);
+    const absentRows  = rowsFromTable(absentTbody).map(r  => [...r, '"Absent"']);
+    const allRows     = [...presentRows, ...absentRows];
+
+    if (!allRows.length) {
+        showNotification('No attendance data to download.', 'warning');
+        return;
+    }
+
+    const csv  = [headers.join(','), ...allRows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${typeName}_Attendance_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification(`${typeName} attendance downloaded successfully.`, 'success');
+}

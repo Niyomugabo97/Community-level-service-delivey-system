@@ -77,7 +77,7 @@ A comprehensive community management system for local leaders and citizens in Rw
 ├── leader-dashboard.html   # Leader dashboard
 ├── citizen-dashboard.html  # Citizen dashboard
 ├── css/
-│   └── style.css          # Main stylesheet
+│   └── new-styles.css     # Main consolidated stylesheet
 ├── js/
 │   ├── main.js            # Home page functionality
 │   ├── auth.js            # Authentication logic

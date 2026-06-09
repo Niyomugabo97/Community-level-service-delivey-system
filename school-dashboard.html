@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>School Dropout Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
 </head>
 <body>
@@ -21,6 +20,7 @@
                 <ul class="nav-menu">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="#" id="logoutBtn">Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
                 </ul>
             </div>
         </nav>
@@ -38,6 +38,18 @@
             <!-- School Info Section -->
             <section id="schoolInfo" class="dashboard-section active">
                 <h2><i class="fa-solid fa-school"></i> School Profile & Dropout Statistics</h2>
+
+                <!-- Report Actions -->
+                <div class="report-actions-bar">
+                    <span class="report-actions-label"><i class="fa-solid fa-file-lines"></i> Report Actions:</span>
+                    <button id="downloadReportBtn" class="btn btn-secondary">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                    </button>
+                    <button id="shareReportBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-share-nodes"></i> Share to Leaders
+                    </button>
+                </div>
+
                 <form id="schoolInfoForm" class="form-container">
                     <div class="form-row">
                         <div class="form-group">
@@ -182,6 +194,10 @@
         </div>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/school-dashboard.js"></script>
     <script src="js/navbar.js"></script>
 </body>

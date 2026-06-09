@@ -129,7 +129,8 @@ function handleLoginSubmit() {
     }
 
     // Send login request to backend
-    fetch('/api/auth/login', {
+    const apiUrl = (window.CONFIG && window.CONFIG.API_BASE_URL) ? window.CONFIG.API_BASE_URL : 'http://localhost:5000/api';
+    fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -251,7 +252,8 @@ function handleSignupSubmit() {
         payload.sector = document.getElementById('signupSectorSector').value.trim();
     }
 
-    fetch('/api/auth/register', {
+    const apiUrl = (window.CONFIG && window.CONFIG.API_BASE_URL) ? window.CONFIG.API_BASE_URL : 'http://localhost:5000/api';
+    fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

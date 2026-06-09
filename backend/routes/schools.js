@@ -1,187 +1,84 @@
 const express = require("express");
 const router = express.Router();
-const { Member } = require("../models");
+const { School, SchoolDropoutRecord } = require("../models");
 
-//////////////// GET SCHOOL DROPOUT STATISTICS //////////////////
+//////////////// DROPOUT STATISTICS (named routes first) //////////////////
 router.get("/dropout-statistics", async (req, res) => {
   try {
-    console.log("Fetching school dropout statistics...");
-    
-    // Get all members from database
-    const members = await Member.find({});
-    
-    // Group members by sector/village as "schools"
-    const schoolGroups = {};
-    let totalStudents = 0;
-    let totalDropouts = 0;
-    
-    members.forEach(member => {
-      const schoolKey = `${member.sector || 'Unknown'}-${member.village || 'Unknown'}`;
-      
-      if (!schoolGroups[schoolKey]) {
-        schoolGroups[schoolKey] = {
-          name: schoolKey,
-          sector: member.sector || 'Unknown',
-          village: member.village || 'Unknown',
-          totalStudents: 0,
-          dropouts: 0,
-          activeStudents: 0
-        };
-      }
-      
-      schoolGroups[schoolKey].totalStudents++;
-      totalStudents++;
-      
-      // Define dropout criteria (you can modify this based on your actual requirements)
-      // For example: age > 18 and no recent activity, or specific status
-      const isDropout = member.age > 18 && !member.telephone; // Example criteria
-      
-      if (isDropout) {
-        schoolGroups[schoolKey].dropouts++;
-        totalDropouts++;
-      } else {
-        schoolGroups[schoolKey].activeStudents++;
-      }
-    });
-    
-    const schools = Object.values(schoolGroups);
+    const schools = await School.find({}).lean();
+
     const totalSchools = schools.length;
-    const averageRate = totalStudents > 0 
-      ? Math.round((totalDropouts / totalStudents) * 100) 
-      : 0;
-    
-    const statistics = {
+    const totalStudents = schools.reduce((sum, s) => sum + (s.totalStudents || 0), 0);
+    const totalDropouts = schools.reduce((sum, s) => sum + (s.totalDropouts || 0), 0);
+    const averageRate = totalStudents > 0 ? Math.round((totalDropouts / totalStudents) * 100) : 0;
+
+    res.json({
       totalSchools,
       totalStudents,
       totalDropouts,
       averageRate,
-      schools: schools.map(school => ({
-        ...school,
-        dropoutRate: school.totalStudents > 0 
-          ? Math.round((school.dropouts / school.totalStudents) * 100) 
+      schools: schools.map(s => ({
+        name: s.schoolName,
+        schoolLeader: s.schoolLeader,
+        email: s.email,
+        phone: s.phone,
+        totalStudents: s.totalStudents || 0,
+        dropouts: s.totalDropouts || 0,
+        dropoutRate: (s.totalStudents || 0) > 0
+          ? Math.round(((s.totalDropouts || 0) / s.totalStudents) * 100)
           : 0
       }))
-    };
-    
-    console.log("School dropout statistics calculated:", {
-      totalSchools,
-      totalStudents,
-      totalDropouts,
-      averageRate
     });
-    
-    res.json(statistics);
   } catch (err) {
     console.error("Error fetching school dropout statistics:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-//////////////// GET ALL SCHOOLS //////////////////
-router.get("/", async (req, res) => {
+//////////////// DROPOUT RECORDS //////////////////
+router.get("/dropout-records", async (req, res) => {
   try {
-    const { sector, village } = req.query;
-    
-    // Get all members and group by sector/village
-    const members = await Member.find({});
-    const schoolGroups = {};
-    
-    members.forEach(member => {
-      const schoolKey = `${member.sector || 'Unknown'}-${member.village || 'Unknown'}`;
-      
-      if (!schoolGroups[schoolKey]) {
-        schoolGroups[schoolKey] = {
-          name: schoolKey,
-          sector: member.sector || 'Unknown',
-          village: member.village || 'Unknown',
-          totalStudents: 0,
-          activeStudents: 0,
-          dropouts: 0
-        };
-      }
-      
-      schoolGroups[schoolKey].totalStudents++;
-      
-      // Apply dropout criteria
-      const isDropout = member.age > 18 && !member.telephone;
-      if (isDropout) {
-        schoolGroups[schoolKey].dropouts++;
-      } else {
-        schoolGroups[schoolKey].activeStudents++;
-      }
-    });
-    
-    let schools = Object.values(schoolGroups);
-    
-    // Filter by sector if provided
-    if (sector) {
-      schools = schools.filter(school => school.sector === sector);
-    }
-    
-    // Filter by village if provided
-    if (village) {
-      schools = schools.filter(school => school.village === village);
-    }
-    
-    // Add dropout rates
-    schools = schools.map(school => ({
-      ...school,
-      dropoutRate: school.totalStudents > 0 
-        ? Math.round((school.dropouts / school.totalStudents) * 100) 
-        : 0
-    }));
-    
-    res.json(schools);
+    const filter = req.query.ownerEmail ? { ownerEmail: req.query.ownerEmail } : {};
+    const records = await SchoolDropoutRecord.find(filter).sort({ date: -1 }).lean();
+    res.json(records);
   } catch (err) {
-    console.error("Error fetching schools:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-//////////////// GET SCHOOL BY ID //////////////////
-router.get("/:schoolId", async (req, res) => {
+router.post("/dropout-records", async (req, res) => {
   try {
-    const { schoolId } = req.params;
-    
-    // schoolId is expected to be in format "sector-village"
-    const [sector, village] = schoolId.split('-');
-    
-    const members = await Member.find({ 
-      sector: sector, 
-      village: village 
-    });
-    
-    if (members.length === 0) {
-      return res.status(404).json({ error: "School not found" });
-    }
-    
-    const school = {
-      name: schoolId,
-      sector,
-      village,
-      totalStudents: members.length,
-      activeStudents: 0,
-      dropouts: 0,
-      students: members.map(member => ({
-        name: member.name,
-        age: member.age,
-        sex: member.sex,
-        telephone: member.telephone,
-        role: member.role,
-        status: member.age > 18 && !member.telephone ? 'dropout' : 'active'
-      }))
-    };
-    
-    // Calculate active and dropout counts
-    school.activeStudents = school.students.filter(s => s.status === 'active').length;
-    school.dropouts = school.students.filter(s => s.status === 'dropout').length;
-    school.dropoutRate = school.totalStudents > 0 
-      ? Math.round((school.dropouts / school.totalStudents) * 100) 
-      : 0;
-    
+    const record = new SchoolDropoutRecord({ ...req.body, date: new Date() });
+    await record.save();
+    res.json(record);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//////////////// SCHOOL PROFILE //////////////////
+router.get("/", async (req, res) => {
+  try {
+    const filter = req.query.ownerEmail ? { ownerEmail: req.query.ownerEmail } : {};
+    const schools = await School.find(filter).lean();
+    res.json(schools);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const { ownerEmail } = req.body;
+    if (!ownerEmail) return res.status(400).json({ error: "ownerEmail is required" });
+
+    const school = await School.findOneAndUpdate(
+      { ownerEmail },
+      { ...req.body },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
     res.json(school);
   } catch (err) {
-    console.error("Error fetching school:", err);
     res.status(500).json({ error: err.message });
   }
 });

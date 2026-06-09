@@ -1,12 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Analytics - Community Service Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+    <style>
+        /* Cell ranking cards */
+        .cell-ranking-section h5 {
+            margin: 0 0 0.75rem 0;
+            color: var(--text-color);
+        }
+
+        #cellRankingContainer .cell-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .cell-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .cell-card .cell-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+        }
+
+        .cell-card .cell-meta {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .cell-rate {
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .cell-rate.high {
+            color: #28a745;
+        }
+
+        .cell-rate.medium {
+            color: #fd7e14;
+        }
+
+        .cell-rate.low {
+            color: #dc3545;
+        }
+    </style>
 </head>
+
 <body>
     <header>
         <nav class="navbar">
@@ -19,7 +74,8 @@
                 </button>
                 <ul class="nav-menu">
                     <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
-                    <li><a href="view-analytics.html" class="active"><i class="fa-solid fa-chart-line"></i> View Analytics</a></li>
+                    <li><a href="view-analytics.html" class="active"><i class="fa-solid fa-chart-line"></i> View
+                            Analytics</a></li>
                     <li><a href="index.html#about"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
                     <li><a href="index.html#contact"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
                     <li><a href="login.html"><i class="fa-solid fa-right-to-bracket"></i> Login</a></li>
@@ -39,81 +95,91 @@
                     <div class="analytics-placeholder">
                         <i class="fa-solid fa-chart-bar fa-3x"></i>
                         <h3>Analytics Dashboard</h3>
-                        <p>View comprehensive analytics about community services, attendance, and performance metrics.</p>
+                        <p>View comprehensive analytics about community services, attendance, and performance metrics.
+                        </p>
                     </div>
                 </div>
             </div>
         </section>
 
-        
+
         <!-- Attendance Analytics Section -->
         <section class="statistics-section">
             <div class="container">
                 <h2 class="section-title"><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
-                
-                                    
-                    
-                    <!-- Attendance Categories -->
-                    <div class="attendance-categories">
-                        <h4>Attendance Performance Breakdown</h4>
-                        <div class="category-grid">
-                            <div class="category-item excellent">
-                                <div class="category-label">Excellent (80-100%)</div>
-                                <div class="category-count" id="excellentCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="excellentBar"></div>
-                                </div>
+                <p class="section-subtitle" id="attendanceMonthSubtitle" style="font-size: 16px; color: #666; margin-top: 8px; margin-bottom: 24px; font-weight: 500;">This is analytics of attendance of this month</p>
+
+
+
+                <!-- Attendance Categories -->
+                <div class="attendance-categories">
+                    <h4>Attendance Performance Breakdown</h4>
+                    <div class="category-grid">
+                        <div class="category-item excellent">
+                            <div class="category-label">Excellent (80-100%)</div>
+                            <div class="category-count" id="excellentCount">0</div>
+                            <div class="category-bar">
+                                <div class="category-fill" id="excellentBar"></div>
                             </div>
-                            <div class="category-item good">
-                                <div class="category-label">Good (50-79%)</div>
-                                <div class="category-count" id="goodCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="goodBar"></div>
-                                </div>
+                        </div>
+                        <div class="category-item good">
+                            <div class="category-label">Good (50-79%)</div>
+                            <div class="category-count" id="goodCount">0</div>
+                            <div class="category-bar">
+                                <div class="category-fill" id="goodBar"></div>
                             </div>
-                            <div class="category-item poor">
-                                <div class="category-label">Poor (1-49%)</div>
-                                <div class="category-count" id="poorCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="poorBar"></div>
-                                </div>
+                        </div>
+                        <div class="category-item poor">
+                            <div class="category-label">Poor (1-49%)</div>
+                            <div class="category-count" id="poorCount">0</div>
+                            <div class="category-bar">
+                                <div class="category-fill" id="poorBar"></div>
                             </div>
-                            <div class="category-item none">
-                                <div class="category-label">No Attendance (0%)</div>
-                                <div class="category-count" id="noneCount">0</div>
-                                <div class="category-bar">
-                                    <div class="category-fill" id="noneBar"></div>
-                                </div>
+                        </div>
+                        <div class="category-item none">
+                            <div class="category-label">No Attendance (0%)</div>
+                            <div class="category-count" id="noneCount">0</div>
+                            <div class="category-bar">
+                                <div class="category-fill" id="noneBar"></div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Sector Statistics with Village Breakdown -->
-                    <div class="sector-statistics">
-                        <h4>Sector Attendance Statistics</h4>
-                        <div class="sector-grid">
-                            <div class="sector-chart-container">
-                                <canvas id="sectorChart" width="400" height="300"></canvas>
-                            </div>
-                            <div class="sector-details" id="sectorDetails">
-                                <!-- Sector statistics will be populated here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Village Breakdown by Sector -->
-                        <div class="village-breakdown-section">
-                            <h5>Village Attendance by Sector</h5>
-                            <div class="village-chart-container">
-                                <canvas id="villageChart" width="400" height="300"></canvas>
-                            </div>
-                            <div id="villageBreakdownContainer">
-                                <!-- Village breakdown by sector will be populated here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    
                 </div>
+
+                <!-- Sector Statistics with Village Breakdown -->
+                <div class="sector-statistics">
+                    <h4>Sector Attendance Statistics</h4>
+                    <div class="sector-grid">
+                        <div class="sector-chart-container">
+                            <canvas id="sectorChart" width="400" height="300"></canvas>
+                        </div>
+                        <div class="sector-details" id="sectorDetails">
+                            <!-- Sector statistics will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Cell Rankings -->
+                    <div class="cell-ranking-section" style="margin-top:1rem;">
+                        <h5>Best Performing Cells</h5>
+                        <div id="cellRankingContainer">
+                            <!-- Cell rankings will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Village Breakdown by Sector -->
+                    <div class="village-breakdown-section">
+                        <h5>Village Attendance by Sector</h5>
+                        <div class="village-chart-container">
+                            <canvas id="villageChart" width="400" height="300"></canvas>
+                        </div>
+                        <div id="villageBreakdownContainer">
+                            <!-- Village breakdown by sector will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
             </div>
         </section>
 
@@ -151,7 +217,8 @@
                             <i class="fa-solid fa-users"></i>
                         </div>
                         <h3>Member Analytics</h3>
-                        <p>Track member registration, attendance patterns, and engagement metrics across your community.</p>
+                        <p>Track member registration, attendance patterns, and engagement metrics across your community.
+                        </p>
                     </div>
                     <div class="feature-item">
                         <div class="feature-icon">
@@ -203,7 +270,8 @@
                                 <i class="fa-solid fa-user-tie"></i>
                             </div>
                             <h3>For Leaders</h3>
-                            <p>Community leaders can access detailed analytics for their respective areas and manage community services effectively.</p>
+                            <p>Community leaders can access detailed analytics for their respective areas and manage
+                                community services effectively.</p>
                             <a href="login.html" class="btn btn-primary">Leader Login</a>
                         </div>
                         <div class="access-item">
@@ -211,7 +279,8 @@
                                 <i class="fa-solid fa-user"></i>
                             </div>
                             <h3>For Citizens</h3>
-                            <p>Citizens can view public analytics and community statistics to stay informed about local developments.</p>
+                            <p>Citizens can view public analytics and community statistics to stay informed about local
+                                developments.</p>
                             <a href="login.html" class="btn btn-secondary">Citizen Login</a>
                         </div>
                     </div>
@@ -254,4 +323,5 @@
     <script src="js/home.js"></script>
     <script src="js/analytics.js"></script>
 </body>
+
 </html>

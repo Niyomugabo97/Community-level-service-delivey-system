@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Analytics - Community Services</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/new-styles.css">
     <style>
         /* Analytics Dashboard Styles */
         .analytics-header {
@@ -293,7 +293,11 @@
     <header class="analytics-header">
         <div class="container">
             <h1><i class="fa-solid fa-chart-line"></i> Attendance Analytics Dashboard</h1>
-            <p>Comprehensive attendance tracking and insights for community engagement</p>
+            <p>This is analytics of attendance of this month: <strong id="dynamicMonthSpan" style="color: #ffd54f;"></strong></p>
+            <script>
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                document.getElementById('dynamicMonthSpan').innerText = monthNames[new Date().getMonth()] + ' ' + new Date().getFullYear();
+            </script>
         </div>
     </header>
 

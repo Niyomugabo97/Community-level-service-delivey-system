@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { CitizenReport } = require('../models');
+const { LeaderReport } = require('../models');
 
-// Create a citizen report
+// Create a leader report
 router.post('/', async (req, res) => {
   try {
-    console.log('Citizen report received:', req.body);
-    const report = new CitizenReport(req.body);
+    console.log('Leader report received:', req.body);
+    const report = new LeaderReport(req.body);
     await report.save();
     res.json(report);
   } catch (err) {
-    console.error('Error saving citizen report:', err);
+    console.error('Error saving leader report:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -18,14 +18,27 @@ router.post('/', async (req, res) => {
 // Get reports - filtered by type and/or email
 router.get('/', async (req, res) => {
   try {
-    const { type, reportedByEmail } = req.query;  // ← read query params
+    const { type, reportedByEmail } = req.query;
 
     const filter = {};
-    if (type) filter.type = type;                               // ← filter by type
-    if (reportedByEmail) filter.reportedByEmail = reportedByEmail; // ← filter by citizen
+    if (type) filter.type = type;
+    if (reportedByEmail) filter.reportedByEmail = reportedByEmail;
 
-    const items = await CitizenReport.find(filter).sort({ createdAt: -1 }).limit(100);
+    const items = await LeaderReport.find(filter).sort({ createdAt: -1 }).limit(100);
     res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get a single report
+router.get('/:id', async (req, res) => {
+  try {
+    const report = await LeaderReport.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    res.json(report);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -34,7 +47,7 @@ router.get('/', async (req, res) => {
 // Update a report
 router.put('/:id', async (req, res) => {
   try {
-    const report = await CitizenReport.findByIdAndUpdate(
+    const report = await LeaderReport.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
@@ -51,7 +64,7 @@ router.put('/:id', async (req, res) => {
 // Delete a report
 router.delete('/:id', async (req, res) => {
   try {
-    const report = await CitizenReport.findByIdAndDelete(req.params.id);
+    const report = await LeaderReport.findByIdAndDelete(req.params.id);
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }

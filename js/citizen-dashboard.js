@@ -19,6 +19,9 @@ function initializeDashboard() {
     // Forms
     setupForms();
     
+    // Auto fill location details
+    autoFillLocation();
+    
     // Load data tables
     loadAllTables();
     
@@ -73,13 +76,17 @@ function setupForms() {
         chatForm.addEventListener('submit', handleCitizenChatSubmit);
     }
     
-        // Infrastructure form
-        const infraForm = document.getElementById('infrastructureForm');
-        if (infraForm) infraForm.addEventListener('submit', handleInfrastructureSubmit);
+    // Infrastructure form
+    const infraForm = document.getElementById('infrastructureForm');
+    if (infraForm) infraForm.addEventListener('submit', handleInfrastructureSubmit);
 
-        // Visitors form
-        const visitorsForm = document.getElementById('visitorsForm');
-        if (visitorsForm) visitorsForm.addEventListener('submit', handleVisitorsSubmit);
+    // Visitors form
+    const visitorsForm = document.getElementById('visitorsForm');
+    if (visitorsForm) visitorsForm.addEventListener('submit', handleVisitorsSubmit);
+
+    // Case form
+    const caseForm = document.getElementById('caseForm');
+    if (caseForm) caseForm.addEventListener('submit', handleCaseSubmit);
 }
 
 // Send report to backend API; returns true on success, false on failure
@@ -95,6 +102,29 @@ async function sendReportToServer(record) {
     } catch (err) {
         console.warn('sendReportToServer failed:', err);
         return false;
+    }
+}
+
+async function uploadInfrastructureImage(file) {
+    try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error('Upload failed: ' + res.status + ' ' + errorText);
+        }
+
+        const data = await res.json();
+        return data.url || data.path || null;
+    } catch (err) {
+        console.error('uploadInfrastructureImage failed:', err);
+        throw err;
     }
 }
 
@@ -150,6 +180,7 @@ async function handleDrugsSubmit(e) {
     }
 
     e.target.reset();
+    autoFillLocation();
     loadDrugsTable();
 }
 
@@ -208,6 +239,7 @@ async function handleViolenceSubmit(e) {
     }
 
     e.target.reset();
+    autoFillLocation();
     loadViolenceTable();
 }
 
@@ -243,6 +275,7 @@ function loadAllTables() {
     loadViolenceTable();
     loadInfrastructureTable();
     loadVisitorsTable();
+    loadCaseTable();
 }
 
 // Format date helper
@@ -266,39 +299,37 @@ async function handleInfrastructureSubmit(e) {
     const fileInput = document.getElementById('infrastructureImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    async function saveReport(imageData) {
-        const record = {
-            type: 'infrastructure',
-            data: {
-                place: place,
-                date: dateVal,
-                image: imageData || null,
-                description: desc
-            },
-            reportedBy: currentUser ? currentUser.name : 'Citizen',
-            reportedByEmail: currentUser ? currentUser.email : '',
-            dateReported: new Date().toISOString()
-        };
-
-        const saved = await sendReportToServer(record);
-        if (!saved) {
-            alert('Failed to send infrastructure report to server. Please try again.');
-        } else {
-            alert('Infrastructure report submitted successfully!');
+    let imageUrl = null;
+    if (file) {
+        try {
+            imageUrl = await uploadInfrastructureImage(file);
+        } catch (err) {
+            alert('Failed to upload infrastructure image. Please try again.');
+            return;
         }
-
-        e.target.reset();
-        loadInfrastructureTable();
     }
 
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            saveReport(evt.target.result);
-        };
-        reader.readAsDataURL(file);
+    const record = {
+        type: 'infrastructure',
+        data: {
+            place: place,
+            date: dateVal,
+            image: imageUrl,
+            description: desc
+        },
+        reportedBy: currentUser ? currentUser.name : 'Citizen',
+        reportedByEmail: currentUser ? currentUser.email : '',
+        dateReported: new Date().toISOString()
+    };
+
+    const saved = await sendReportToServer(record);
+    if (!saved) {
+        alert('Failed to send infrastructure report to server. Please try again.');
     } else {
-        await saveReport(null);
+        alert('Infrastructure report submitted successfully!');
+        e.target.reset();
+        autoFillLocation();
+        loadInfrastructureTable();
     }
 }
 
@@ -318,11 +349,15 @@ async function loadInfrastructureTable() {
                 <td>${r.data.image ? `<img src="${r.data.image}" alt="img" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
                 <td>${truncateDesc(r.data.description, 60)}</td>
                 <td>${formatDate(r.dateReported)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editInfrastructureReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteInfrastructureReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
+        `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
     } catch (err) {
         console.warn('Could not load infrastructure reports:', err);
-        tbody.innerHTML = '<tr><td colspan="5">Unable to load reports</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">Unable to load reports</td></tr>';
     }
 }
 
@@ -363,6 +398,7 @@ async function handleVisitorsSubmit(e) {
     }
 
     e.target.reset();
+    autoFillLocation();
     loadVisitorsTable();
 }
 
@@ -506,4 +542,270 @@ function escapeHtml(text) {
 function truncateDesc(text, len) {
     if (!text) return '—';
     return text.length <= len ? escapeHtml(text) : escapeHtml(text.slice(0, len)) + '…';
+}
+
+// Auto fill location details for citizen
+function autoFillLocation() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    if (!currentUser) return;
+
+    // Drugs Form
+    if (document.getElementById('drugsSector')) document.getElementById('drugsSector').value = currentUser.sector || '';
+    if (document.getElementById('drugsCell')) document.getElementById('drugsCell').value = currentUser.cell || '';
+    if (document.getElementById('drugsVillage')) document.getElementById('drugsVillage').value = currentUser.village || '';
+
+    // Violence Form
+    if (document.getElementById('violenceSector')) document.getElementById('violenceSector').value = currentUser.sector || '';
+    if (document.getElementById('violenceCell')) document.getElementById('violenceCell').value = currentUser.cell || '';
+    if (document.getElementById('violenceVillage')) document.getElementById('violenceVillage').value = currentUser.village || '';
+
+    // Visitors Form
+    if (document.getElementById('visitorYourSector')) document.getElementById('visitorYourSector').value = currentUser.sector || '';
+    if (document.getElementById('visitorYourCell')) document.getElementById('visitorYourCell').value = currentUser.cell || '';
+    if (document.getElementById('visitorYourVillage')) document.getElementById('visitorYourVillage').value = currentUser.village || '';
+    if (document.getElementById('visitorYourTelephone')) document.getElementById('visitorYourTelephone').value = currentUser.telephone || currentUser.phone || '';
+
+    // Case Form
+    if (document.getElementById('caseReporterName')) document.getElementById('caseReporterName').value = currentUser.name || '';
+    if (document.getElementById('caseSector')) document.getElementById('caseSector').value = currentUser.sector || '';
+    if (document.getElementById('caseCell')) document.getElementById('caseCell').value = currentUser.cell || '';
+    if (document.getElementById('caseVillage')) document.getElementById('caseVillage').value = currentUser.village || '';
+}
+
+// Convert file to Base64
+function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// Custom Citizen Case Submit
+async function handleCaseSubmit(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('caseSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+    }
+
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    const fileInput = document.getElementById('caseEvidenceImage');
+    const file = fileInput ? fileInput.files[0] : null;
+
+    let imageData = null;
+    if (file) {
+        try {
+            imageData = await convertToBase64(file);
+        } catch (err) {
+            console.warn('Failed to convert image to base64:', err);
+        }
+    }
+
+    const reporterName = document.getElementById('caseReporterName') ? document.getElementById('caseReporterName').value.trim() : (currentUser ? currentUser.name : 'Citizen');
+    const caseData = {
+        id: Date.now(),
+        type: document.getElementById('caseType').value,
+        title: document.getElementById('caseTitle').value,
+        description: document.getElementById('caseDescription').value,
+        sector: document.getElementById('caseSector').value,
+        cell: document.getElementById('caseCell').value,
+        village: document.getElementById('caseVillage').value,
+        accusedName: document.getElementById('caseAccusedName').value,
+        accusedPhone: document.getElementById('caseAccusedPhone').value,
+        incidentDate: document.getElementById('caseIncidentDate').value,
+        priority: document.getElementById('casePriority').value,
+        image: imageData,
+        status: "pending",
+        level: "Village",
+        escalatedToCellAt: null,
+        escalatedToSectorAt: null,
+        createdAt: new Date().toISOString()
+    };
+
+    const record = {
+        type: 'case',
+        data: caseData,
+        reportedBy: reporterName,
+        reportedByEmail: currentUser ? currentUser.email : '',
+        reportedByPhone: currentUser ? (currentUser.phone || '') : '',
+        dateReported: new Date().toISOString()
+    };
+
+    const saved = await sendReportToServer(record);
+    if (!saved) {
+        // Fallback to local storage if server fails
+        const cases = JSON.parse(localStorage.getItem('citizenCases')) || [];
+        cases.push(caseData);
+        localStorage.setItem('citizenCases', JSON.stringify(cases));
+        alert('Case saved locally due to server issues.');
+    } else {
+        const successMessage = document.getElementById('caseSuccessMessage');
+        if (successMessage) {
+            successMessage.style.display = "block";
+            setTimeout(() => {
+                successMessage.style.display = "none";
+            }, 3000);
+        } else {
+            alert('Case submitted successfully!');
+        }
+    }
+
+    e.target.reset();
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Case";
+    }
+    autoFillLocation();
+    loadCaseTable();
+}
+
+async function loadCaseTable() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    const tbody = document.getElementById('caseTableBody');
+    if (!tbody) return;
+
+    let cases = [];
+    try {
+        const res = await fetch(`/api/citizen-reports?type=case&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) throw new Error('Server error');
+        const userRecords = await res.json();
+        cases = userRecords.map(r => ({ ...r.data, _id: r._id, reportedBy: r.reportedBy }));
+    } catch (err) {
+        console.warn('Could not load cases from server, loading from localStorage:', err);
+        const localCases = JSON.parse(localStorage.getItem('citizenCases')) || [];
+        cases = localCases.map(c => ({ ...c, reportedBy: currentUser.name }));
+    }
+
+    if (cases.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; color: #666; padding: 20px;">No cases submitted yet</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = cases.reverse().map(c => {
+        const statusClass = c.status === 'resolved' ? 'status-solved' :
+            c.status === 'under-review' ? 'status-escalated' : 'status-pending';
+            
+        const priorityClass = c.priority === 'emergency' ? 'status-escalated' :
+            c.priority === 'high' ? 'status-escalated' : 
+            c.priority === 'medium' ? 'status-pending' : 'status-solved';
+
+        const level = c.level || 'Village';
+        const countdownHtml = getCaseCountdownHtml(c);
+
+        return `
+            <tr>
+                <td>${escapeHtml(c.type)}</td>
+                <td>${escapeHtml(c.title)}</td>
+                <td>${escapeHtml(c.reportedBy || currentUser.name)}</td>
+                <td><span class="status-badge ${priorityClass}">${capitalize(c.priority)}</span></td>
+                <td><span class="status-badge status-pending" style="background: #e2f0fe; color: #1f4e79; border: 1px solid #b8daff;">${level}</span></td>
+                <td>
+                    <span class="status-badge ${statusClass}">
+                        ${capitalize(c.status)}
+                    </span>
+                </td>
+                <td>${countdownHtml}</td>
+                <td>
+                    ${c.image ? `<img src="${c.image}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : 'No Image'}
+                </td>
+                <td>${formatDate(c.incidentDate || c.createdAt)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (!citizenCasesInterval) {
+        startCountdownUpdates();
+    }
+}
+
+function getCaseCountdownHtml(c) {
+    if (c.status === 'resolved') {
+        return `<span style="color: #28a745; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Solved</span>`;
+    }
+
+    const now = new Date();
+    const createdAtTime = new Date(c.createdAt).getTime();
+    const ESCALATION_PERIOD_MS = 14 * 24 * 60 * 60 * 1000;
+
+    let deadline = createdAtTime + ESCALATION_PERIOD_MS;
+    if (c.level === 'Cell') {
+        const escalatedToCellTime = new Date(c.escalatedToCellAt || c.createdAt).getTime();
+        deadline = escalatedToCellTime + ESCALATION_PERIOD_MS;
+    } else if (c.level === 'Sector') {
+        return `<span style="color: #dc3545; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> Sector (Max)</span>`;
+    }
+
+    const timeLeft = deadline - now.getTime();
+    if (timeLeft <= 0) {
+        return `<span style="color: #dc3545; font-weight: bold;">Escalating...</span>`;
+    }
+
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+    let displayStr = '';
+    if (days > 0) displayStr += `${days}d `;
+    if (hours > 0 || days > 0) displayStr += `${hours}h `;
+    displayStr += `${minutes}m`;
+
+    let color = '#28a745'; 
+    if (days < 2) {
+        color = '#dc3545'; 
+    } else if (days < 5) {
+        color = '#fd7e14'; 
+    }
+
+    return `<span style="color: ${color}; font-weight: bold;"><i class="fa-regular fa-clock"></i> ${displayStr}</span>`;
+}
+
+function capitalize(text) {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+let citizenCasesInterval = null;
+function startCountdownUpdates() {
+    if (citizenCasesInterval) clearInterval(citizenCasesInterval);
+    citizenCasesInterval = setInterval(() => {
+        const caseTable = document.getElementById('caseTable');
+        if (caseTable && caseTable.getBoundingClientRect().width > 0) {
+            loadCaseTable();
+        }
+    }, 30000);
+}
+// Edit Infrastructure Report
+function editInfrastructureReport(reportId) {
+    alert('Edit functionality for report ID: ' + reportId + ' will be implemented');
+    // TODO: Implement edit modal or redirect to edit page
+}
+
+// Delete Infrastructure Report
+async function deleteInfrastructureReport(reportId) {
+    if (!confirm('Are you sure you want to delete this report?')) {
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/citizen-reports/' + reportId, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!res.ok) throw new Error('Server error');
+        
+        alert('Report deleted successfully');
+        loadInfrastructureTable();
+    } catch (err) {
+        console.error('Error deleting report:', err);
+        alert('Failed to delete report');
+    }
 }

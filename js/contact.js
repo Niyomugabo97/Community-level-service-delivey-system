@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleContactSubmit() {
     const form = document.getElementById('contactForm');
     const formMessage = document.getElementById('formMessage');
-    
+
     // Get form data
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - Community Level Service Delivery Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
 </head>
 <body>
@@ -21,6 +20,7 @@
                 </button>
                 <ul class="nav-menu">
                     <li><a href="home.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="news.html"><i class="fa-solid fa-newspaper"></i> News</a></li>
                     <li><a href="analytics.html"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
                     <li><a href="about.html" class="active"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
                     <li><a href="contact.html"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
@@ -153,31 +153,28 @@
                     </div>
                 </section>
 
-                <!-- Team Section -->
-                <section class="team-section">
-                    <h2>Leadership Team</h2>
-                    <div class="team-grid">
-                        <div class="team-member">
-                            <div class="member-avatar">
-                                <i class="fa-solid fa-user"></i>
-                            </div>
-                            <h4>Community Director</h4>
-                            <p>Dedicated to ensuring excellent service delivery at the community level.</p>
+                <!-- Community Leaders Section -->
+                <section class="team-section" id="leadersSection">
+                    <h2><i class="fa-solid fa-people-group"></i> Our Community Leaders</h2>
+                    <p class="section-sub">These are the leaders serving your community. They are responsible for attendance, reporting, and connecting citizens with local services.</p>
+
+                    <!-- Filter bar -->
+                    <div class="leaders-filter-bar">
+                        <input type="text" id="leaderSearchInput" placeholder="Search by name, sector, cell or village..." class="search-input">
+                        <select id="leaderSectorFilter" class="filter-select">
+                            <option value="">All Sectors</option>
+                        </select>
+                    </div>
+
+                    <div class="leaders-grid" id="leadersGrid">
+                        <div class="leaders-loading">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Loading leaders...
                         </div>
-                        <div class="team-member">
-                            <div class="member-avatar">
-                                <i class="fa-solid fa-user"></i>
-                            </div>
-                            <h4>Technology Lead</h4>
-                            <p>Ensuring our platform is secure, reliable, and user-friendly for everyone.</p>
-                        </div>
-                        <div class="team-member">
-                            <div class="member-avatar">
-                                <i class="fa-solid fa-user"></i>
-                            </div>
-                            <h4>Community Engagement Manager</h4>
-                            <p>Building strong connections between leaders and citizens in every community.</p>
-                        </div>
+                    </div>
+
+                    <div id="leadersEmpty" style="display:none; text-align:center; padding:40px 0; color:#888;">
+                        <i class="fa-solid fa-user-slash" style="font-size:2.5rem; margin-bottom:12px;"></i>
+                        <p>No leader profiles found.</p>
                     </div>
                 </section>
 
@@ -209,6 +206,7 @@
                     <h4>Quick Links</h4>
                     <ul>
                         <li><a href="home.html">Home</a></li>
+                        <li><a href="news.html">News</a></li>
                         <li><a href="analytics.html">Analytics</a></li>
                         <li><a href="about.html">About Us</a></li>
                         <li><a href="contact.html">Contact</a></li>
@@ -241,5 +239,95 @@
     </footer>
 
     <script src="js/navbar.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+    (async function initAboutLeaders() {
+        const api = new ApiService();
+        let allProfiles = [];
+
+        async function loadLeaders() {
+            const grid = document.getElementById('leadersGrid');
+            const empty = document.getElementById('leadersEmpty');
+            try {
+                allProfiles = await api.getLeaderProfiles();
+            } catch (e) {
+                allProfiles = [];
+            }
+
+            populateSectorFilter(allProfiles);
+            renderLeaders(allProfiles);
+        }
+
+        function populateSectorFilter(profiles) {
+            const sel = document.getElementById('leaderSectorFilter');
+            const sectors = [...new Set(profiles.map(p => p.sector).filter(Boolean))].sort();
+            sectors.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                sel.appendChild(opt);
+            });
+        }
+
+        function renderLeaders(profiles) {
+            const grid = document.getElementById('leadersGrid');
+            const empty = document.getElementById('leadersEmpty');
+            if (!profiles.length) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = profiles.map(p => `
+                <div class="leader-card">
+                    <div class="leader-photo">
+                        ${p.photoUrl
+                            ? `<img src="${p.photoUrl}" alt="${escapeHtml(p.name)}">`
+                            : `<i class="fa-solid fa-user-tie"></i>`}
+                    </div>
+                    <div class="leader-info">
+                        <h4>${escapeHtml(p.name)}</h4>
+                        <span class="leader-role">${escapeHtml(p.role || 'Village Leader')}</span>
+                        <div class="leader-location">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>${escapeHtml([p.village, p.cell, p.sector].filter(Boolean).join(', '))}</span>
+                        </div>
+                        <div class="leader-tel">
+                            <i class="fa-solid fa-phone"></i>
+                            <a href="tel:${escapeHtml(p.telephone)}">${escapeHtml(p.telephone)}</a>
+                        </div>
+                        ${p.bio ? `<p class="leader-bio">${escapeHtml(p.bio)}</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('leaderSearchInput').value.toLowerCase();
+            const sector = document.getElementById('leaderSectorFilter').value;
+            const filtered = allProfiles.filter(p => {
+                const matchesSearch = !q ||
+                    (p.name || '').toLowerCase().includes(q) ||
+                    (p.sector || '').toLowerCase().includes(q) ||
+                    (p.cell || '').toLowerCase().includes(q) ||
+                    (p.village || '').toLowerCase().includes(q);
+                const matchesSector = !sector || p.sector === sector;
+                return matchesSearch && matchesSector;
+            });
+            renderLeaders(filtered);
+        }
+
+        document.getElementById('leaderSearchInput').addEventListener('input', applyFilters);
+        document.getElementById('leaderSectorFilter').addEventListener('change', applyFilters);
+
+        loadLeaders();
+    })();
+    </script>
 </body>
 </html>
