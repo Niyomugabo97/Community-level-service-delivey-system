@@ -6,7 +6,8 @@ require("dotenv").config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const path = require('path');
 
 // Serve frontend static files from project root so relative API calls work
@@ -31,10 +32,30 @@ const mongooseOptions = {
   connectTimeoutMS: 10000,
 };
 
+async function seedAdminUser() {
+  const { User } = require('./models');
+  const bcrypt = require('bcryptjs');
+  try {
+    const existing = await User.findOne({ userType: 'admin' });
+    if (!existing) {
+      const hash = await bcrypt.hash('Admin@2024', 10);
+      await User.create({
+        name: 'System Administrator',
+        email: 'admin@umuturage.rw',
+        userType: 'admin',
+        passwordHash: hash
+      });
+      console.log('Admin user created — email: admin@umuturage.rw  password: Admin@2024');
+    }
+  } catch (err) {
+    console.error('Admin seed error:', err.message);
+  }
+}
+
 function connectWithRetry(retries = 5, delay = 5000) {
   console.log(`Attempting MongoDB connection to ${maskUri(mongoUrl)} (retries left: ${retries})`);
   mongoose.connect(mongoUrl, mongooseOptions)
-    .then(() => console.log('MongoDB Connected'))
+    .then(() => { console.log('MongoDB Connected'); seedAdminUser(); })
     .catch(err => {
       console.error('Error connecting to MongoDB:', err && err.message ? err.message : err);
       if (retries > 0) {
@@ -67,6 +88,7 @@ const intekoAttendanceRoutes = require("./routes/intekoAttendance");
 const locationRoutes = require("./routes/locations");
 const performanceRoutes = require("./routes/performance");
 const leaderProfileRoutes = require("./routes/leaderProfiles");
+const adminRoutes = require("./routes/admin");
 
 app.use("/api/home-updates", homeUpdateRoutes);
 app.use("/api/attendance", attendanceRoutes);
@@ -82,6 +104,12 @@ app.use("/api/inteko-attendance", intekoAttendanceRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/performance", performanceRoutes);
 app.use("/api/leader-profiles", leaderProfileRoutes);
+app.use("/api/admin", adminRoutes);
+
+// Admin dashboard page (must be before the wildcard)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'admin.html'));
+});
 
 // Fallback to index.html for client-side routes
 app.get('*', (req, res) => {

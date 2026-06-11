@@ -140,7 +140,7 @@
                             <div class="form-group">
                                 <label>Select Sector *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select id="leaderSector" required onchange="updateLeaderCells()">
+                                    <select id="leaderSector" required onchange="updateLeaderCells()" style="flex: 1;">
                                         <option value="">-- Select your sector --</option>
                                         <option value="Ruhuha">Ruhuha</option>
                                         <option value="Nyarugenge">Nyarugenge</option>
@@ -154,7 +154,7 @@
                             <div class="form-group">
                                 <label>Select Cell *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select id="leaderCell" required onchange="updateLeaderVillages()" disabled>
+                                    <select id="leaderCell" required onchange="updateLeaderVillages()" disabled style="flex: 1;">
                                         <option value="">Select your cell</option>
                                     </select>
                                     <button type="button" class="btn btn-sm btn-secondary" onclick="addNewCell()" title="Add new cell">
@@ -165,7 +165,7 @@
                             <div class="form-group">
                                 <label>Select Village *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select id="leaderVillage" required onchange="loadLeaderAttendance()" disabled>
+                                    <select id="leaderVillage" required onchange="loadLeaderAttendance()" disabled style="flex: 1;">
                                         <option value="">Select your village</option>
                                     </select>
                                     <button type="button" class="btn btn-sm btn-secondary" onclick="addNewVillage()" title="Add new village">
@@ -315,24 +315,39 @@
                         <div class="location-selector">
                             <div class="form-group">
                                 <label>Select Sector *</label>
-                                <select id="intekoSector" required onchange="updateIntekoLeaderCells()">
-                                    <option value="">-- Select your sector --</option>
-                                    <option value="Ruhuha">Ruhuha</option>
-                                    <option value="Nyarugenge">Nyarugenge</option>
-                                    <option value="Mayange">Mayange</option>
-                                </select>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="intekoSector" required onchange="updateIntekoLeaderCells()" style="flex: 1;">
+                                        <option value="">-- Select your sector --</option>
+                                        <option value="Ruhuha">Ruhuha</option>
+                                        <option value="Nyarugenge">Nyarugenge</option>
+                                        <option value="Mayange">Mayange</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addNewIntekoSector()" title="Add new sector">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Select Cell *</label>
-                                <select id="intekoCell" required onchange="updateIntekoLeaderVillages()" disabled>
-                                    <option value="">Select your cell</option>
-                                </select>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="intekoCell" required onchange="updateIntekoLeaderVillages()" disabled style="flex: 1;">
+                                        <option value="">Select your cell</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addNewIntekoCell()" title="Add new cell">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Select Village *</label>
-                                <select id="intekoVillage" required disabled>
-                                    <option value="">Select your village</option>
-                                </select>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="intekoVillage" required disabled style="flex: 1;">
+                                        <option value="">Select your village</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addNewIntekoVillage()" title="Add new village">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <button class="btn btn-primary" onclick="confirmIntekoLocation()">
@@ -1082,6 +1097,7 @@
                                 <th>Image</th>
                                 <th>Description</th>
                                 <th>Date Reported</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="leaderInfrastructureTableBody">
@@ -1446,6 +1462,35 @@
     <script src="js/leader-dashboard.js"></script>
     <script src="js/leader-profile.js"></script>
     <script src="js/navbar.js"></script>
+
+<!-- Edit Infrastructure Modal -->
+<div id="editInfrastructureModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:8px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 18px">Edit Infrastructure Report</h3>
+        <div class="form-group">
+            <label>Place/Location</label>
+            <input type="text" id="editInfraPlace" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+        </div>
+        <div class="form-row" style="display:flex;gap:12px;margin-top:10px;">
+            <div class="form-group" style="flex:1">
+                <label>Date</label>
+                <input type="date" id="editInfraDate" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>Replace Image (optional)</label>
+                <input type="file" id="editInfraImage" accept="image/*" style="width:100%;padding:4px;">
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+            <label>Description</label>
+            <textarea id="editInfraDescription" rows="3" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+            <button class="btn btn-secondary" onclick="closeEditInfraModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitEditInfrastructure()">Save Changes</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
 

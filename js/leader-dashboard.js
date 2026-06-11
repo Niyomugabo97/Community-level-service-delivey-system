@@ -4500,11 +4500,28 @@ function handleLeaderInfrastructureSubmit(e) {
     }
 
     if (file) {
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-            saveReport(evt.target.result);
-        };
-        reader.readAsDataURL(file);
+        const compressImage = (f) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX = 800;
+                    let { width, height } = img;
+                    if (width > MAX || height > MAX) {
+                        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+                        else { width = Math.round(width * MAX / height); height = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(f);
+        });
+        compressImage(file).then(saveReport);
     } else {
         saveReport(null);
     }
@@ -4546,8 +4563,88 @@ async function loadLeaderInfrastructureTable() {
             <td>${r.image ? `<img src="${r.image}" alt="img" style="width:100px;height:60px;object-fit:cover;border-radius:4px;" />` : '—'}</td>
             <td>${truncateDesc(r.description, 80)}</td>
             <td>${formatDate(r.dateReported)}</td>
+            <td style="white-space:nowrap;">
+                <button class="btn btn-secondary" style="margin-right:4px;" onclick="openEditInfraModal('${r.id}','${escapeHtml(r.place)}','${r.date}','${escapeHtml(r.description)}')">Edit</button>
+                <button class="btn btn-danger" onclick="deleteLeaderInfrastructure('${r.id}')">Delete</button>
+            </td>
         </tr>
-    `).join('') : '<tr><td colspan="5">No reports yet</td></tr>';
+    `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
+}
+
+let _editInfraId = null;
+
+function openEditInfraModal(id, place, date, description) {
+    _editInfraId = id;
+    document.getElementById('editInfraPlace').value = place;
+    document.getElementById('editInfraDate').value = date;
+    document.getElementById('editInfraDescription').value = description;
+    document.getElementById('editInfraImage').value = '';
+    const modal = document.getElementById('editInfrastructureModal');
+    modal.style.display = 'flex';
+}
+
+function closeEditInfraModal() {
+    document.getElementById('editInfrastructureModal').style.display = 'none';
+    _editInfraId = null;
+}
+
+async function submitEditInfrastructure() {
+    if (!_editInfraId) return;
+    const place = document.getElementById('editInfraPlace').value.trim();
+    const date = document.getElementById('editInfraDate').value;
+    const description = document.getElementById('editInfraDescription').value.trim();
+    const fileInput = document.getElementById('editInfraImage');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+
+    async function doUpdate(imageData) {
+        const api = new ApiService();
+        try {
+            const payload = { data: { place, date, description } };
+            if (imageData) payload.data.image = imageData;
+            await api.updateLeaderReport(_editInfraId, payload);
+            closeEditInfraModal();
+            await loadLeaderInfrastructureTable();
+        } catch (err) {
+            alert('Failed to update report: ' + err.message);
+        }
+    }
+
+    if (file) {
+        const compressImage = (f) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX = 800;
+                    let { width, height } = img;
+                    if (width > MAX || height > MAX) {
+                        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+                        else { width = Math.round(width * MAX / height); height = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(f);
+        });
+        doUpdate(await compressImage(file));
+    } else {
+        doUpdate(null);
+    }
+}
+
+async function deleteLeaderInfrastructure(id) {
+    if (!confirm('Delete this infrastructure report? This cannot be undone.')) return;
+    const api = new ApiService();
+    try {
+        await api.deleteLeaderReport(id);
+        await loadLeaderInfrastructureTable();
+    } catch (err) {
+        alert('Failed to delete report: ' + err.message);
+    }
 }
 
 // Shift Automate Citizen Cases
@@ -7071,4 +7168,62 @@ function downloadAttendanceCSV(type) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showNotification(`${typeName} attendance downloaded successfully.`, 'success');
+}
+
+// ── Inteko location: add new Sector / Cell / Village ──────────────────────
+function addNewIntekoSector() {
+    showInputPrompt('Enter new sector name', 'Sector name', (name) => {
+        if (!name) return;
+        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        if (locations.sectors.includes(name.trim())) { showNotification('Sector already exists', 'error'); return; }
+        locations.sectors.push(name.trim());
+        localStorage.setItem('systemLocations', JSON.stringify(locations));
+        // Refresh both Umuganda and Inteko sector dropdowns
+        loadSectorsForLeader();
+        loadIntekoSectors();
+        showNotification(`Sector "${name}" added successfully`, 'success');
+    });
+}
+
+function addNewIntekoCell() {
+    showInputPrompt('Enter new cell name', 'Cell name', (name) => {
+        if (!name) return;
+        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        if (locations.cells.includes(name.trim())) { showNotification('Cell already exists', 'error'); return; }
+        locations.cells.push(name.trim());
+        localStorage.setItem('systemLocations', JSON.stringify(locations));
+        const sel = document.getElementById('intekoSector');
+        if (sel && sel.value) updateIntekoLeaderCells();
+        showNotification(`Cell "${name}" added successfully`, 'success');
+    });
+}
+
+function addNewIntekoVillage() {
+    showInputPrompt('Enter new village name', 'Village name', (name) => {
+        if (!name) return;
+        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        if (locations.villages.includes(name.trim())) { showNotification('Village already exists', 'error'); return; }
+        locations.villages.push(name.trim());
+        localStorage.setItem('systemLocations', JSON.stringify(locations));
+        const s = document.getElementById('intekoSector');
+        const c = document.getElementById('intekoCell');
+        if (s && c && s.value && c.value) updateIntekoLeaderVillages();
+        showNotification(`Village "${name}" added successfully`, 'success');
+    });
+}
+
+function loadIntekoSectors() {
+    let locations;
+    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
+    if (!locations || !Array.isArray(locations.sectors) || locations.sectors.length === 0)
+        locations = initializeDefaultLocations();
+    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const memberSectors = [...new Set(memberRecords.map(r => r.sector).filter(Boolean))];
+    const allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
+    const sel = document.getElementById('intekoSector');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">-- Select your sector --</option>' +
+        allSectors.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (current) sel.value = current;
 }

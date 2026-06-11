@@ -148,17 +148,16 @@ async function loadHomeUpdates() {
             updates = await api.getHomeUpdates();
         }
     } catch (err) {
-        console.warn('Failed to load home updates from backend, falling back to local storage/sample:', err);
+        console.warn('Failed to load home updates from backend:', err);
     }
 
-    // Merge/Fallback for Activities
+    // Activities
     const activitiesGrid = document.getElementById('activitiesGrid');
     if (activitiesGrid) {
-        let activities = updates.filter(u => u.type === 'activity');
+        const activities = updates.filter(u => u.type === 'activity');
         if (activities.length === 0) {
-            const stored = JSON.parse(localStorage.getItem('activities')) || sampleActivities;
-            activities = stored;
-        }
+            activitiesGrid.innerHTML = '<p class="empty-state">No activities yet.</p>';
+        } else {
         const sorted = [...activities].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
         const levelBadge = (level) => level ? `<span class="level-badge ${level}">${escapeHtml(level.charAt(0).toUpperCase() + level.slice(1))}</span>` : '';
         const byLine = (a) => (a.uploadedBy || a.postedBy) ? `<small class="card-by">By: ${escapeHtml(a.uploadedBy || a.postedBy)}</small>` : '';
@@ -173,16 +172,16 @@ async function loadHomeUpdates() {
                 ${byLine(activity)}
             </div>
         `).join('');
+        }
     }
 
-    // Merge/Fallback for News (upcoming sessions)
+    // News (upcoming sessions)
     const newsGrid = document.getElementById('newsGrid');
     if (newsGrid) {
-        let news = updates.filter(u => u.type === 'upcoming');
+        const news = updates.filter(u => u.type === 'upcoming');
         if (news.length === 0) {
-            const stored = JSON.parse(localStorage.getItem('news')) || sampleNews;
-            news = stored;
-        }
+            newsGrid.innerHTML = '<p class="empty-state">No upcoming sessions yet.</p>';
+        } else {
         const sorted = [...news].sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
         const levelBadge = (level) => level ? `<span class="level-badge ${level}">${escapeHtml(level.charAt(0).toUpperCase() + level.slice(1))}</span>` : '';
         const byLine = (n) => (n.uploadedBy || n.postedBy) ? `<small class="card-by">By: ${escapeHtml(n.uploadedBy || n.postedBy)}</small>` : '';
@@ -198,16 +197,16 @@ async function loadHomeUpdates() {
                 ${byLine(item)}
             </div>
         `).join('');
+        }
     }
 
-    // Merge/Fallback for Trending
+    // Trending
     const trendingGrid = document.getElementById('trendingGrid');
     if (trendingGrid) {
-        let trending = updates.filter(u => u.type === 'trending');
+        const trending = updates.filter(u => u.type === 'trending');
         if (trending.length === 0) {
-            const stored = JSON.parse(localStorage.getItem('trending')) || sampleTrending;
-            trending = stored;
-        }
+            trendingGrid.innerHTML = '<p class="empty-state">No trending updates yet.</p>';
+        } else {
         const sorted = [...trending].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
         const levelBadge = (level) => level ? `<span class="level-badge ${level}">${escapeHtml(level.charAt(0).toUpperCase() + level.slice(1))}</span>` : '';
         const byLine = (t) => (t.uploadedBy || t.postedBy) ? `<small class="card-by">By: ${escapeHtml(t.uploadedBy || t.postedBy)}</small>` : '';
@@ -222,6 +221,7 @@ async function loadHomeUpdates() {
                 ${byLine(item)}
             </div>
         `).join('');
+        }
     }
 }
 
@@ -264,11 +264,6 @@ async function loadInfrastructureReports() {
     }
 
     if (reports.length === 0) {
-        const local = JSON.parse(localStorage.getItem('infrastructureReports')) || [];
-        reports = local;
-    }
-
-    if (reports.length === 0) {
         container.innerHTML = '<p>No infrastructure reports yet.</p>';
         return;
     }
@@ -302,10 +297,6 @@ async function loadSchoolDropoutStats() {
         }
     } catch (err) {
         console.warn('Failed to load schools from backend:', err);
-    }
-
-    if (schools.length === 0) {
-        schools = JSON.parse(localStorage.getItem('schools')) || [];
     }
 
     const totalSchools = schools.length;

@@ -800,6 +800,36 @@
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
+/* Add-location plus buttons — override the generic .location-selector button rule */
+.location-selector .btn-sm {
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transform: none;
+    box-shadow: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.location-selector .btn-sm:hover {
+    background: rgba(255, 255, 255, 0.32);
+    border-color: #fff;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 .btn-sm {
     padding: 8px 12px;
     font-size: 12px;

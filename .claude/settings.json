@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"netstat -ano | findstr :5000\")",
+      "Bash(cmd /c \"netstat -ano | findstr :5000 | findstr LISTENING\")",
+      "Bash(taskkill /PID 12832 /F)",
+      "Bash(cmd.exe /c \"taskkill /PID 12832 /F\")",
+      "Bash(cmd.exe /c \"taskkill /PID 12832 /F 2>&1\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 12832 -Force; Write-Host 'Done'\")",
+      "Bash(cd \"/c/Users/Claude/Desktop/Umuturage ku isonga-System\" && find . -type f -name \"*.js\" -o -name \"*.html\" -o -name \"*.json\" | head -50)",
+      "Read(//c/c/Users/Claude/Desktop/**)"
+    ]
+  }
+}

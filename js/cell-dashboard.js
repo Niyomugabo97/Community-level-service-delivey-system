@@ -35,15 +35,25 @@ function setupNavigation() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const sectionId = link.dataset.section;
-            
+
             // Update active states
             menuLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
-            
+
             sections.forEach(s => s.classList.remove('active'));
             const targetSection = document.getElementById(sectionId);
             if (targetSection) {
                 targetSection.classList.add('active');
+            }
+
+            // Lazy-load data when section is opened
+            if (sectionId === 'attendance') {
+                loadCellUmugandaAnalytics();
+                loadCellIntekoAnalytics();
+            } else if (sectionId === 'registrations') {
+                loadCellRegistrations();
+            } else if (sectionId === 'infra-visitors') {
+                loadCellInfraVisitors();
             }
         });
     });
@@ -84,6 +94,10 @@ function loadAllData() {
     setupHomeUpdatesTabs();
     setupHomeUpdateForms();
     loadCellHomeUpdatesList();
+    loadCellRegistrations();
+    setupCellAttendanceTabs();
+    setupCellInfraVisitorsTabs();
+    loadCellInfraVisitors();
 }
 
 // Load escalated cases
