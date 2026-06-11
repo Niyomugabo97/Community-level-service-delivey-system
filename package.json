@@ -4,6 +4,8 @@
   "description": "A comprehensive community management system for local leaders and citizens in Rwanda.",
   "main": "index.js",
   "scripts": {
+    "start": "node backend/server.js",
+    "build": "echo \"No build step required\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
