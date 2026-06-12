@@ -10,8 +10,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const path = require('path');
 
-// Serve frontend static files from project root so relative API calls work
-app.use(express.static(path.join(__dirname, '..')));
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 //////////////// CONNECT DB //////////////////
 const mongoUrl = process.env.MongoDB_Url || process.env.MONGO_URI;
@@ -108,12 +108,12 @@ app.use("/api/admin", adminRoutes);
 
 // Admin dashboard page (must be before the wildcard)
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'admin.html'));
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'admin.html'));
 });
 
 // Fallback to index.html for client-side routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
 });
 
 //////////////// START //////////////////
