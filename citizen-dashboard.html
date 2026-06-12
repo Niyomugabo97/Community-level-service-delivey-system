@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Dashboard </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body class="with-bottom-sidebar">
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-user"></i> Citizen Dashboard</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="dashboard-sidebar bottom">
+            <ul class="dashboard-menu">
+                <li><a href="#" data-section="drugs" class="active"><i class="fa-solid fa-bottle-droplet"></i> Report Drugs/Illegal Drinks</a></li>
+                <li><a href="#" data-section="violence"><i class="fa-solid fa-hand-fist"></i> Report Sexual Violence</a></li>
+                <li><a href="#" data-section="infrastructure"><i class="fa-solid fa-road"></i> Damaged Infrastructure Report</a></li>
+                <li><a href="#" data-section="visitors"><i class="fa-solid fa-user-group"></i> Report Visitors / Guests</a></li>
+                <li><a href="#" data-section="case"><i class="fa-solid fa-scale-balanced"></i> Ikirago (Case)</a></li>
+                <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat with Leaders</a></li>
+            </ul>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Report Drugs Section -->
+            <section id="drugs" class="dashboard-section active">
+                <h2><i class="fa-solid fa-bottle-droplet"></i> Report Drugs and Illegal Drinks</h2>
+                <form id="drugsForm" class="form-container">
+                    <div class="form-group">
+                        <label>Name(s) of Selling Illegal Drinks</label>
+                        <input type="text" id="drugsName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="drugsSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="drugsCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="drugsVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="drugsDescription" rows="3" placeholder="Describe the situation (location, details, etc.)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Send Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Reports</h3>
+                    <table id="drugsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Sector</th>
+                                <th>Cell</th>
+                                <th>Village</th>
+                                <th>Description</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drugsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Report Sexual Violence Section -->
+            <section id="violence" class="dashboard-section">
+                <h2>Report Sexual Violence</h2>
+                <form id="violenceForm" class="form-container">
+                    <div class="form-group">
+                        <label>Name of Victim</label>
+                        <input type="text" id="violenceVictimName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Telephone</label>
+                        <input type="tel" id="violenceTelephone" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="violenceSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="violenceCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="violenceVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Case Description</label>
+                        <textarea id="violenceDescription" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Send Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Reports</h3>
+                    <table id="violenceTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Victim Name</th>
+                                <th>Telephone</th>
+                                <th>Sector</th>
+                                <th>Cell</th>
+                                <th>Village</th>
+                                <th>Description</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody id="violenceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Damaged Infrastructure Report Section -->
+            <section id="infrastructure" class="dashboard-section">
+                <h2><i class="fa-solid fa-road"></i> Report Damaged Infrastructure</h2>
+                <form id="infrastructureForm" class="form-container">
+                    <div class="form-group">
+                        <label>Place/Location</label>
+                        <input type="text" id="infrastructurePlace" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="infrastructureDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="infrastructureImage" accept="image/*" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="infrastructureDescription" rows="3" placeholder="Describe the damaged infrastructure (e.g., broken road, damaged bridge, etc.)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Reports</h3>
+                    <table id="infrastructureTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Place/Location</th>
+                                <th>Date</th>
+                                <th>Image</th>
+                                <th>Description</th>
+                                <th>Date Reported</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="infrastructureTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Visitors / Guests Report Section -->
+            <section id="visitors" class="dashboard-section">
+                <h2><i class="fa-solid fa-user-group"></i> Report Visitors / Guests in Family</h2>
+                <form id="visitorsForm" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Your Sector</label>
+                            <input type="text" id="visitorYourSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Your Cell</label>
+                            <input type="text" id="visitorYourCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Your Village</label>
+                            <input type="text" id="visitorYourVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Your Telephone</label>
+                            <input type="tel" id="visitorYourTelephone">
+                        </div>
+                        <div class="form-group">
+                            <label>Visitor's Names</label>
+                            <input type="text" id="visitorNames" required placeholder="Comma separated or single name">
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Visitors</label>
+                            <input type="number" id="visitorCount" min="1" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Visitor IDs</label>
+                            <input type="text" id="visitorIDs" placeholder="Comma separated national IDs">
+                        </div>
+                        <div class="form-group">
+                            <label>Visitor Telephone</label>
+                            <input type="tel" id="visitorTelephone">
+                        </div>
+                        <div class="form-group">
+                            <label>Where they come from (Province)</label>
+                            <input type="text" id="visitorFromProvince">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>District</label>
+                            <input type="text" id="visitorFromDistrict">
+                        </div>
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="visitorFromSector">
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="visitorFromCell">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="visitorFromVillage">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Visit (Description)</label>
+                            <input type="text" id="visitorReason">
+                        </div>
+                        <div class="form-group">
+                            <label>Return Date</label>
+                            <input type="date" id="visitorReturnDate">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Visitor Report</button>
+                </form>
+                <div class="data-table-container">
+                    <h3>My Visitor Reports</h3>
+                    <table id="visitorsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Visitor Names</th>
+                                <th>Count</th>
+                                <th>Visitor IDs</th>
+                                <th>From (Province/District/Sector/Cell/Village)</th>
+                                <th>Reason</th>
+                                <th>Return</th>
+                                <th>Date Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Shift Automate Case Section -->
+            <section id="case" class="dashboard-section">
+                <h2><i class="fa-solid fa-scale-balanced"></i> Submit Case / Ikirego</h2>
+                <form id="caseForm" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Reporter (Plaintiff / Urega)</label>
+                            <input type="text" id="caseReporterName" placeholder="Enter reporter's full name" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Case Type</label>
+                            <select id="caseType" required>
+                                <option value="">Select Type</option>
+                                <option value="Land Conflict">Land Conflict</option>
+                                <option value="Violence">Violence</option>
+                                <option value="Theft">Theft</option>
+                                <option value="Family Conflict">Family Conflict</option>
+                                <option value="Corruption">Corruption</option>
+                                <option value="Property Damage">Property Damage</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Case Title</label>
+                            <input type="text" id="caseTitle" placeholder="Enter case title" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Full Description</label>
+                        <textarea id="caseDescription" placeholder="Explain the issue..." required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="caseSector" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="caseCell" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="caseVillage" required />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Person Being Reported (Accused)</label>
+                            <input type="text" id="caseAccusedName" placeholder="Accused full name" />
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number (Accused)</label>
+                            <input type="tel" id="caseAccusedPhone" placeholder="Accused phone number" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date of Incident</label>
+                            <input type="date" id="caseIncidentDate" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="casePriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="emergency">Emergency</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Evidence Image</label>
+                        <input type="file" id="caseEvidenceImage" accept="image/*" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="caseSubmitBtn">
+                        Submit Case
+                    </button>
+                </form>
+
+                <div class="success-message" id="caseSuccessMessage" style="display: none; background:#d4edda; color:#155724; padding:12px; border-radius:5px; margin-top:20px; text-align:center;">
+                    Case submitted successfully!
+                </div>
+
+                <div class="data-table-container">
+                    <h3>My Submitted Cases</h3>
+                    <table id="caseTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Reporter</th>
+                                <th>Priority</th>
+                                <th>Level</th>
+                                <th>Status</th>
+                                <th>Time Left</th>
+                                <th>Evidence</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caseTableBody">
+                            <tr>
+                                <td colspan="9">No cases submitted yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <section id="chat" class="dashboard-section">
+                <h2><i class="fa-solid fa-comments"></i> Chat with Leaders</h2>
+                <div class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chatRecipientRole">Send To</label>
+                            <select id="chatRecipientRole">
+                                <option value="leader">Village Leader</option>
+                                <option value="cell">Cell Leader</option>
+                                <option value="sector">Sector Leader</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chatRecipientUser">Select Leader</label>
+                            <select id="chatRecipientUser" required>
+                                <option value="">Select Leader</option>
+                            </select>
+                        </div>
+                    </div>
+                    <form id="citizenChatForm">
+                        <div class="form-group">
+                            <label for="citizenChatMessage">Message</label>
+                            <textarea id="citizenChatMessage" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+                <div class="data-table-container">
+                    <h3>Conversation</h3>
+                    <div id="citizenChatMessages" class="chat-messages"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Edit Infrastructure Modal -->
+    <div id="editInfrastructureModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Infrastructure Report</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editInfrastructureForm">
+                    <div class="form-group">
+                        <label>Place/Location</label>
+                        <input type="text" id="editInfraPlace" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="editInfraDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="editInfraImage" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="editInfraDescription" rows="3" placeholder="Describe the damaged infrastructure"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/citizen-dashboard.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+</html>
+

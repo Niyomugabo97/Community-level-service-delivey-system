@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Level Dashboard </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-layer-group"></i> Cell Level Dashboard</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#" id="logoutBtn">Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <ul class="dashboard-menu">
+                <li><a href="#" data-section="cases" class="active"><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases</a></li>
+                <li><a href="#" data-section="activities"><i class="fa-solid fa-chart-line"></i> Village Activities</a></li>
+                <li><a href="#" data-section="reports"><i class="fa-solid fa-file-lines"></i> Reports Summary</a></li>
+                <li><a href="#" data-section="statistics"><i class="fa-solid fa-chart-pie"></i> Statistics</a></li>
+                <li><a href="#" data-section="registrations"><i class="fa-solid fa-users"></i> Member Registrations</a></li>
+                <li><a href="#" data-section="attendance"><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</a></li>
+                <li><a href="#" data-section="infra-visitors"><i class="fa-solid fa-road"></i> Infrastructure & Visitors</a></li>
+                <li><a href="#" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> Activities & Home Updates</a></li>
+                <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat</a></li>
+            </ul>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Escalated Cases Section -->
+            <section id="cases" class="dashboard-section active">
+                <h2><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases from Villages</h2>
+                <div class="info-banner">
+                    <p>These cases were escalated from Village level. Please review and resolve them.</p>
+                </div>
+                <div class="data-table-container">
+                    <table id="caseTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Plaintiff</th>
+                                <th>Defendant</th>
+                                <th>Village</th>
+                                <th>Original Leader</th>
+                                <th>Case Description</th>
+                                <th>Status</th>
+                                <th>Escalated Date</th>
+                                <th>Countdown</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caseTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Case Resolution Form -->
+                <div class="form-container" style="margin-top: 2rem;">
+                    <h3>Resolve Case</h3>
+                    <form id="resolveCaseForm">
+                        <div class="form-group">
+                            <label>Select Case ID</label>
+                            <select id="resolveCaseId" required>
+                                <option value="">Select a case to resolve</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Resolution Days</label>
+                                <input type="number" id="cellResolutionDays" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Resolution Date</label>
+                                <input type="date" id="cellResolutionDate" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Resolution Notes</label>
+                            <textarea id="cellResolutionNotes" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Case Status</label>
+                            <select id="cellCaseStatus" required>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Solved">Solved</option>
+                                <option value="Escalate to Sector">Escalate to Sector</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Case</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Village Activities Section -->
+            <section id="activities" class="dashboard-section">
+                <h2><i class="fa-solid fa-chart-line"></i> Village Activities Monitoring</h2>
+                <div class="activities-summary">
+                    <div class="summary-card">
+                        <h3>Umuganda Attendance</h3>
+                        <div id="umugandaSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Inteko Meetings</h3>
+                        <div id="intekoSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>New Registrations</h3>
+                        <div id="registrationSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Reports</h3>
+                        <div id="reportsSummary"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section (full details from citizens & village leaders) -->
+            <section id="reports" class="dashboard-section">
+                <h2><i class="fa-solid fa-file-lines"></i> All Reports (Full Details)</h2>
+                <p class="section-desc">Drug and sexual violence reports from citizens and village leaders in your cell. All details are visible automatically.</p>
+                <div class="reports-container">
+                    <div class="report-section">
+                        <h3>Drug/Illegal Drinks Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Sector</th>
+                                    <th>Cell</th>
+                                    <th>Village</th>
+                                    <th>Description</th>
+                                    <th>Reported by</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drugsReportsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-section">
+                        <h3>Sexual Violence Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Victim Name</th>
+                                    <th>Telephone</th>
+                                    <th>Sector</th>
+                                    <th>Cell</th>
+                                    <th>Village</th>
+                                    <th>Description</th>
+                                    <th>Reported by</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violenceReportsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="statistics" class="dashboard-section">
+                <h2><i class="fa-solid fa-chart-pie"></i> Cell Level Statistics</h2>
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <h3>Total Cases</h3>
+                        <p class="stat-number" id="totalCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pending Cases</h3>
+                        <p class="stat-number" id="pendingCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Solved Cases</h3>
+                        <p class="stat-number" id="solvedCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Escalated to Sector</h3>
+                        <p class="stat-number" id="escalatedCases">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Member Registrations Section -->
+            <section id="registrations" class="dashboard-section">
+                <h2><i class="fa-solid fa-users"></i> Member Registrations in Your Cell</h2>
+                <p class="section-desc">All community members registered by village leaders in your cell.</p>
+
+                <div class="data-table-container">
+                    <div class="table-header">
+                        <h3>Registered Members</h3>
+                        <div class="table-actions">
+                            <input type="text" id="cellRegSearch" placeholder="Search by name..." class="search-input" oninput="filterCellRegistrations()">
+                            <select id="cellRegVillageFilter" class="filter-select" onchange="filterCellRegistrations()">
+                                <option value="">All Villages</option>
+                            </select>
+                            <select id="cellRegStatusFilter" class="filter-select" onchange="filterCellRegistrations()">
+                                <option value="">All Status</option>
+                                <option value="Current Member">Current Members</option>
+                                <option value="New Member">New Members</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid" style="margin-bottom:1rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Members</h4>
+                            <div class="stat-value" id="cellRegTotal">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Current Members</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="cellRegCurrent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-plus" style="color:#2980b9;"></i> New Members</h4>
+                            <div class="stat-value" style="color:#2980b9;" id="cellRegNew">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-venus-mars"></i> Male / Female</h4>
+                            <div class="stat-value" id="cellRegGender">—</div>
+                        </div>
+                    </div>
+
+                    <table id="cellRegistrationsTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Sex</th>
+                                <th>Age</th>
+                                <th>Telephone</th>
+                                <th>Sector</th>
+                                <th>Cell</th>
+                                <th>Village</th>
+                                <th>Status</th>
+                                <th>Date Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cellRegistrationsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Attendance Analytics Section -->
+            <section id="attendance" class="dashboard-section">
+                <h2><i class="fa-solid fa-chart-bar"></i> Attendance Analytics (Cell)</h2>
+
+                <div class="sub-analytics-tabs" style="margin-bottom:0;">
+                    <a class="sub-analytics-tab active" data-atab="cell-umuganda-analytics">
+                        <i class="fa-solid fa-people-group"></i> Umuganda
+                    </a>
+                    <a class="sub-analytics-tab" data-atab="cell-inteko-analytics">
+                        <i class="fa-solid fa-clipboard-check"></i> Inteko
+                    </a>
+                </div>
+
+                <!-- Umuganda panel -->
+                <div class="sub-tab-panel active" id="atab-cell-umuganda-analytics" style="padding-top:1.5rem;">
+                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Records</h4>
+                            <div class="stat-value" id="cuga-total">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="cuga-present">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
+                            <div class="stat-value" style="color:#e74c3c;" id="cuga-absent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-percent"></i> Rate</h4>
+                            <div class="stat-value" id="cuga-rate">0%</div>
+                        </div>
+                    </div>
+                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <label>Filter by date:</label>
+                        <input type="date" id="cuga-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <button class="btn btn-primary" onclick="loadCellUmugandaAnalytics()"><i class="fa-solid fa-filter"></i> Apply</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('cuga-dateFilter').value='';loadCellUmugandaAnalytics()"><i class="fa-solid fa-times"></i> Clear</button>
+                    </div>
+                    <div class="data-table-container" style="margin-bottom:1.5rem;">
+                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members</h4>
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
+                            <tbody id="cuga-present-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table-container">
+                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
+                            <tbody id="cuga-absent-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Inteko panel -->
+                <div class="sub-tab-panel" id="atab-cell-inteko-analytics" style="padding-top:1.5rem;">
+                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Records</h4>
+                            <div class="stat-value" id="cint-total">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="cint-present">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
+                            <div class="stat-value" style="color:#e74c3c;" id="cint-absent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-percent"></i> Rate</h4>
+                            <div class="stat-value" id="cint-rate">0%</div>
+                        </div>
+                    </div>
+                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <label>Filter by date:</label>
+                        <input type="date" id="cint-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <button class="btn btn-primary" onclick="loadCellIntekoAnalytics()"><i class="fa-solid fa-filter"></i> Apply</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('cint-dateFilter').value='';loadCellIntekoAnalytics()"><i class="fa-solid fa-times"></i> Clear</button>
+                    </div>
+                    <div class="data-table-container" style="margin-bottom:1.5rem;">
+                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members</h4>
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
+                            <tbody id="cint-present-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="data-table-container">
+                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
+                            <tbody id="cint-absent-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Infrastructure & Visitor Reports Section -->
+            <section id="infra-visitors" class="dashboard-section">
+                <h2><i class="fa-solid fa-road"></i> Infrastructure & Visitor Reports</h2>
+
+                <div class="home-updates-tabs">
+                    <button type="button" class="tab-btn active" data-tab="infra">Infrastructure Reports</button>
+                    <button type="button" class="tab-btn" data-tab="visitors">Visitor Reports</button>
+                    <button type="button" class="tab-btn" data-tab="insurance">Insurance Payments</button>
+                </div>
+
+                <!-- Infrastructure -->
+                <div id="tab-infra" class="home-update-form active" style="padding-top:1rem;">
+                    <div class="data-table-container">
+                        <h3><i class="fa-solid fa-road"></i> Damaged Infrastructure Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Place / Location</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Reported By</th>
+                                    <th>Date Reported</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cellInfraBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Visitors -->
+                <div id="tab-visitors" class="home-update-form" style="padding-top:1rem;">
+                    <div class="stats-grid" style="margin-bottom:1rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-users"></i> Total Visitors</h4>
+                            <div class="stat-value" id="cellVisitorTotal">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-calendar-day"></i> This Month</h4>
+                            <div class="stat-value" id="cellVisitorMonth">0</div>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <h3><i class="fa-solid fa-user-group"></i> Visitor / Guest Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Visitor Names</th>
+                                    <th>Count</th>
+                                    <th>From (Province/District)</th>
+                                    <th>Reason</th>
+                                    <th>Return Date</th>
+                                    <th>Host Location</th>
+                                    <th>Reported By</th>
+                                    <th>Date Reported</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cellVisitorBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Insurance -->
+                <div id="tab-insurance" class="home-update-form" style="padding-top:1rem;">
+                    <div class="stats-grid" style="margin-bottom:1rem;">
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-shield-halved"></i> Total Records</h4>
+                            <div class="stat-value" id="cellInsuranceTotal">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-check-circle" style="color:#27ae60;"></i> Paid</h4>
+                            <div class="stat-value" style="color:#27ae60;" id="cellInsurancePaid">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4><i class="fa-solid fa-times-circle" style="color:#e74c3c;"></i> Not Paid</h4>
+                            <div class="stat-value" style="color:#e74c3c;" id="cellInsuranceUnpaid">0</div>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <h3><i class="fa-solid fa-shield-halved"></i> Insurance Payment Records</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full Name</th>
+                                    <th>Telephone</th>
+                                    <th>Sector</th>
+                                    <th>Cell</th>
+                                    <th>Village</th>
+                                    <th>Status</th>
+                                    <th>Date Recorded</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cellInsuranceBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activities & Home Updates Section -->
+            <section id="homeupdates" class="dashboard-section">
+                <h2><i class="fa-solid fa-bullhorn"></i> Post to Home Page (Cell)</h2>
+                <p class="section-desc">Upload recent activities, upcoming sessions, and trending topics. These will appear on the home page.</p>
+                <div class="home-updates-tabs">
+                    <button type="button" class="tab-btn active" data-tab="activity">Recent Activity</button>
+                    <button type="button" class="tab-btn" data-tab="upcoming">Upcoming Session</button>
+                    <button type="button" class="tab-btn" data-tab="trending">Trending</button>
+                </div>
+                <div id="tab-activity" class="home-update-form active">
+                    <h3>Post Recent Activity</h3>
+                    <form id="cellActivityForm" class="form-container">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="cellActivityDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place / Venue</label>
+                                <input type="text" id="cellActivityPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="cellActivityDate" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload image (optional)</label>
+                            <input type="file" id="cellActivityImage" accept="image/*" capture="environment">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Activity</button>
+                    </form>
+                </div>
+                <div id="tab-upcoming" class="home-update-form">
+                    <h3>Post Upcoming Session</h3>
+                    <form id="cellUpcomingForm" class="form-container">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="cellUpcomingTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="cellUpcomingDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place / Venue</label>
+                                <input type="text" id="cellUpcomingPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="cellUpcomingDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Upcoming Session</button>
+                    </form>
+                </div>
+                <div id="tab-trending" class="home-update-form">
+                    <h3>Post Trending Topic</h3>
+                    <form id="cellTrendingForm" class="form-container">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="cellTrendingDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place</label>
+                                <input type="text" id="cellTrendingPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="cellTrendingDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Trending</button>
+                    </form>
+                </div>
+                <div class="data-table-container" style="margin-top: 1.5rem;">
+                    <h3>Your recent posts (Cell)</h3>
+                    <div id="cellHomeUpdatesList"></div>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <section id="chat" class="dashboard-section">
+                <h2><i class="fa-solid fa-comments"></i> Chat with Citizens, Village and Sector</h2>
+                <div class="form-container">
+                    <form id="cellChatForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cellChatRecipientRole">Send To</label>
+                                <select id="cellChatRecipientRole" required>
+                                    <option value="citizen">Citizens</option>
+                                    <option value="leader">Village Leader</option>
+                                    <option value="sector">Sector Leader</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cellChatMessage">Message</label>
+                            <textarea id="cellChatMessage" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+                <div class="data-table-container">
+                    <h3>Conversation</h3>
+                    <div id="cellChatMessages" class="chat-messages"></div>
+                </div>
+                <div class="data-table-container">
+                    <h3>Citizens who contacted you</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Citizen</th>
+                                <th>Telephone</th>
+                                <th>Last Message</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cellInboxBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/cell-dashboard.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+</html>
+
+

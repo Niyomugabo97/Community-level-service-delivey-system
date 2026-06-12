@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – Umuturage ku Isonga</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOGIN SECTION
+══════════════════════════════════════════════════════════ -->
+<div id="adminLoginSection" class="admin-login-wrapper">
+  <div class="login-box">
+    <div class="login-logo"><i class="fas fa-shield-alt"></i></div>
+    <h2 id="authTitle">Admin Portal</h2>
+    <p id="authSubtitle">Community Service Delivery System</p>
+
+    <!-- ── LOGIN FORM ── -->
+    <div id="loginView">
+      <form id="adminLoginForm" autocomplete="off">
+        <div class="form-group">
+          <label for="adminEmail">Email Address</label>
+          <input type="email" id="adminEmail" placeholder="admin@umuturage.rw" required>
+        </div>
+        <div class="form-group">
+          <label for="adminPassword">Password</label>
+          <div class="password-field">
+            <input type="password" id="adminPassword" placeholder="Enter password" required>
+            <button type="button" id="togglePassword"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="login-btn">
+          <span>Sign In</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </form>
+      <div id="loginError" class="login-error" style="display:none;"></div>
+      <p class="auth-switch">Don't have an account? <a href="#" onclick="showSignup()">Sign Up</a></p>
+      <a href="/home.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Site</a>
+    </div>
+
+    <!-- ── SIGNUP FORM ── -->
+    <div id="signupView" style="display:none;">
+      <form id="adminSignupForm" autocomplete="off">
+        <div class="form-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" placeholder="Enter your full name" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email Address</label>
+          <input type="email" id="signupEmail" placeholder="admin@umuturage.rw" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <div class="password-field">
+            <input type="password" id="signupPassword" placeholder="Create a password" required>
+            <button type="button" id="toggleSignupPassword"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="signupConfirm">Confirm Password</label>
+          <input type="password" id="signupConfirm" placeholder="Repeat your password" required>
+        </div>
+        <button type="submit" class="login-btn">
+          <span>Create Account</span>
+          <i class="fas fa-user-plus"></i>
+        </button>
+      </form>
+      <div id="signupError" class="login-error" style="display:none;"></div>
+      <p class="auth-switch">Already have an account? <a href="#" onclick="showLogin()">Sign In</a></p>
+      <a href="/home.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Site</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DASHBOARD SECTION
+══════════════════════════════════════════════════════════ -->
+<div id="adminDashboard" class="admin-dashboard" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <i class="fas fa-shield-alt"></i>
+        <span>Admin Panel</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="overview">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Overview</span>
+      </a>
+      <a href="#" class="nav-item" data-section="users">
+        <i class="fas fa-users"></i>
+        <span>User Management</span>
+      </a>
+      <a href="#" class="nav-item" data-section="reports">
+        <i class="fas fa-chart-bar"></i>
+        <span>System Reports</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="adminLogout" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <h1 id="pageTitle">Dashboard Overview</h1>
+      <div class="admin-user">
+        <div class="user-avatar"><i class="fas fa-user-shield"></i></div>
+        <div class="user-info">
+          <span id="adminName">Administrator</span>
+          <small>System Admin</small>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── OVERVIEW ── -->
+    <section id="overviewSection" class="content-section">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-info"><h3 id="totalUsers">—</h3><p>Total Users</p></div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="fas fa-user"></i></div>
+          <div class="stat-info"><h3 id="totalCitizens">—</h3><p>Citizens</p></div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+          <div class="stat-info"><h3 id="totalLeaders">—</h3><p>Village Leaders</p></div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon"><i class="fas fa-building"></i></div>
+          <div class="stat-info"><h3 id="totalCellLeaders">—</h3><p>Cell Leaders</p></div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-icon"><i class="fas fa-map-marked-alt"></i></div>
+          <div class="stat-info"><h3 id="totalSectorLeaders">—</h3><p>Sector Leaders</p></div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+          <div class="stat-info"><h3 id="totalReports">—</h3><p>Total Reports</p></div>
+        </div>
+      </div>
+
+      <div class="overview-bottom">
+        <div class="recent-card">
+          <h3><i class="fas fa-clock"></i> Recent Registrations</h3>
+          <div id="recentUsersList" class="recent-list">
+            <p class="loading-text">Loading…</p>
+          </div>
+        </div>
+        <div class="role-chart-card">
+          <h3><i class="fas fa-chart-pie"></i> User Distribution by Role</h3>
+          <div id="roleDistribution" class="role-distribution">
+            <p class="loading-text">Loading…</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── USER MANAGEMENT ── -->
+    <section id="usersSection" class="content-section" style="display:none;">
+      <div class="section-header">
+        <h2>User Management</h2>
+        <div class="section-actions">
+          <input type="text" id="userSearch" placeholder="Search by name, email or phone…" class="search-input">
+          <select id="roleFilter" class="filter-select">
+            <option value="">All Roles</option>
+            <option value="citizen">Citizen</option>
+            <option value="leader">Village Leader</option>
+            <option value="cell">Cell Leader</option>
+            <option value="sector">Sector Leader</option>
+            <option value="school">School</option>
+          </select>
+          <button class="btn-create-user" onclick="openCreateModal()">
+            <i class="fas fa-user-plus"></i> Create Account
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Location</th>
+              <th>Role</th>
+              <th>Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="8" class="loading-row">Loading users…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── SYSTEM REPORTS ── -->
+    <section id="reportsSection" class="content-section" style="display:none;">
+      <div class="section-header">
+        <h2>System Reports Overview</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="fas fa-user-edit"></i></div>
+          <div class="stat-info"><h3 id="citizenReportsCount">—</h3><p>Citizen Reports</p></div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="fas fa-file-signature"></i></div>
+          <div class="stat-info"><h3 id="leaderReportsCount">—</h3><p>Leader Reports</p></div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon"><i class="fas fa-id-card"></i></div>
+          <div class="stat-info"><h3 id="membersCount">—</h3><p>Registered Members</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ROLE CHANGE MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="roleModal" class="modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeRoleModal()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-cog"></i> Change User Role</h3>
+      <button class="modal-close" onclick="closeRoleModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p>Select a new role for <strong id="modalUserName"></strong>:</p>
+      <div class="role-options">
+        <label class="role-option">
+          <input type="radio" name="newRole" value="citizen">
+          <div class="role-card">
+            <i class="fas fa-user"></i>
+            <span>Citizen</span>
+            <small>Basic member</small>
+          </div>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="newRole" value="leader">
+          <div class="role-card">
+            <i class="fas fa-user-tie"></i>
+            <span>Village Leader</span>
+            <small>Village level</small>
+          </div>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="newRole" value="cell">
+          <div class="role-card">
+            <i class="fas fa-building"></i>
+            <span>Cell Leader</span>
+            <small>Cell level</small>
+          </div>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="newRole" value="sector">
+          <div class="role-card">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Sector Leader</span>
+            <small>Sector level</small>
+          </div>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="newRole" value="school">
+          <div class="role-card">
+            <i class="fas fa-school"></i>
+            <span>School</span>
+            <small>School admin</small>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeRoleModal()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmRoleChange()">Update Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DELETE CONFIRMATION MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="deleteModal" class="modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeDeleteModal()"></div>
+  <div class="modal-content modal-sm">
+    <div class="modal-header danger">
+      <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+      <button class="modal-close" onclick="closeDeleteModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong id="deleteUserName"></strong>?</p>
+      <p class="warning-text"><i class="fas fa-exclamation-circle"></i> This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-delete" onclick="confirmDelete()">Delete User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     CREATE ACCOUNT MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="createModal" class="modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeCreateModal()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-plus"></i> Create New Account</h3>
+      <button class="modal-close" onclick="closeCreateModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="createUserForm" autocomplete="off">
+        <div class="create-form-grid">
+          <div class="form-group">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" id="newUserName" placeholder="Enter full name" required>
+          </div>
+          <div class="form-group">
+            <label>Email Address <span class="required">*</span></label>
+            <input type="email" id="newUserEmail" placeholder="Enter email" required>
+          </div>
+          <div class="form-group">
+            <label>Password <span class="required">*</span></label>
+            <input type="password" id="newUserPassword" placeholder="Enter password" required>
+          </div>
+          <div class="form-group">
+            <label>Telephone</label>
+            <input type="text" id="newUserTelephone" placeholder="Enter phone number">
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="newUserType">
+              <option value="citizen">Citizen</option>
+              <option value="leader">Village Leader</option>
+              <option value="cell">Cell Leader</option>
+              <option value="sector">Sector Leader</option>
+              <option value="school">School</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sector</label>
+            <input type="text" id="newUserSector" placeholder="Sector name">
+          </div>
+          <div class="form-group">
+            <label>Cell</label>
+            <input type="text" id="newUserCell" placeholder="Cell name">
+          </div>
+          <div class="form-group">
+            <label>Village</label>
+            <input type="text" id="newUserVillage" placeholder="Village name">
+          </div>
+        </div>
+        <div id="createUserError" class="create-error" style="display:none;"></div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitCreateUser()">
+        <i class="fas fa-user-plus"></i> Create Account
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>
