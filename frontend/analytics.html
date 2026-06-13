@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Community Level Service Delivery Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Navigation Header -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="home.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="news.html"><i class="fa-solid fa-newspaper"></i> News</a></li>
+                    <li><a href="analytics.html" class="active"><i class="fa-solid fa-chart-line"></i> Analytics</a>
+                    </li>
+                    <li><a href="about.html"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
+                    <li><a href="contact.html"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
+                    <li class="auth-menu">
+                        <a href="auth.html"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                    </li>
+                    <li class="auth-menu">
+                        <a href="auth.html?tab=signup"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Page Hero -->
+        <section class="page-hero">
+            <div class="container">
+                <h1><i class="fa-solid fa-chart-line"></i> Analytics Dashboard</h1>
+                <p>Comprehensive insights into community services and performance metrics</p>
+            </div>
+        </section>
+
+        <!-- Attendance Analytics Section -->
+        <section class="statistics-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
+
+                <!-- Month / Year Filter -->
+                <div class="analytics-filter-bar">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <label for="monthSelector">Month:</label>
+                    <select id="monthSelector">
+                        <option value="0">-- All Months --</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <label for="yearSelector">Year:</label>
+                    <select id="yearSelector">
+                        <option value="0">-- All Years --</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                    <button id="applyMonthFilter" class="btn btn-primary">
+                        <i class="fa-solid fa-filter"></i> Apply Filter
+                    </button>
+                </div>
+
+                <p class="section-subtitle" id="attendanceMonthSubtitle">This is analytics of attendance of this month</p>
+
+                <!-- Analytics Navigation Tabs -->
+                <div class="analytics-tabs">
+                    <a href="#tab-umuganda" class="analytics-tab active" data-tab="umuganda">
+                        <i class="fa-solid fa-people-group"></i> Umuganda Analytics
+                    </a>
+                    <a href="#tab-inteko" class="analytics-tab" data-tab="inteko">
+                        <i class="fa-solid fa-clipboard-check"></i> Inteko Analytics
+                    </a>
+                    <a href="#tab-school" class="analytics-tab" data-tab="school">
+                        <i class="fa-solid fa-graduation-cap"></i> School Analytics
+                    </a>
+                </div>
+
+                <!-- Tab Panel: Umuganda Analytics -->
+                <div class="tab-panel active" id="tab-umuganda">
+
+                    <!-- Sub-navigation -->
+                    <div class="sub-analytics-tabs">
+                        <a class="sub-analytics-tab active" data-subtab="overview">
+                            <i class="fa-solid fa-chart-pie"></i> Overview
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="sector">
+                            <i class="fa-solid fa-map"></i> Sector Analytics
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="cell">
+                            <i class="fa-solid fa-layer-group"></i> Cell Analytics
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="village">
+                            <i class="fa-solid fa-tree-city"></i> Village Analytics
+                        </a>
+                    </div>
+
+                    <!-- Sub-panel: Overview -->
+                    <div class="sub-tab-panel active" id="subtab-overview">
+                        <div class="attendance-categories">
+                            <h4><i class="fa-solid fa-chart-pie"></i> Attendance Performance Breakdown</h4>
+                            <div class="category-grid">
+                                <div class="category-item excellent">
+                                    <div class="category-label">Excellent (80-100%)</div>
+                                    <div class="category-count" id="excellentCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="excellentBar"></div></div>
+                                </div>
+                                <div class="category-item good">
+                                    <div class="category-label">Good (50-79%)</div>
+                                    <div class="category-count" id="goodCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="goodBar"></div></div>
+                                </div>
+                                <div class="category-item poor">
+                                    <div class="category-label">Poor (1-49%)</div>
+                                    <div class="category-count" id="poorCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="poorBar"></div></div>
+                                </div>
+                                <div class="category-item none">
+                                    <div class="category-label">No Attendance (0%)</div>
+                                    <div class="category-count" id="noneCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="noneBar"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Sector Analytics -->
+                    <div class="sub-tab-panel" id="subtab-sector">
+                        <div class="sector-statistics">
+                            <h4><i class="fa-solid fa-map"></i> Sector Attendance Statistics</h4>
+                            <div class="sector-grid">
+                                <div class="sector-chart-container">
+                                    <canvas id="sectorChart" width="400" height="300"></canvas>
+                                </div>
+                                <div class="sector-details" id="sectorDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Cell Analytics -->
+                    <div class="sub-tab-panel" id="subtab-cell">
+                        <div class="cell-analytics-section">
+                            <h4><i class="fa-solid fa-layer-group"></i> Cell Performance Rankings</h4>
+                            <p class="section-note">All cells ranked by attendance performance</p>
+                            <div id="cellAnalyticsContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Village Analytics -->
+                    <div class="sub-tab-panel" id="subtab-village">
+                        <div class="village-breakdown-section">
+                            <h4><i class="fa-solid fa-tree-city"></i> Village Attendance by Sector</h4>
+                            <div class="village-chart-container">
+                                <canvas id="villageChart" width="400" height="300"></canvas>
+                            </div>
+                            <div id="villageBreakdownContainer"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Tab Panel: School Analytics -->
+                <div class="tab-panel" id="tab-school">
+                    <div class="school-analytics-section">
+                        <h4><i class="fa-solid fa-graduation-cap"></i> School Dropout Statistics</h4>
+                        <p class="section-note">Education metrics submitted by registered schools</p>
+
+                        <!-- Summary Cards -->
+                        <div class="statistics-grid">
+                            <div class="stat-card">
+                                <h3><i class="fa-solid fa-school"></i> Total Schools</h3>
+                                <p class="stat-number" id="homeTotalSchools">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3><i class="fa-solid fa-users"></i> Total Students</h3>
+                                <p class="stat-number" id="homeTotalStudents">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3><i class="fa-solid fa-user-graduate"></i> Total Dropouts</h3>
+                                <p class="stat-number" id="homeTotalDropouts">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3><i class="fa-solid fa-percent"></i> Avg Dropout Rate</h3>
+                                <p class="stat-number" id="homeAverageRate">0%</p>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row 1 -->
+                        <div class="school-charts-grid">
+                            <div class="school-chart-card">
+                                <h5><i class="fa-solid fa-chart-bar"></i> Dropout Count by School</h5>
+                                <div class="chart-canvas-wrapper">
+                                    <canvas id="schoolDropoutBarChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="school-chart-card">
+                                <h5><i class="fa-solid fa-chart-pie"></i> Gender Distribution of Dropouts</h5>
+                                <div class="chart-canvas-wrapper chart-canvas-wrapper--small">
+                                    <canvas id="schoolGenderChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row 2 -->
+                        <div class="school-charts-grid">
+                            <div class="school-chart-card">
+                                <h5><i class="fa-solid fa-chart-column"></i> Students vs Dropouts per School</h5>
+                                <div class="chart-canvas-wrapper">
+                                    <canvas id="schoolCompareChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="school-chart-card">
+                                <h5><i class="fa-solid fa-chart-line"></i> Monthly Dropout Trend (Histogram)</h5>
+                                <div class="chart-canvas-wrapper">
+                                    <canvas id="schoolMonthlyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart Row 3: Age Distribution -->
+                        <div class="school-charts-grid school-charts-grid--single">
+                            <div class="school-chart-card">
+                                <h5><i class="fa-solid fa-layer-group"></i> Dropout Rate by School (%)</h5>
+                                <div class="chart-canvas-wrapper">
+                                    <canvas id="schoolRateChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Per-School Breakdown -->
+                        <div class="school-list-section">
+                            <h5><i class="fa-solid fa-list"></i> Per-School Breakdown</h5>
+                            <div id="homeSchoolList" class="school-list"></div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <!-- Tab Panel: Inteko Analytics -->
+                <div class="tab-panel" id="tab-inteko">
+
+                    <!-- Sub-navigation (same structure as Umuganda) -->
+                    <div class="sub-analytics-tabs">
+                        <a class="sub-analytics-tab active" data-subtab="inteko-overview">
+                            <i class="fa-solid fa-chart-pie"></i> Overview
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="inteko-sector">
+                            <i class="fa-solid fa-map"></i> Sector Analytics
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="inteko-cell">
+                            <i class="fa-solid fa-layer-group"></i> Cell Analytics
+                        </a>
+                        <a class="sub-analytics-tab" data-subtab="inteko-village">
+                            <i class="fa-solid fa-tree-city"></i> Village Analytics
+                        </a>
+                    </div>
+
+                    <!-- Sub-panel: Overview -->
+                    <div class="sub-tab-panel active" id="subtab-inteko-overview">
+                        <div class="attendance-categories">
+                            <h4><i class="fa-solid fa-chart-pie"></i> Inteko Attendance Performance Breakdown</h4>
+                            <div class="category-grid">
+                                <div class="category-item excellent">
+                                    <div class="category-label">Excellent (80-100%)</div>
+                                    <div class="category-count" id="intekoExcellentCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="intekoExcellentBar"></div></div>
+                                </div>
+                                <div class="category-item good">
+                                    <div class="category-label">Good (50-79%)</div>
+                                    <div class="category-count" id="intekoGoodCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="intekoGoodBar"></div></div>
+                                </div>
+                                <div class="category-item poor">
+                                    <div class="category-label">Poor (1-49%)</div>
+                                    <div class="category-count" id="intekoPoorCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="intekoPoorBar"></div></div>
+                                </div>
+                                <div class="category-item none">
+                                    <div class="category-label">No Attendance (0%)</div>
+                                    <div class="category-count" id="intekoNoneCount">0</div>
+                                    <div class="category-bar"><div class="category-fill" id="intekoNoneBar"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Sector Analytics -->
+                    <div class="sub-tab-panel" id="subtab-inteko-sector">
+                        <div class="sector-statistics">
+                            <h4><i class="fa-solid fa-map"></i> Sector Attendance Statistics</h4>
+                            <div class="sector-grid">
+                                <div class="sector-chart-container">
+                                    <canvas id="intekoSectorChart" width="400" height="300"></canvas>
+                                </div>
+                                <div class="sector-details" id="intekoSectorDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Cell Analytics -->
+                    <div class="sub-tab-panel" id="subtab-inteko-cell">
+                        <div class="cell-analytics-section">
+                            <h4><i class="fa-solid fa-layer-group"></i> Cell Performance Rankings</h4>
+                            <p class="section-note">All cells ranked by Inteko attendance performance</p>
+                            <div id="intekoCellAnalyticsContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Village Analytics -->
+                    <div class="sub-tab-panel" id="subtab-inteko-village">
+                        <div class="village-breakdown-section">
+                            <h4><i class="fa-solid fa-tree-city"></i> Village Attendance by Sector</h4>
+                            <div class="village-chart-container">
+                                <canvas id="intekoVillageChart" width="400" height="300"></canvas>
+                            </div>
+                            <div id="intekoVillageBreakdownContainer"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Analytics Features Section -->
+        <section class="analytics-features">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-chart-pie"></i> Analytics Features</h2>
+                <p class="section-subtitle">Explore what our analytics platform offers</p>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <h3>Member Analytics</h3>
+                        <p>Track member registration, attendance patterns, and engagement metrics across your community.
+                        </p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <h3>Attendance Reports</h3>
+                        <p>Comprehensive attendance analytics for Umuganda meetings and community activities.</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-chart-area"></i>
+                        </div>
+                        <h3>Performance Metrics</h3>
+                        <p>Monitor service delivery performance and community engagement over time.</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-map-marked-alt"></i>
+                        </div>
+                        <h3>Location Insights</h3>
+                        <p>Analyze data by sectors, villages, and cells for targeted community development.</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-file-export"></i>
+                        </div>
+                        <h3>Data Export</h3>
+                        <p>Export analytics data in various formats for reporting and further analysis.</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <h3>Real-time Alerts</h3>
+                        <p>Receive notifications about important community metrics and attendance patterns.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Access Requirements Section -->
+        <section class="access-section">
+            <div class="container">
+                <h2 class="section-title"><i class="fa-solid fa-shield-halved"></i> Access & Permissions</h2>
+                <p class="section-subtitle">Different roles have access to different analytics</p>
+                <div class="access-content">
+                    <div class="access-grid">
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <h3>Community Leaders</h3>
+                            <p>Access detailed analytics for their respective areas and manage community services
+                                effectively.</p>
+                            <ul class="access-list">
+                                <li><i class="fa-solid fa-check"></i> Attendance tracking</li>
+                                <li><i class="fa-solid fa-check"></i> Performance reports</li>
+                                <li><i class="fa-solid fa-check"></i> Member management</li>
+                                <li><i class="fa-solid fa-check"></i> Activity monitoring</li>
+                            </ul>
+                            <a href="auth.html" class="btn btn-primary">Leader Login</a>
+                        </div>
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <h3>Citizens</h3>
+                            <p>View public analytics and community statistics to stay informed about local developments.
+                            </p>
+                            <ul class="access-list">
+                                <li><i class="fa-solid fa-check"></i> Public statistics</li>
+                                <li><i class="fa-solid fa-check"></i> Community updates</li>
+                                <li><i class="fa-solid fa-check"></i> Event information</li>
+                                <li><i class="fa-solid fa-check"></i> Issue reporting</li>
+                            </ul>
+                            <a href="auth.html" class="btn btn-secondary">Citizen Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h3>
+                    <p>Your trusted platform for local service delivery and community reporting.</p>
+                    <div class="social-links">
+                        <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="home.html">Home</a></li>
+                        <li><a href="analytics.html">Analytics</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="#">Report Issue</a></li>
+                        <li><a href="#">View Updates</a></li>
+                        <li><a href="#">Community Events</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Community Level Service Delivery Platform. All rights reserved.</p>
+                <p>Designed with <i class="fas fa-heart"></i> for your community</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/analytics.js"></script>
+</body>
+
+</html>

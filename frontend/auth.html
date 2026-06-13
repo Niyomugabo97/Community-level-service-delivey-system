@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up - Community Level Service Delivery Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body class="auth-page">
+    <!-- Navigation Header -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="home.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="news.html"><i class="fa-solid fa-newspaper"></i> News</a></li>
+                    <li><a href="analytics.html"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+                    <li><a href="about.html"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
+                    <li><a href="contact.html"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
+                    <li class="auth-menu">
+                        <a href="auth.html" class="active"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                    </li>
+                    <li class="auth-menu">
+                        <a href="auth.html?tab=signup"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="auth-main">
+        <div class="auth-container">
+            <div class="auth-box">
+                <!-- Auth Header -->
+                <div class="auth-header">
+                    <h1><i class="fa-solid fa-shield-halved"></i> Welcome</h1>
+                    <p>Access your community service account</p>
+                </div>
+
+                <!-- Auth Tabs -->
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login
+                    </button>
+                    <button class="tab-btn" data-tab="signup">
+                        <i class="fa-solid fa-user-plus"></i> Sign Up
+                    </button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="loginForm" class="auth-form active">
+                    <form id="loginFormElement">
+                        <h2><i class="fa-solid fa-key"></i> Login to Your Account</h2>
+
+                        <div class="form-group">
+                            <label for="loginEmail">
+                                <i class="fa-solid fa-envelope"></i> Email
+                            </label>
+                            <input 
+                                type="email" 
+                                id="loginEmail" 
+                                name="email"
+                                required 
+                                placeholder="Enter your email"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="loginPassword">
+                                <i class="fa-solid fa-lock"></i> Password
+                            </label>
+                            <input 
+                                type="password" 
+                                id="loginPassword" 
+                                name="password"
+                                required 
+                                placeholder="Enter your password"
+                            >
+                        </div>
+
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-sign-in-alt"></i> Login
+                        </button>
+
+                        <div class="form-divider">
+                            <span>or</span>
+                        </div>
+
+                        <div class="auth-footer-text">
+                            <p>Don't have an account? <button type="button" class="tab-switch" data-tab="signup">Sign up here</button></p>
+                            <p><a href="#">Forgot your password?</a></p>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sign Up Form -->
+                <div id="signupForm" class="auth-form">
+                    <form id="signupFormElement">
+                        <h2><i class="fa-solid fa-user-plus"></i> Create New Account</h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupName">
+                                    <i class="fa-solid fa-user"></i> Full Name
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupName" 
+                                    name="fullName"
+                                    required 
+                                    placeholder="Your full name"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupEmail">
+                                    <i class="fa-solid fa-envelope"></i> Email
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="signupEmail" 
+                                    name="email"
+                                    required 
+                                    placeholder="Your email address"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupPhone">
+                                    <i class="fa-solid fa-phone"></i> Phone Number
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    id="signupPhone" 
+                                    name="phone"
+                                    required 
+                                    placeholder="+250 (0) XXX XXX XXX"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupUserType">
+                                    <i class="fa-solid fa-user-tie"></i> Account Type
+                                </label>
+                                <select id="signupUserType" name="userType" required>
+                                    <option value="">-- Select Your Role --</option>
+                                    <option value="leader">Village Leader</option>
+                                    <option value="cell">Cell Leader</option>
+                                    <option value="sector">Sector Leader</option>
+                                    <option value="school">School Leader</option>
+                                    <option value="citizen">Citizen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Leader-specific fields -->
+                        <div id="leaderFields" class="leader-specific-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="signupVillage">
+                                    <i class="fa-solid fa-map-pin"></i> Village
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupVillage" 
+                                    name="village"
+                                    placeholder="Enter your village"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupCell">
+                                    <i class="fa-solid fa-map-location-dot"></i> Cell
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupCell" 
+                                    name="cell"
+                                    placeholder="Enter your cell"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupSector">
+                                    <i class="fa-solid fa-building"></i> Sector
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupSector" 
+                                    name="sector"
+                                    placeholder="Enter your sector"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Cell-specific fields -->
+                        <div id="cellFields" class="cell-specific-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="signupCellCell">
+                                    <i class="fa-solid fa-map-location-dot"></i> Cell
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupCellCell" 
+                                    name="cellName"
+                                    placeholder="Enter your cell"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupCellSector">
+                                    <i class="fa-solid fa-building"></i> Sector
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupCellSector" 
+                                    name="sectorName"
+                                    placeholder="Enter your sector"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Sector-specific fields -->
+                        <div id="sectorFields" class="sector-specific-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="signupSectorSector">
+                                    <i class="fa-solid fa-building"></i> Sector
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupSectorSector" 
+                                    name="sectorFullName"
+                                    placeholder="Enter your sector"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="signupPassword">
+                                    <i class="fa-solid fa-lock"></i> Password
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="signupPassword" 
+                                    name="password"
+                                    required 
+                                    placeholder="Create a strong password"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="signupConfirmPassword">
+                                    <i class="fa-solid fa-lock"></i> Confirm Password
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="signupConfirmPassword" 
+                                    name="confirmPassword"
+                                    required 
+                                    placeholder="Confirm your password"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                            <label for="agreeTerms">
+                                I agree to the <a href="#">terms of service</a> and <a href="#">privacy policy</a>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-user-plus"></i> Sign Up
+                        </button>
+
+                        <div class="form-divider">
+                            <span>or</span>
+                        </div>
+
+                        <div class="auth-footer-text">
+                            <p>Already have an account? <button type="button" class="tab-switch" data-tab="login">Login here</button></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Auth Info Side Panel -->
+            <div class="auth-info">
+                <div class="info-content">
+                    <h3><i class="fa-solid fa-star"></i> Why Join Us?</h3>
+                    <ul class="benefits-list">
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Connect with your community leaders</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Report issues and get instant updates</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Track community activities and events</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Access analytics and insights</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Secure and private communication</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>Make a real difference in your community</span>
+                        </li>
+                    </ul>
+
+                    <div class="trust-badges">
+                        <div class="badge">
+                            <i class="fa-solid fa-shield"></i>
+                            <span>Secure</span>
+                        </div>
+                        <div class="badge">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Community</span>
+                        </div>
+                        <div class="badge">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Verified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fa-solid fa-house-chimney-heart"></i> Community Services</h3>
+                    <p>Your trusted platform for local service delivery and community reporting.</p>
+                    <div class="social-links">
+                        <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="home.html">Home</a></li>
+                        <li><a href="analytics.html">Analytics</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="#">Report Issue</a></li>
+                        <li><a href="#">View Updates</a></li>
+                        <li><a href="#">Community Events</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Community Level Service Delivery Platform. All rights reserved.</p>
+                <p>Designed with <i class="fas fa-heart"></i> for your community</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
