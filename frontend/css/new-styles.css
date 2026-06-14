@@ -5142,12 +5142,20 @@ section {
     background: #eef5fb !important;
 }
 
-/* Notification Bell Styles */
+/* Notification Bell Styles — reset the dashboard card style when inside navbar */
 .notification-item {
     position: relative;
     margin-left: auto;
 }
+.nav-menu .notification-item {
+    padding: 0;
+    margin-bottom: 0;
+    background: transparent;
+    border-left: none;
+    border-radius: 0;
+}
 
+/* ── Notification bell wrapper ── */
 .notification-link {
     position: relative;
     display: flex;
@@ -5157,129 +5165,181 @@ section {
     border-radius: 6px;
     transition: background-color 0.3s ease;
 }
-
-.notification-link:hover {
-    background-color: rgba(52, 152, 219, 0.1);
-}
+.notification-link:hover { background-color: rgba(52,152,219,0.1); }
 
 .notification-badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #e74c3c;
-    color: white;
+    top: -5px; right: -5px;
+    background: #e74c3c;
+    color: #fff;
     border-radius: 50%;
     padding: 2px 6px;
-    font-size: 11px;
-    font-weight: bold;
-    min-width: 20px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 11px; font-weight: 700;
+    min-width: 20px; text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
+/* ── Dropdown panel ── */
 .notification-dropdown {
     position: absolute;
-    top: 100%;
-    right: 0;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    width: 350px;
-    max-height: 400px;
-    overflow-y: auto;
+    top: calc(100% + 10px);
+    right: -10px;
+    width: 360px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
     display: none;
-    z-index: 1000;
-    margin-top: 8px;
+    z-index: 1200;
+    overflow: hidden;
+    /* Reset the navbar's inherited white color for ALL children */
+    color: #1e293b;
 }
-
-.notification-dropdown.active {
-    display: block;
+.notification-dropdown * {
+    color: inherit;
 }
+.notification-dropdown.active { display: block; }
 
+/* ── Header ── */
 .notification-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    background-color: #f8f9fa;
-    border-radius: 8px 8px 0 0;
+    padding: 14px 18px;
+    background: #1a3a5c;
+    border-bottom: none;
+    border-radius: 0;
+    color: #ffffff;   /* white text for the dark header */
 }
-
 .notification-header h3 {
     margin: 0;
-    font-size: 16px;
-    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
+.notification-header h3 i { color: #4ade80; }
 
-.clear-btn {
-    background: none;
-    border: none;
-    color: #3498db;
-    cursor: pointer;
+.notif-view-all {
     font-size: 12px;
-    text-decoration: underline;
-    padding: 0;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.notif-view-all:hover {
+    background: rgba(255,255,255,0.35);
+    color: #ffffff;
 }
 
-.clear-btn:hover {
-    color: #2980b9;
-}
-
+/* ── Scrollable list ── */
 .notification-list {
-    padding: 8px 0;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 4px 0;
+    background: #ffffff;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
 }
+.notification-list::-webkit-scrollbar { width: 4px; }
+.notification-list::-webkit-scrollbar-track { background: transparent; }
+.notification-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
+/* ── Individual announcement card ── */
 .notification-item-content {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    padding: 13px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #ffffff;
+    cursor: default;
+    transition: background 0.15s;
 }
-
-.notification-item-content:last-child {
-    border-bottom: none;
-}
-
-.notification-item-content:hover {
-    background-color: #f8f9fa;
-}
+.notification-item-content:last-child { border-bottom: none; }
+.notification-item-content:hover { background: #f8fafc; }
 
 .notification-item-content.unread {
-    background-color: #eff6ff;
+    background: #f0f7ff;
+    border-left: 3px solid #1a3a5c;
+    padding-left: 15px;
+}
+.notification-item-content.urgent {
+    background: #fff5f5;
+    border-left: 3px solid #dc2626;
+    padding-left: 15px;
+}
+
+.notif-urgent-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef2f2;
+    color: #dc2626 !important;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
 .notification-title {
-    font-weight: 600;
-    color: #333;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
     margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 .notification-description {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 4px;
-    line-height: 1.4;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.5;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .notification-time {
     font-size: 11px;
-    color: #999;
+    color: #94a3b8;
 }
 
+/* ── Empty / loading state ── */
 .no-notifications {
-    padding: 20px 12px;
+    padding: 28px 16px;
     text-align: center;
-    color: #999;
-    font-size: 14px;
+    color: #64748b;
+    font-size: 13px;
 }
+
+.clear-btn {
+    background: none; border: none;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer; font-size: 11px;
+    padding: 0;
+}
+.clear-btn:hover { color: #fff; }
 
 @media (max-width: 768px) {
     .notification-dropdown {
-        width: 300px;
-        right: -50px;
+        width: 320px;
+        right: -60px;
     }
+    .notification-dropdown::before { right: 70px; }
+}
+@media (max-width: 480px) {
+    .notification-dropdown {
+        width: calc(100vw - 24px);
+        right: -80px;
+    }
+    .notification-dropdown::before { display: none; }
 }
 
 /* User Profile Icon Styles */
@@ -5392,45 +5452,6 @@ section {
 }
 
 /* Bell Login/Signup Button Styles */
-.bell-login-btn {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 8px;
-    color: var(--white) !important;
-    font-weight: 600 !important;
-    transition: opacity 0.3s ease !important;
-}
-
-.bell-login-btn:hover {
-    opacity: 0.8 !important;
-}
-
-.bell-login-btn i {
-    font-size: 18px !important;
-    animation: bellRing 0.5s ease-in-out infinite;
-}
-
-@keyframes bellRing {
-    0%, 100% {
-        transform: rotate(0deg);
-    }
-    25% {
-        transform: rotate(15deg);
-    }
-    75% {
-        transform: rotate(-15deg);
-    }
-}
-
-.bell-login-btn:hover i {
-    animation: bellRing 0.5s ease-in-out 2;
-}
-
-@media (max-width: 768px) {
-    .bell-login-btn i {
-        font-size: 16px !important;
-    }
-}
 
 /* ============================================================
    LEADER PROFILE — Dashboard Editor & About Us Cards
@@ -5640,4 +5661,237 @@ section {
     .profile-editor-layout { grid-template-columns: 1fr; }
     .profile-photo-card { flex-direction: row; align-items: center; justify-content: flex-start; }
     .leaders-grid { grid-template-columns: 1fr; }
+}
+
+/* ================================================================
+   RESPONSIVE IMPROVEMENTS v2
+   ================================================================ */
+
+/* --- Hamburger nav at 768px (many nav items overflow on tablets) --- */
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .navbar .container {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .logo {
+        min-width: 0;
+        max-width: calc(100% - 44px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: clamp(0.88rem, 3vw, 1.3rem);
+    }
+
+    .nav-menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100vw;
+        max-width: 100vw;
+        background-color: var(--primary-color);
+        padding: 0.5rem 0.75rem;
+        gap: 0.25rem;
+        margin: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        box-sizing: border-box;
+        z-index: 999;
+    }
+
+    .nav-menu.open {
+        display: flex;
+    }
+
+    .nav-menu li {
+        width: 100%;
+        margin: 0;
+        white-space: normal;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 0.65rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* --- Bottom sidebar becomes horizontal scroll strip on mobile --- */
+    .dashboard-sidebar.bottom {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding: 0;
+        overflow-y: visible;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu {
+        flex-direction: row;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding: 0.5rem 0.75rem;
+        gap: 0;
+        align-items: stretch;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu li {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu a {
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-radius: 6px;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu a.active {
+        background-color: rgba(255,255,255,0.15);
+        box-shadow: inset 0 -3px 0 rgba(255,255,255,0.6);
+    }
+
+    body.with-bottom-sidebar .dashboard-content {
+        margin-left: 0;
+    }
+
+    /* --- Tighter dashboard headings --- */
+    .dashboard-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
+
+    /* --- Analytics tabs become horizontal scroll on narrow screens --- */
+    .analytics-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 3px;
+    }
+
+    .analytics-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sub-analytics-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    /* --- Section header stacks on mobile --- */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .section-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* --- Contact grid --- */
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    /* --- About section --- */
+    .about-mission {
+        padding: 24px 16px;
+    }
+    .about-mission p {
+        font-size: 1rem;
+    }
+
+    /* --- Auth layout: hide info panel on mobile --- */
+    .auth-two-col {
+        grid-template-columns: 1fr;
+    }
+    .auth-info-side {
+        display: none;
+    }
+}
+
+/* --- Mobile: fine-tune button and action bar behaviour --- */
+@media (max-width: 480px) {
+    /* Buttons inside action toolbars stay auto-width */
+    .section-actions .btn,
+    .btn-group .btn,
+    .filter-bar .btn {
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    /* Tighter dashboard heading on phones */
+    .dashboard-section h2 {
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Report-actions bar stacks vertically */
+    .report-actions-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .report-actions-bar .btn {
+        width: 100%;
+    }
+
+    /* Statistics grid two columns minimum */
+    .statistics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Stat card tighter */
+    .stat-card {
+        padding: clamp(0.75rem, 3vw, 1rem);
+    }
+}
+
+/* --- Tablet (769px–1024px): narrow bottom sidebar proportionally --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .dashboard-sidebar.bottom {
+        width: 210px;
+    }
+    body.with-bottom-sidebar .dashboard-content {
+        margin-left: 210px;
+    }
+    .dashboard-sidebar.bottom .dashboard-menu a {
+        padding: 0.7rem 0.875rem;
+        font-size: 0.88rem;
+    }
+
+    /* Regular sidebar a bit narrower on tablet */
+    .dashboard-sidebar {
+        width: 210px;
+    }
+    .dashboard-menu a {
+        font-size: 0.875rem;
+        padding: 0.8rem 1.1rem;
+    }
 }

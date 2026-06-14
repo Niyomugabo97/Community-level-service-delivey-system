@@ -257,7 +257,6 @@
                 <ul class="nav-menu">
                     <li><a href="home.html" class="active"><i class="fa-solid fa-house"></i> Home</a></li>
                     <li><a href="news.html"><i class="fa-solid fa-newspaper"></i> News</a></li>
-                    <li><a href="analytics.html"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
                     <li><a href="about.html"><i class="fa-solid fa-info-circle"></i> About Us</a></li>
                     <li><a href="contact.html"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
                     <li class="auth-menu">
@@ -266,8 +265,20 @@
                     <li class="auth-menu">
                         <a href="auth.html?tab=signup"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
                     </li>
-                    <li>
-                        <a href="#" id="notificationBell" class="bell-login-btn"><i class="fa-solid fa-bell"></i> Announcements</a>
+                    <li class="notification-item" style="position:relative;">
+                        <a href="#" id="notificationBell" style="position:relative;">
+                          <i class="fa-solid fa-bell"></i> Announcements
+                          <span id="notificationBadge" class="notification-badge" style="display:none;"></span>
+                        </a>
+                        <div id="notificationDropdown" class="notification-dropdown">
+                          <div class="notification-header">
+                            <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
+                            <a href="announcements.html" class="notif-view-all">View all →</a>
+                          </div>
+                          <div id="notificationList" class="notification-list">
+                            <p class="no-notifications">Loading…</p>
+                          </div>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -445,7 +456,6 @@
                 <div class="cta-buttons">
                     <a href="auth.html?tab=signup" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Sign Up Now</a>
                     <a href="news.html" class="btn btn-secondary"><i class="fa-solid fa-newspaper"></i> Read the News</a>
-                    <a href="analytics.html" class="btn btn-secondary"><i class="fa-solid fa-chart-line"></i> View Analytics</a>
                 </div>
             </div>
         </section>
@@ -470,7 +480,6 @@
                     <ul>
                         <li><a href="home.html">Home</a></li>
                         <li><a href="news.html">News</a></li>
-                        <li><a href="analytics.html">Analytics</a></li>
                         <li><a href="about.html">About Us</a></li>
                         <li><a href="contact.html">Contact</a></li>
                     </ul>

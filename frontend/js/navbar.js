@@ -138,43 +138,32 @@ async function loadAnnouncements() {
 
     if (!notificationList) return;
 
-    // Try to fetch from backend
-    const response = await fetch('/api/home-updates?type=announcement', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const response = await fetch('/api/announcements');
+    if (!response.ok) throw new Error('fetch failed');
+    const announcements = await response.json();
 
-    let announcements = [];
-    
-    if (response.ok) {
-      const data = await response.json();
-      announcements = Array.isArray(data) ? data : [];
-    } else {
-      // Fallback to localStorage
-      announcements = JSON.parse(localStorage.getItem('announcements')) || [];
+    if (!announcements.length) {
+      notificationList.innerHTML = '<p class="no-notifications">No announcements yet</p>';
+      if (notificationBadge) notificationBadge.style.display = 'none';
+      return;
     }
 
-    if (announcements.length === 0) {
-      notificationList.innerHTML = '<p class="no-notifications">No new announcements</p>';
-      notificationBadge.style.display = 'none';
-    } else {
-      // Sort by date (newest first)
-      announcements.sort((a, b) => new Date(b.datePosted || b.createdAt) - new Date(a.datePosted || a.createdAt));
+    notificationList.innerHTML = announcements.slice(0, 10).map((ann, idx) => `
+      <div class="notification-item-content ${ann.priority === 'urgent' ? 'urgent' : ''} ${idx === 0 ? 'unread' : ''}">
+        ${ann.priority === 'urgent' ? '<span class="notif-urgent-tag"><i class="fas fa-exclamation-circle"></i> Urgent</span>' : ''}
+        <div class="notification-title">${escapeHtml(ann.title)}</div>
+        <div class="notification-description">${escapeHtml(ann.message)}</div>
+        <div class="notification-time">${formatNotificationTime(ann.createdAt)}</div>
+      </div>
+    `).join('');
 
-      notificationList.innerHTML = announcements.slice(0, 10).map((ann, idx) => `
-        <div class="notification-item-content ${idx === 0 ? 'unread' : ''}">
-          <div class="notification-title">${escapeHtml(ann.title || 'Announcement')}</div>
-          <div class="notification-description">${escapeHtml(ann.description || ann.content || 'New announcement from leaders')}</div>
-          <div class="notification-time">${formatNotificationTime(ann.datePosted || ann.createdAt)}</div>
-        </div>
-      `).join('');
-
-      // Update badge
+    if (notificationBadge) {
       notificationBadge.textContent = Math.min(announcements.length, 99);
-      notificationBadge.style.display = announcements.length > 0 ? 'inline-block' : 'none';
+      notificationBadge.style.display = 'inline-block';
     }
   } catch (err) {
-    console.warn('Failed to load announcements:', err);
+    const notificationList = document.getElementById('notificationList');
+    if (notificationList) notificationList.innerHTML = '<p class="no-notifications">Could not load announcements</p>';
   }
 }
 
