@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcements </title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/new-styles.css">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; margin: 0; }
+
+    .page-header {
+      background: linear-gradient(135deg, #1a3a5c 0%, #2d6a4f 100%);
+      color: #fff; padding: 32px 24px; text-align: center;
+    }
+    .page-header h1 { margin: 0 0 6px; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .page-header p  { margin: 0; opacity: 0.85; font-size: 0.95rem; }
+
+    .page-content { max-width: 780px; margin: 32px auto; padding: 0 16px; }
+
+    .filter-bar {
+      display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 8px 18px; border-radius: 20px; border: 2px solid #1a3a5c;
+      background: #fff; color: #1a3a5c; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover { background: #1a3a5c; color: #fff; }
+    .filter-btn.urgent-filter { border-color: #716868; color: #dc2626; }
+    .filter-btn.urgent-filter.active, .filter-btn.urgent-filter:hover { background: #dc2626; color: #fff; }
+
+    .ann-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .ann-card {
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 20px 22px; border-left: 5px solid #1a3a5c;
+      animation: fadeIn 0.3s ease;
+    }
+    .ann-card.urgent { border-left-color: #dc2626; background: linear-gradient(135deg, #fff 90%, #fff5f5 100%); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+    .ann-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .ann-card-title  { font-size: 1.05rem; font-weight: 700; color: #1a3a5c; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .ann-card-title .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+    }
+    .badge.urgent { background: #fef2f2; color: #dc2626; }
+    .badge.normal { background: #eff6ff; color: #1d4ed8; }
+
+    .ann-card-date { font-size: 0.8rem; color: #888; white-space: nowrap; }
+    .ann-card-body { font-size: 0.92rem; color: #444; line-height: 1.7; margin: 0; white-space: pre-line; }
+
+    .state-box {
+      text-align: center; padding: 60px 20px; color: #888;
+      background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .state-box i { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; display: block; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #fff; text-decoration: none; font-size: 0.875rem;
+      margin-bottom: 16px; opacity: 0.85; transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  <h1><i class="fas fa-bullhorn"></i> Community Announcements</h1>
+  <p>Official announcements from the community administration</p>
+</div>
+
+<div class="page-content">
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn urgent-filter" onclick="setFilter('urgent', this)"><i class="fas fa-exclamation-circle"></i> Urgent</button>
+    <button class="filter-btn" onclick="setFilter('normal', this)">Normal</button>
+  </div>
+
+  <div id="annList" class="ann-list">
+    <div class="state-box"><i class="fas fa-spinner fa-spin"></i><p>Loading announcements…</p></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/announcements';
+let allAnn = [];
+let currentFilter = 'all';
+
+async function loadAnnouncements() {
+  try {
+    const res = await fetch(API);
+    allAnn = await res.json();
+    renderList();
+  } catch (e) {
+    document.getElementById('annList').innerHTML =
+      '<div class="state-box"><i class="fas fa-exclamation-circle"></i><p>Failed to load announcements. Please try again later.</p></div>';
+  }
+}
+
+function renderList() {
+  const listEl = document.getElementById('annList');
+  const filtered = currentFilter === 'all' ? allAnn : allAnn.filter(a => a.priority === currentFilter);
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<div class="state-box"><i class="fas fa-bullhorn"></i><p>No announcements found.</p></div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(a => `
+    <div class="ann-card ${a.priority === 'urgent' ? 'urgent' : ''}">
+      <div class="ann-card-header">
+        <h2 class="ann-card-title">
+          ${a.priority === 'urgent'
+            ? '<span class="badge urgent"><i class="fas fa-exclamation-circle"></i> Urgent</span>'
+            : '<span class="badge normal"><i class="fas fa-info-circle"></i> Normal</span>'}
+          ${esc(a.title)}
+        </h2>
+        <span class="ann-card-date">
+          <i class="fas fa-calendar-alt"></i>
+          ${new Date(a.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </span>
+      </div>
+      <p class="ann-card-body">${esc(a.message)}</p>
+    </div>`).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(str || '')));
+  return d.innerHTML;
+}
+
+loadAnnouncements();
+</script>
+</body>
+</html>

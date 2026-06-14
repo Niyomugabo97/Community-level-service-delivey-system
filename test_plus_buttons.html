@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plus Button Test</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/new-styles.css">
+<style>
+body { background: #f0f4f8; padding: 20px; font-family: Arial, sans-serif; }
+</style>
+</head>
+<body>
+<div class="leader-location-selection">
+    <h3>Select Your Location</h3>
+    <div class="location-selector">
+        <div class="form-group">
+            <label>Select Sector *</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="leaderSector" style="flex: 1;">
+                    <option value="">-- Select your sector --</option>
+                    <option value="Ruhuha">Ruhuha</option>
+                    <option value="Nyarugenge">Nyarugenge</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-secondary" title="Add new sector">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Select Cell *</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="leaderCell" style="flex: 1;" disabled>
+                    <option value="">Select your cell</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-secondary" title="Add new cell">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Select Village *</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="leaderVillage" style="flex: 1;" disabled>
+                    <option value="">Select your village</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-secondary" title="Add new village">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-group">
+            <button class="btn btn-primary">
+                <i class="fa-solid fa-check"></i> Confirm Location
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
