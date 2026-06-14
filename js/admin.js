@@ -155,15 +155,26 @@ function switchSection(section) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
-  const titles = { overview: 'Dashboard Overview', users: 'User Management', reports: 'System Reports' };
+  const titles = { overview: 'Dashboard Overview', users: 'User Management', reports: 'System Reports', analytics: 'Analytics Dashboard', announcements: 'Announcements' };
   document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
 
-  document.getElementById('overviewSection').style.display = section === 'overview' ? 'block' : 'none';
-  document.getElementById('usersSection').style.display    = section === 'users'    ? 'block' : 'none';
-  document.getElementById('reportsSection').style.display  = section === 'reports'  ? 'block' : 'none';
+  document.getElementById('overviewSection').style.display       = section === 'overview'      ? 'block' : 'none';
+  document.getElementById('usersSection').style.display          = section === 'users'         ? 'block' : 'none';
+  document.getElementById('reportsSection').style.display        = section === 'reports'       ? 'block' : 'none';
+  document.getElementById('analyticsSection').style.display      = section === 'analytics'     ? 'block' : 'none';
+  document.getElementById('announcementsSection').style.display  = section === 'announcements' ? 'block' : 'none';
 
-  if (section === 'users')   loadUsers();
-  if (section === 'reports') loadStats();
+  if (section === 'users')         loadUsers();
+  if (section === 'reports')       loadStats();
+  if (section === 'analytics')     initAnalytics();
+  if (section === 'announcements') loadAnnouncements();
+}
+
+let _analyticsInstance = null;
+function initAnalytics() {
+  if (!_analyticsInstance && typeof AnalyticsPage !== 'undefined') {
+    _analyticsInstance = new AnalyticsPage();
+  }
 }
 
 // ─── STATS ────────────────────────────────────────────────
@@ -449,3 +460,109 @@ function showToast(msg, type = 'info') {
   c.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(110%)'; setTimeout(() => t.remove(), 320); }, 3200);
 }
+
+// ─── ANNOUNCEMENTS ────────────────────────────────────────
+const ANN_API = '/api/announcements';
+
+async function loadAnnouncements() {
+  const listEl = document.getElementById('annList');
+  listEl.innerHTML = '<div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const res  = await fetch(ANN_API);
+    const data = await res.json();
+    if (!data.length) {
+      listEl.innerHTML = '<div class="ann-empty"><i class="fas fa-bullhorn"></i><p>No announcements yet.</p></div>';
+      return;
+    }
+    listEl.innerHTML = data.map(a => `
+      <div class="ann-item ${a.priority === 'urgent' ? 'ann-urgent' : ''}">
+        <div class="ann-item-header">
+          <div class="ann-item-meta">
+            ${a.priority === 'urgent' ? '<span class="ann-badge urgent"><i class="fas fa-exclamation-circle"></i> Urgent</span>' : '<span class="ann-badge normal"><i class="fas fa-info-circle"></i> Normal</span>'}
+            <span class="ann-item-title">${esc(a.title)}</span>
+          </div>
+          <div class="ann-item-actions">
+            <span class="ann-item-date">${new Date(a.createdAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+            <button class="ann-delete-btn" onclick="deleteAnnouncement('${a._id}')" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <p class="ann-item-body">${esc(a.message)}</p>
+      </div>`).join('');
+  } catch (err) {
+    listEl.innerHTML = `<div class="ann-empty" style="color:#dc2626"><i class="fas fa-exclamation-circle"></i><p>${err.message}</p></div>`;
+  }
+}
+
+async function sendAnnouncement() {
+  const title    = document.getElementById('annTitle').value.trim();
+  const message  = document.getElementById('annMessage').value.trim();
+  const priority = document.getElementById('annPriority').value;
+  const msgEl    = document.getElementById('annFormMsg');
+  const token    = localStorage.getItem('adminToken');
+
+  msgEl.style.display = 'none';
+
+  if (!title || !message) {
+    msgEl.textContent = 'Please enter both a title and a message.';
+    msgEl.className = 'ann-msg ann-msg-error';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.querySelector('.ann-send-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+  try {
+    const res  = await fetch(ANN_API, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ title, message, priority })
+    });
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data.error || 'Failed to send');
+
+    document.getElementById('annTitle').value   = '';
+    document.getElementById('annMessage').value = '';
+    document.getElementById('annCharCount').textContent = '0 / 1000';
+    msgEl.textContent = 'Announcement sent successfully!';
+    msgEl.className = 'ann-msg ann-msg-success';
+    msgEl.style.display = 'block';
+    setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+    loadAnnouncements();
+  } catch (err) {
+    msgEl.textContent = err.message;
+    msgEl.className = 'ann-msg ann-msg-error';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Announcement';
+  }
+}
+
+async function deleteAnnouncement(id) {
+  if (!confirm('Delete this announcement?')) return;
+  const token = localStorage.getItem('adminToken');
+  try {
+    const res = await fetch(`${ANN_API}/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    showToast('Announcement deleted', 'success');
+    loadAnnouncements();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Character counter for announcement textarea
+document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('input', e => {
+    if (e.target.id === 'annMessage') {
+      document.getElementById('annCharCount').textContent = `${e.target.value.length} / 1000`;
+    }
+  });
+});

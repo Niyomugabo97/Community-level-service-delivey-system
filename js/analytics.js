@@ -1324,8 +1324,10 @@ class AnalyticsPage {
     }
 }
 
-// Initialize analytics page when DOM is loaded
+// Auto-initialize only on the standalone analytics page (not when embedded in admin dashboard)
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Analytics page loaded, initializing...');
-    new AnalyticsPage();
+    if (!document.getElementById('adminDashboard')) {
+        console.log('Analytics page loaded, initializing...');
+        new AnalyticsPage();
+    }
 });

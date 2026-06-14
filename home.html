@@ -266,8 +266,20 @@
                     <li class="auth-menu">
                         <a href="auth.html?tab=signup"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
                     </li>
-                    <li>
-                        <a href="#" id="notificationBell" class="bell-login-btn"><i class="fa-solid fa-bell"></i> Announcements</a>
+                    <li class="notification-item" style="position:relative;">
+                        <a href="#" id="notificationBell" style="position:relative;">
+                          <i class="fa-solid fa-bell"></i> Announcements
+                          <span id="notificationBadge" class="notification-badge" style="display:none;"></span>
+                        </a>
+                        <div id="notificationDropdown" class="notification-dropdown">
+                          <div class="notification-header">
+                            <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
+                            <a href="announcements.html" class="notif-view-all">View all →</a>
+                          </div>
+                          <div id="notificationList" class="notification-list">
+                            <p class="no-notifications">Loading…</p>
+                          </div>
+                        </div>
                     </li>
                 </ul>
             </div>
