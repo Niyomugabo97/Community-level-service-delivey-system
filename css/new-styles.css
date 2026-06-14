@@ -5641,3 +5641,236 @@ section {
     .profile-photo-card { flex-direction: row; align-items: center; justify-content: flex-start; }
     .leaders-grid { grid-template-columns: 1fr; }
 }
+
+/* ================================================================
+   RESPONSIVE IMPROVEMENTS v2
+   ================================================================ */
+
+/* --- Hamburger nav at 768px (many nav items overflow on tablets) --- */
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .navbar .container {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .logo {
+        min-width: 0;
+        max-width: calc(100% - 44px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: clamp(0.88rem, 3vw, 1.3rem);
+    }
+
+    .nav-menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100vw;
+        max-width: 100vw;
+        background-color: var(--primary-color);
+        padding: 0.5rem 0.75rem;
+        gap: 0.25rem;
+        margin: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        box-sizing: border-box;
+        z-index: 999;
+    }
+
+    .nav-menu.open {
+        display: flex;
+    }
+
+    .nav-menu li {
+        width: 100%;
+        margin: 0;
+        white-space: normal;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 0.65rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* --- Bottom sidebar becomes horizontal scroll strip on mobile --- */
+    .dashboard-sidebar.bottom {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding: 0;
+        overflow-y: visible;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu {
+        flex-direction: row;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding: 0.5rem 0.75rem;
+        gap: 0;
+        align-items: stretch;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu li {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu a {
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-radius: 6px;
+    }
+
+    .dashboard-sidebar.bottom .dashboard-menu a.active {
+        background-color: rgba(255,255,255,0.15);
+        box-shadow: inset 0 -3px 0 rgba(255,255,255,0.6);
+    }
+
+    body.with-bottom-sidebar .dashboard-content {
+        margin-left: 0;
+    }
+
+    /* --- Tighter dashboard headings --- */
+    .dashboard-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
+
+    /* --- Analytics tabs become horizontal scroll on narrow screens --- */
+    .analytics-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 3px;
+    }
+
+    .analytics-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sub-analytics-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    /* --- Section header stacks on mobile --- */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .section-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* --- Contact grid --- */
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    /* --- About section --- */
+    .about-mission {
+        padding: 24px 16px;
+    }
+    .about-mission p {
+        font-size: 1rem;
+    }
+
+    /* --- Auth layout: hide info panel on mobile --- */
+    .auth-two-col {
+        grid-template-columns: 1fr;
+    }
+    .auth-info-side {
+        display: none;
+    }
+}
+
+/* --- Mobile: fine-tune button and action bar behaviour --- */
+@media (max-width: 480px) {
+    /* Buttons inside action toolbars stay auto-width */
+    .section-actions .btn,
+    .btn-group .btn,
+    .filter-bar .btn {
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    /* Tighter dashboard heading on phones */
+    .dashboard-section h2 {
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Report-actions bar stacks vertically */
+    .report-actions-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .report-actions-bar .btn {
+        width: 100%;
+    }
+
+    /* Statistics grid two columns minimum */
+    .statistics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Stat card tighter */
+    .stat-card {
+        padding: clamp(0.75rem, 3vw, 1rem);
+    }
+}
+
+/* --- Tablet (769px–1024px): narrow bottom sidebar proportionally --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .dashboard-sidebar.bottom {
+        width: 210px;
+    }
+    body.with-bottom-sidebar .dashboard-content {
+        margin-left: 210px;
+    }
+    .dashboard-sidebar.bottom .dashboard-menu a {
+        padding: 0.7rem 0.875rem;
+        font-size: 0.88rem;
+    }
+
+    /* Regular sidebar a bit narrower on tablet */
+    .dashboard-sidebar {
+        width: 210px;
+    }
+    .dashboard-menu a {
+        font-size: 0.875rem;
+        padding: 0.8rem 1.1rem;
+    }
+}
