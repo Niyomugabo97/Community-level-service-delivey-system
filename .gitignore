@@ -6,8 +6,6 @@ dist
 build
 .vercel
 
-# Frontend & project root files (backend-only repo)
-frontend/
 .claude/
 .vscode/
 *.docx

@@ -9,7 +9,7 @@ console.log('=====================================');
 // 1. API Service Class
 class ApiService {
     constructor() {
-        this.baseURL = CONFIG.API_BASE_URL; // http://localhost:5000/api
+        this.baseURL = CONFIG.API_BASE_URL;
         this.cloudinary = CONFIG.CLOUDINARY; // Your Cloudinary config
     }
 
@@ -143,7 +143,7 @@ console.log('- Cloudinary Cloud Name:', CONFIG.CLOUDINARY.CLOUD_NAME);
 console.log('- MongoDB URL:', CONFIG.MONGODB.URL);
 console.log('');
 console.log('This setup allows your frontend to:');
-console.log('1. Connect to your backend API at localhost:5000');
+console.log('1. Connect to your backend API at', CONFIG.API_BASE_URL);
 console.log('2. Upload images directly to your Cloudinary account');
 console.log('3. Store data in your MongoDB database');
 console.log('4. Use real-time data synchronization');
