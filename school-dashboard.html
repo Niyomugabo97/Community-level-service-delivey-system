@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Dropout Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-graduation-cap"></i> School Dropout Dashboard</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#" id="logoutBtn">Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <ul class="dashboard-menu">
+                <li><a href="#" data-section="schoolInfo" class="active"><i class="fa-solid fa-school"></i> 1. School Profile & Statistics</a></li>
+                <li><a href="#" data-section="dropouts"><i class="fa-solid fa-user-graduate"></i> 2. Record Dropout Students</a></li>
+            </ul>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- School Info Section -->
+            <section id="schoolInfo" class="dashboard-section active">
+                <h2><i class="fa-solid fa-school"></i> School Profile & Dropout Statistics</h2>
+
+                <!-- Report Actions -->
+                <div class="report-actions-bar">
+                    <span class="report-actions-label"><i class="fa-solid fa-file-lines"></i> Report Actions:</span>
+                    <button id="downloadReportBtn" class="btn btn-secondary">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                    </button>
+                    <button id="shareReportBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-share-nodes"></i> Share to Leaders
+                    </button>
+                </div>
+
+                <form id="schoolInfoForm" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="schoolName">School Name</label>
+                            <input type="text" id="schoolName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="schoolLeader">School Leader</label>
+                            <input type="text" id="schoolLeader" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="schoolEmail">Email</label>
+                            <input type="email" id="schoolEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="schoolPhone">Telephone</label>
+                            <input type="tel" id="schoolPhone" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="totalStudents">Total Number of Students</label>
+                            <input type="number" id="totalStudents" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="totalDropouts">Total School Dropout Students</label>
+                            <input type="number" id="totalDropouts" min="0" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save School Information</button>
+                </form>
+
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <h3>Total Students</h3>
+                        <p class="stat-number" id="statTotalStudents">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Dropouts</h3>
+                        <p class="stat-number" id="statTotalDropouts">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Dropout Rate</h3>
+                        <p class="stat-number" id="statDropoutRate">0%</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dropout Records Section -->
+            <section id="dropouts" class="dashboard-section">
+                <h2><i class="fa-solid fa-user-graduate"></i> Record School Dropout Students</h2>
+                <form id="dropoutForm" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dropoutSchoolName">School Name</label>
+                            <input type="text" id="dropoutSchoolName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dropoutSchoolLeader">School Leader</label>
+                            <input type="text" id="dropoutSchoolLeader" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dropoutLeaderPhone">Leader's Phone</label>
+                            <input type="tel" id="dropoutLeaderPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dropoutLeaderEmail">Leader's Email</label>
+                            <input type="email" id="dropoutLeaderEmail" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentName">Student Name</label>
+                            <input type="text" id="studentName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="studentSex">Sex</label>
+                            <select id="studentSex" required>
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="studentAge">Age</label>
+                            <input type="number" id="studentAge" min="3" max="25" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recentLevel">Recent Level/Class</label>
+                            <input type="text" id="recentLevel" placeholder="e.g. P5, S3" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fatherName">Father's Name</label>
+                            <input type="text" id="fatherName">
+                        </div>
+                        <div class="form-group">
+                            <label for="fatherPhone">Father's Phone</label>
+                            <input type="tel" id="fatherPhone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="motherName">Mother's Name</label>
+                            <input type="text" id="motherName">
+                        </div>
+                        <div class="form-group">
+                            <label for="guardianPhone">Guardian's Phone</label>
+                            <input type="tel" id="guardianPhone">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Dropout Record</button>
+                </form>
+
+                <div class="data-table-container">
+                    <h3>Dropout Students Records</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Sex</th>
+                                <th>Age</th>
+                                <th>Recent Level</th>
+                                <th>School</th>
+                                <th>Father</th>
+                                <th>Mother</th>
+                                <th>Guardian Phone</th>
+                                <th>Date Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dropoutTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/school-dashboard.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+</html>
+
+

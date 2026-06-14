@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Analytics - Community Services</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+    <style>
+        /* Analytics Dashboard Styles */
+        .analytics-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        .analytics-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .analytics-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .analytics-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .analytics-nav {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .analytics-nav button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            background: var(--background-color);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .analytics-nav button:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .analytics-nav button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .date-filter {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .date-filter input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .date-filter button {
+            padding: 0.5rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .export-btn {
+            background: var(--secondary-color) !important;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .analytics-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+        }
+        
+        .analytics-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .analytics-card h3 {
+            color: var(--primary-color);
+            margin: 0 0 1rem 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .big-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--text-color);
+            margin: 1rem 0;
+        }
+        
+        .trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .trend.up {
+            color: #28a745;
+        }
+        
+        .trend.down {
+            color: #dc3545;
+        }
+        
+        .chart-container-large {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container-large h3 {
+            color: var(--primary-color);
+            margin: 0 0 2rem 0;
+            font-size: 1.5rem;
+        }
+        
+        .chart-wrapper-large {
+            position: relative;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #attendanceChartLarge {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .member-list {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .member-list h3 {
+            color: var(--primary-color);
+            margin: 0 0 1.5rem 0;
+            font-size: 1.5rem;
+        }
+        
+        .member-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .member-filters select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .member-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .member-table th,
+        .member-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .member-table th {
+            background: var(--background-color);
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .attendance-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .attendance-badge.excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .attendance-badge.good {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .attendance-badge.poor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .attendance-badge.none {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        .back-to-dashboard {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-dashboard:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .analytics-container {
+                padding: 1rem;
+            }
+            
+            .analytics-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .big-number {
+                font-size: 2rem;
+            }
+            
+            .chart-wrapper-large {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="analytics-header">
+        <div class="container">
+            <h1><i class="fa-solid fa-chart-line"></i> Attendance Analytics Dashboard</h1>
+            <p>This is analytics of attendance of this month: <strong id="dynamicMonthSpan" style="color: #ffd54f;"></strong></p>
+            <script>
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                document.getElementById('dynamicMonthSpan').innerText = monthNames[new Date().getMonth()] + ' ' + new Date().getFullYear();
+            </script>
+        </div>
+    </header>
+
+    <main class="analytics-container">
+        <!-- Navigation -->
+        <nav class="analytics-nav">
+            <button class="active" onclick="showView('overview')">
+                <i class="fa-solid fa-chart-pie"></i> Overview
+            </button>
+            <button onclick="showView('trends')">
+                <i class="fa-solid fa-chart-line"></i> Trends
+            </button>
+            <button onclick="showView('members')">
+                <i class="fa-solid fa-users"></i> Members
+            </button>
+            
+        </nav>
+
+        <!-- Date Filter -->
+        <div class="date-filter">
+            <div>
+                <label for="startDate">From:</label>
+                <input type="date" id="startDate">
+                <label for="endDate">To:</label>
+                <input type="date" id="endDate">
+            </div>
+            <div>
+                <button onclick="applyDateFilter()">
+                    <i class="fa-solid fa-filter"></i> Apply Filter
+                </button>
+                <button onclick="resetDateFilter()">
+                    <i class="fa-solid fa-undo"></i> Reset
+                </button>
+                
+            </div>
+        </div>
+
+        <!-- Overview View -->
+        <div id="overviewView" class="analytics-view">
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-users"></i> Total Members</h3>
+                    <div class="big-number" id="totalMembersAnalytics">0</div>
+                    <div class="trend up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>5% increase this month</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-user-check"></i> Average Attendance</h3>
+                    <div class="big-number" id="avgAttendanceAnalytics">0%</div>
+                    <div class="trend up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>3% improvement</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-calendar-check"></i> Today's Attendance</h3>
+                    <div class="big-number" id="todayAttendanceAnalytics">0</div>
+                    <div class="trend down">
+                        <i class="fa-solid fa-arrow-down"></i>
+                        <span>2 less than yesterday</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-trophy"></i> Top Performers</h3>
+                    <div class="big-number" id="topPerformersAnalytics">0</div>
+                    <div class="trend up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>80%+ attendance</span>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-star"></i> Excellent (80-100%)</h3>
+                    <div class="big-number" id="excellentCountAnalytics">0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="excellentProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-thumbs-up"></i> Good (50-79%)</h3>
+                    <div class="big-number" id="goodCountAnalytics">0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="goodProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-exclamation-triangle"></i> Poor (1-49%)</h3>
+                    <div class="big-number" id="poorCountAnalytics">0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="poorProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-times-circle"></i> No Attendance (0%)</h3>
+                    <div class="big-number" id="noneCountAnalytics">0</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="noneProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members View -->
+        <div id="membersView" class="analytics-view" style="display: none;">
+            <div class="member-list">
+                <h3><i class="fa-solid fa-users"></i> Member Attendance Details</h3>
+                
+                <div class="member-filters">
+                    <select id="categoryFilter" onchange="filterMembers()">
+                        <option value="all">All Categories</option>
+                        <option value="excellent">Excellent (80-100%)</option>
+                        <option value="good">Good (50-79%)</option>
+                        <option value="poor">Poor (1-49%)</option>
+                        <option value="none">No Attendance (0%)</option>
+                    </select>
+                    
+                    <select id="sortBy" onchange="sortMembers()">
+                        <option value="name">Sort by Name</option>
+                        <option value="attendance">Sort by Attendance</option>
+                        <option value="date">Sort by Registration Date</option>
+                    </select>
+                    
+                    <input type="text" id="searchMember" placeholder="Search members..." onkeyup="searchMembers()">
+                </div>
+                
+                <table class="member-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID Number</th>
+                            <th>Sector</th>
+                            <th>Attendance Rate</th>
+                            <th>Category</th>
+                            <th>Last Attended</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersTableBody">
+                        <!-- Members will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Trends View -->
+        <div id="trendsView" class="analytics-view" style="display: none;">
+            <div class="chart-container-large">
+                <h3><i class="fa-solid fa-chart-line"></i> Attendance Trends Over Time</h3>
+                <div class="chart-wrapper-large">
+                    <canvas id="trendsChart" width="1000" height="500"></canvas>
+                </div>
+            </div>
+            
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-calendar-week"></i> This Week</h3>
+                    <div class="big-number" id="weekAttendance">0%</div>
+                    <div class="trend up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>Better than last week</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3><i class="fa-solid fa-calendar-alt"></i> This Month</h3>
+                    <div class="big-number" id="monthAttendance">0%</div>
+                    <div class="trend up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>Improving trend</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </main>
+
+    <a href="leader-dashboard.html" class="back-to-dashboard">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <!-- Scripts -->
+    <script src="js/leader-dashboard.js"></script>
+    <script>
+        // Initialize analytics dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date range (last 30 days)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            
+            // Load analytics data
+            loadAnalyticsData();
+        });
+
+        // View switching
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.analytics-view').forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.analytics-nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected view
+            document.getElementById(viewName + 'View').style.display = 'block';
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Load view-specific data
+            if (viewName === 'members') {
+                loadMembersData();
+            } else if (viewName === 'trends') {
+                loadTrendsData();
+            } else if (viewName === 'reports') {
+                loadReportsData();
+            }
+        }
+
+        // Load analytics data
+        function loadAnalyticsData() {
+            // Use existing statistics calculation
+            if (typeof calculateAttendanceStatistics === 'function') {
+                const stats = calculateAttendanceStatistics();
+                
+                // Update overview cards
+                document.getElementById('totalMembersAnalytics').textContent = stats.totalMembers;
+                document.getElementById('avgAttendanceAnalytics').textContent = stats.overallRate + '%';
+                document.getElementById('todayAttendanceAnalytics').textContent = stats.presentToday;
+                document.getElementById('topPerformersAnalytics').textContent = stats.categories.excellent;
+                
+                // Update category counts
+                document.getElementById('excellentCountAnalytics').textContent = stats.categories.excellent;
+                document.getElementById('goodCountAnalytics').textContent = stats.categories.good;
+                document.getElementById('poorCountAnalytics').textContent = stats.categories.poor;
+                document.getElementById('noneCountAnalytics').textContent = stats.categories.none;
+                
+                // Update progress bars
+                const total = stats.totalMembers || 1;
+                document.getElementById('excellentProgress').style.width = (stats.categories.excellent / total * 100) + '%';
+                document.getElementById('goodProgress').style.width = (stats.categories.good / total * 100) + '%';
+                document.getElementById('poorProgress').style.width = (stats.categories.poor / total * 100) + '%';
+                document.getElementById('noneProgress').style.width = (stats.categories.none / total * 100) + '%';
+                
+                // Draw main chart
+                drawMainAnalyticsChart(stats);
+            }
+        }
+
+        // Draw main analytics chart
+        function drawMainAnalyticsChart(stats) {
+            const canvas = document.getElementById('attendanceChartLarge');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Chart data
+            const data = [
+                { label: 'Excellent (80-100%)', value: stats.categories.excellent, color: '#28a745' },
+                { label: 'Good (50-79%)', value: stats.categories.good, color: '#fd7e14' },
+                { label: 'Poor (1-49%)', value: stats.categories.poor, color: '#ffc107' },
+                { label: 'None (0%)', value: stats.categories.none, color: '#dc3545' }
+            ];
+            
+            const maxValue = Math.max(...data.map(d => d.value), 1);
+            const barWidth = width / (data.length * 2.5);
+            const chartHeight = height - 100;
+            const chartTop = 60;
+            
+            // Draw bars
+            data.forEach((item, index) => {
+                const barHeight = (item.value / maxValue) * chartHeight;
+                const x = (index * 2.5 + 0.5) * barWidth;
+                const y = chartTop + chartHeight - barHeight;
+                
+                // Draw bar with gradient
+                const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+                gradient.addColorStop(0, item.color);
+                gradient.addColorStop(1, adjustColor(item.color, -20));
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Draw value on top of bar
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.value, x + barWidth / 2, y - 10);
+                
+                // Draw percentage
+                const percentage = stats.totalMembers > 0 ? Math.round((item.value / stats.totalMembers) * 100) : 0;
+                ctx.font = '16px Arial';
+                ctx.fillText('(' + percentage + '%)', x + barWidth / 2, y - 35);
+                
+                // Draw label below bar
+                ctx.save();
+                ctx.translate(x + barWidth / 2, height - 20);
+                ctx.rotate(-Math.PI / 6);
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#666';
+                ctx.fillText(item.label, 0, 0);
+                ctx.restore();
+            });
+            
+            // Draw title
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Community Attendance Distribution', width / 2, 30);
+        }
+
+        // Helper function to adjust color brightness
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+            return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+        }
+
+        // Load members data
+        function loadMembersData() {
+            const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+            const tbody = document.getElementById('membersTableBody');
+            
+            tbody.innerHTML = records.map(record => {
+                const percentage = calculateAttendancePercentage(record.idNumber, record.name);
+                const category = getAttendanceCategory(percentage);
+                
+                return `
+                    <tr>
+                        <td>${record.name}</td>
+                        <td>${record.idNumber}</td>
+                        <td>${record.sector}</td>
+                        <td><strong>${percentage}%</strong></td>
+                        <td><span class="attendance-badge ${category}">${category.charAt(0).toUpperCase() + category.slice(1)}</span></td>
+                        <td>${getLastAttendanceDate(record.idNumber)}</td>
+                        <td>${record.status}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Get last attendance date for a member
+        function getLastAttendanceDate(memberId) {
+            const records1 = JSON.parse(localStorage.getItem('umugandaRecords')) || [];
+            const records2 = JSON.parse(localStorage.getItem('umugandaData')) || [];
+            const allRecords = [...records1, ...records2];
+            
+            const memberRecords = allRecords.filter(record => 
+                record.citizenId === memberId || 
+                (record.name && records.find(r => r.idNumber === memberId && r.name === record.name))
+            );
+            
+            if (memberRecords.length === 0) return 'Never';
+            
+            const latestRecord = memberRecords.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            return formatDate(latestRecord.date);
+        }
+
+        // Placeholder functions for other views
+        function loadTrendsData() {
+            // Draw trends chart
+            const canvas = document.getElementById('trendsChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Trends chart will be implemented with historical data', canvas.width / 2, canvas.height / 2);
+            }
+            
+            // Update weekly and monthly stats
+            const stats = calculateAttendanceStatistics();
+            document.getElementById('weekAttendance').textContent = stats.overallRate + '%';
+            document.getElementById('monthAttendance').textContent = stats.overallRate + '%';
+        }
+
+        function loadReportsData() {
+            const tbody = document.getElementById('reportsTableBody');
+            const reports = JSON.parse(localStorage.getItem('attendanceReports')) || [];
+            
+            tbody.innerHTML = reports.length > 0 ? reports.map(report => `
+                <tr>
+                    <td>${formatDate(report.date)}</td>
+                    <td>${report.type}</td>
+                    <td>${report.period}</td>
+                    <td>
+                        <button onclick="viewReport('${report.id}')">
+                            <i class="fa-solid fa-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="4" style="text-align: center;">No reports generated yet</td></tr>';
+        }
+
+        // Filter and search functions
+        function applyDateFilter() {
+            loadAnalyticsData();
+            showNotification('Date filter applied', 'success');
+        }
+
+        function resetDateFilter() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            
+            loadAnalyticsData();
+            showNotification('Date filter reset', 'info');
+        }
+
+        function filterMembers() {
+            loadMembersData();
+        }
+
+        function sortMembers() {
+            loadMembersData();
+        }
+
+        function searchMembers() {
+            loadMembersData();
+        }
+
+        // Export functions
+        function exportAnalytics() {
+            const stats = calculateAttendanceStatistics();
+            const data = {
+                generatedDate: new Date().toISOString(),
+                statistics: stats,
+                members: JSON.parse(localStorage.getItem('registerRecords')) || []
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-analytics-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            showNotification('Analytics exported successfully', 'success');
+        }
+
+        function exportPDF() {
+            showNotification('PDF export will be implemented', 'info');
+        }
+
+        function exportExcel() {
+            showNotification('Excel export will be implemented', 'info');
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        function emailReport() {
+            const email = document.getElementById('emailReport').value;
+            if (email) {
+                showNotification('Report sent to ' + email, 'success');
+                document.getElementById('emailReport').value = '';
+            } else {
+                showNotification('Please enter a valid email address', 'error');
+            }
+        }
+
+        function viewReport(reportId) {
+            showNotification('Viewing report: ' + reportId, 'info');
+        }
+
+        // Notification function
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+                color: white;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Add slide-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
