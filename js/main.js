@@ -91,8 +91,6 @@ function truncateDesc(text, len) {
 
 // Load configuration
 document.addEventListener('DOMContentLoaded', () => {
-    // If api.js and config.js are already loaded statically (e.g. news.html),
-    // ApiService and CONFIG are already available — no need to reload config.js.
     if (typeof ApiService !== 'undefined' && typeof CONFIG !== 'undefined') {
         initializeHome();
         return;

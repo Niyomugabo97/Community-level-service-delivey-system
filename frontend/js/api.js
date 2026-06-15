@@ -17,30 +17,42 @@ class ApiService {
     }
 
     async createHomeUpdate(updateData, imageFile) {
-        try {
-            const formData = new FormData();
-            
-            // Add text fields
-            Object.keys(updateData).forEach(key => {
-                formData.append(key, updateData[key]);
-            });
-            
-            // Add image file if provided
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
-            
-            const response = await fetch(`${this.baseURL}/home-updates`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) throw new Error('Failed to create home update');
-            return await response.json();
-        } catch (error) {
-            console.error('Error creating home update:', error);
-            throw error;
+        const formData = new FormData();
+        Object.keys(updateData).forEach(key => formData.append(key, updateData[key]));
+        if (imageFile) formData.append('image', imageFile);
+        const response = await fetch(`${this.baseURL}/home-updates`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
         }
+        return await response.json();
+    }
+
+    async updateHomeUpdate(id, updateData, imageFile) {
+        const formData = new FormData();
+        Object.keys(updateData).forEach(key => formData.append(key, updateData[key]));
+        if (imageFile) formData.append('image', imageFile);
+        const response = await fetch(`${this.baseURL}/home-updates/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
+        }
+        return await response.json();
+    }
+
+    async deleteHomeUpdate(id) {
+        const response = await fetch(`${this.baseURL}/home-updates/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
+        }
+        return await response.json();
     }
 
     // Members API
@@ -57,21 +69,16 @@ class ApiService {
     }
 
     async createMember(memberData) {
-        try {
-            const response = await fetch(`${this.baseURL}/members`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(memberData)
-            });
-            
-            if (!response.ok) throw new Error('Failed to create member');
-            return await response.json();
-        } catch (error) {
-            console.error('Error creating member:', error);
-            throw error;
+        const response = await fetch(`${this.baseURL}/members`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(memberData)
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
         }
+        return await response.json();
     }
 
     async updateMember(memberId, memberData) {
@@ -514,6 +521,48 @@ class ApiService {
             return await response.json();
         } catch (error) {
             console.error('Error deleting leader profile:', error);
+            throw error;
+        }
+    }
+
+    // Locations API
+    async getLocations() {
+        try {
+            const response = await fetch(`${this.baseURL}/locations`);
+            if (!response.ok) throw new Error('Failed to fetch locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+            return [];
+        }
+    }
+
+    async createLocations(data) {
+        try {
+            const response = await fetch(`${this.baseURL}/locations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Failed to create locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating locations:', error);
+            throw error;
+        }
+    }
+
+    async updateLocations(id, data) {
+        try {
+            const response = await fetch(`${this.baseURL}/locations/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Failed to update locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating locations:', error);
             throw error;
         }
     }

@@ -15,7 +15,8 @@ router.post("/", ...upload.cloudinary("image"), async (req, res) => {
     await update.save();
     res.json(update);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("HomeUpdate save error:", err.message, err);
+    res.status(500).json({ error: err.message || "Failed to save home update" });
   }
 });
 

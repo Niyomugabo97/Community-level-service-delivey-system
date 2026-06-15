@@ -127,6 +127,17 @@ app.get("/", (req, res) => {
 });
 
 /* ========================
+   GLOBAL ERROR HANDLER
+   Must be after all routes — converts any unhandled error
+   (including multer/middleware errors) to a JSON response
+   so the frontend always gets parseable error details.
+======================== */
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message, err.stack);
+  res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+});
+
+/* ========================
    EXPORT APP (IMPORTANT for Render)
 ======================== */
 module.exports = app;
