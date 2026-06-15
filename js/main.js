@@ -91,8 +91,12 @@ function truncateDesc(text, len) {
 
 // Load configuration
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof ApiService !== 'undefined' && typeof CONFIG !== 'undefined') {
+        initializeHome();
+        return;
+    }
     const script = document.createElement('script');
-    script.src = 'config.js';
+    script.src = 'js/config.js';
     script.onload = () => {
         initializeHome();
     };
