@@ -209,6 +209,7 @@ async function loadDrugsTable() {
         const res = await fetch(`/api/citizen-reports?type=drugs&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error('Server error');
         const userRecords = await res.json();
+        userRecords.forEach(r => { _reportCache[r._id] = r; });
         tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
             <tr>
                 <td>${escapeHtml(r.data.name)}</td>
@@ -218,8 +219,11 @@ async function loadDrugsTable() {
                 <td>${trunc(r.data.description, 40)}</td>
                 <td>${formatDate(r.dateReported)}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editDrugsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteDrugsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+                        <button class="btn btn-sm btn-info" onclick="viewReport('${r._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                        <button class="btn btn-sm btn-primary" onclick="editDrugsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteDrugsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="7">No reports yet</td></tr>';
@@ -272,6 +276,7 @@ async function loadViolenceTable() {
         const res = await fetch(`/api/citizen-reports?type=violence&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error('Server error');
         const userRecords = await res.json();
+        userRecords.forEach(r => { _reportCache[r._id] = r; });
         tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
             <tr>
                 <td>${escapeHtml(r.data.victimName)}</td>
@@ -282,8 +287,11 @@ async function loadViolenceTable() {
                 <td>${trunc(r.data.description, 40)}</td>
                 <td>${formatDate(r.dateReported)}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editViolenceReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteViolenceReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+                        <button class="btn btn-sm btn-info" onclick="viewReport('${r._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                        <button class="btn btn-sm btn-primary" onclick="editViolenceReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteViolenceReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="8">No reports yet</td></tr>';
@@ -366,6 +374,7 @@ async function loadInfrastructureTable() {
         const res = await fetch(`/api/citizen-reports?type=infrastructure&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error('Server error');
         const userRecords = await res.json();
+        userRecords.forEach(r => { _reportCache[r._id] = r; });
         tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
             <tr>
                 <td>${escapeHtml(r.data.place)}</td>
@@ -374,8 +383,11 @@ async function loadInfrastructureTable() {
                 <td>${truncateDesc(r.data.description, 60)}</td>
                 <td>${formatDate(r.dateReported)}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editInfrastructureReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteInfrastructureReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+                        <button class="btn btn-sm btn-info" onclick="viewReport('${r._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                        <button class="btn btn-sm btn-primary" onclick="editInfrastructureReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteInfrastructureReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
@@ -435,6 +447,7 @@ async function loadVisitorsTable() {
         const res = await fetch(`/api/citizen-reports?type=visitors&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error('Server error');
         const userRecords = await res.json();
+        userRecords.forEach(r => { _reportCache[r._id] = r; });
         tbody.innerHTML = userRecords.length > 0 ? userRecords.map(r => `
             <tr>
                 <td>${escapeHtml(r.data.visitorNames)}</td>
@@ -445,8 +458,11 @@ async function loadVisitorsTable() {
                 <td>${r.data.returnDate ? formatDate(r.data.returnDate) : '—'}</td>
                 <td>${formatDate(r.dateReported)}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editVisitorsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteVisitorsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+                        <button class="btn btn-sm btn-info" onclick="viewReport('${r._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                        <button class="btn btn-sm btn-primary" onclick="editVisitorsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteVisitorsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </td>
             </tr>
         `).join('') : '<tr><td colspan="8">No visitor reports yet</td></tr>';
@@ -614,6 +630,35 @@ function convertToBase64(file) {
 async function handleCaseSubmit(e) {
     e.preventDefault();
 
+    // Location must be filled — village leader is matched by exact sector + cell + village
+    const sectorVal  = (document.getElementById('caseSector')  && document.getElementById('caseSector').value.trim())  || '';
+    const cellVal    = (document.getElementById('caseCell')    && document.getElementById('caseCell').value.trim())    || '';
+    const villageVal = (document.getElementById('caseVillage') && document.getElementById('caseVillage').value.trim()) || '';
+
+    if (!sectorVal || !cellVal || !villageVal) {
+        alert('Your case cannot be sent: Sector, Cell, and Village must all be filled in so the system can route it to your village leader. Please update your profile with your location first.');
+        return;
+    }
+
+    // Step 1: Find the village leader for this location
+    let assignedLeaderEmail = '';
+    let assignedLeaderName = '';
+    try {
+        const leaderRes = await fetch(
+            `/api/auth/leader-by-location?sector=${encodeURIComponent(sectorVal)}&cell=${encodeURIComponent(cellVal)}&village=${encodeURIComponent(villageVal)}`
+        );
+        if (!leaderRes.ok) {
+            alert(`No village leader is registered for your location (${sectorVal} / ${cellVal} / ${villageVal}).\n\nYour case cannot be sent. Please contact your local administration to register a leader for your area.`);
+            return;
+        }
+        const leader = await leaderRes.json();
+        assignedLeaderEmail = leader.email;
+        assignedLeaderName  = leader.name;
+    } catch (err) {
+        alert('Could not connect to the server to verify your village leader. Please try again.');
+        return;
+    }
+
     const submitBtn = document.getElementById('caseSubmitBtn');
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -639,9 +684,9 @@ async function handleCaseSubmit(e) {
         type: document.getElementById('caseType').value,
         title: document.getElementById('caseTitle').value,
         description: document.getElementById('caseDescription').value,
-        sector: document.getElementById('caseSector').value,
-        cell: document.getElementById('caseCell').value,
-        village: document.getElementById('caseVillage').value,
+        sector: sectorVal,
+        cell: cellVal,
+        village: villageVal,
         accusedName: document.getElementById('caseAccusedName').value,
         accusedPhone: document.getElementById('caseAccusedPhone').value,
         incidentDate: document.getElementById('caseIncidentDate').value,
@@ -654,13 +699,15 @@ async function handleCaseSubmit(e) {
         createdAt: new Date().toISOString()
     };
 
+    // Step 2: Tag the record with the assigned leader so only they see it
     const record = {
         type: 'case',
         data: caseData,
         reportedBy: reporterName,
         reportedByEmail: currentUser ? currentUser.email : '',
         reportedByPhone: currentUser ? (currentUser.phone || '') : '',
-        dateReported: new Date().toISOString()
+        dateReported: new Date().toISOString(),
+        assignedLeaderEmail
     };
 
     const saved = await sendReportToServer(record);
@@ -701,6 +748,7 @@ async function loadCaseTable() {
         const res = await fetch(`/api/citizen-reports?type=case&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error('Server error');
         const userRecords = await res.json();
+        userRecords.forEach(r => { _reportCache[r._id] = r; });
         cases = userRecords.map(r => ({ ...r.data, _id: r._id, reportedBy: r.reportedBy }));
     } catch (err) {
         console.warn('Could not load cases from server, loading from localStorage:', err);
@@ -746,8 +794,11 @@ async function loadCaseTable() {
                 </td>
                 <td>${formatDate(c.incidentDate || c.createdAt)}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editCaseReport('${c._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteCaseReport('${c._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+                        <button class="btn btn-sm btn-info" onclick="viewReport('${c._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                        <button class="btn btn-sm btn-primary" onclick="editCaseReport('${c._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCaseReport('${c._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -816,10 +867,16 @@ function startCountdownUpdates() {
 }
 // ===== Shared helpers for edit/delete =====
 
+// Cache populated by each loadXxxTable() call so View/Edit don't need a separate GET /:id request
+const _reportCache = {};
+
 async function fetchReportById(reportId) {
+    if (_reportCache[reportId]) return _reportCache[reportId];
     const res = await fetch('/api/citizen-reports/' + reportId);
     if (!res.ok) throw new Error('Server error');
-    return await res.json();
+    const data = await res.json();
+    _reportCache[reportId] = data;
+    return data;
 }
 
 async function updateReportData(reportId, updatedData) {
@@ -1110,5 +1167,112 @@ async function deleteCaseReport(reportId) {
         loadCaseTable();
     } catch (err) {
         alert('Failed to delete case');
+    }
+}
+
+// ===== View Report =====
+
+async function viewReport(reportId) {
+    const modal = document.getElementById('viewReportModal');
+    const titleEl = document.getElementById('viewReportTitle');
+    const bodyEl = document.getElementById('viewReportBody');
+
+    bodyEl.innerHTML = '<p style="padding:16px;color:#666;">Loading...</p>';
+    modal.style.display = 'flex';
+
+    try {
+        const record = await fetchReportById(reportId);
+        const d = record.data || {};
+
+        const typeLabels = {
+            drugs: 'Drug Report Details',
+            violence: 'Sexual Violence Report Details',
+            infrastructure: 'Infrastructure Report Details',
+            visitors: 'Visitor Report Details',
+            case: 'Case Details'
+        };
+        titleEl.textContent = typeLabels[record.type] || 'Report Details';
+
+        let fields = [];
+        if (record.type === 'drugs') {
+            fields = [
+                ['Name(s)',       d.name],
+                ['Sector',        d.sector],
+                ['Cell',          d.cell],
+                ['Village',       d.village],
+                ['Description',   d.description],
+                ['Reported By',   record.reportedBy],
+                ['Date Reported', formatDate(record.dateReported)]
+            ];
+        } else if (record.type === 'violence') {
+            fields = [
+                ['Victim Name',   d.victimName],
+                ['Telephone',     d.telephone],
+                ['Sector',        d.sector],
+                ['Cell',          d.cell],
+                ['Village',       d.village],
+                ['Description',   d.description],
+                ['Reported By',   record.reportedBy],
+                ['Date Reported', formatDate(record.dateReported)]
+            ];
+        } else if (record.type === 'infrastructure') {
+            fields = [
+                ['Place / Location', d.place],
+                ['Date',             formatDate(d.date || record.dateReported)],
+                ['Description',      d.description],
+                ['Reported By',      record.reportedBy],
+                ['Date Reported',    formatDate(record.dateReported)]
+            ];
+        } else if (record.type === 'visitors') {
+            fields = [
+                ['Visitor Names',    d.visitorNames],
+                ['Number',           d.visitorCount],
+                ['Visitor IDs',      d.visitorIDs || '—'],
+                ['Visitor Telephone',d.visitorTelephone || '—'],
+                ['From Province',    d.fromProvince || '—'],
+                ['From District',    d.fromDistrict || '—'],
+                ['From Sector',      d.fromSector || '—'],
+                ['From Cell',        d.fromCell || '—'],
+                ['From Village',     d.fromVillage || '—'],
+                ['Reason',           d.reason || '—'],
+                ['Return Date',      d.returnDate ? formatDate(d.returnDate) : '—'],
+                ['Your Sector',      d.yourSector || '—'],
+                ['Your Cell',        d.yourCell || '—'],
+                ['Your Village',     d.yourVillage || '—'],
+                ['Reported By',      record.reportedBy],
+                ['Date Reported',    formatDate(record.dateReported)]
+            ];
+        } else if (record.type === 'case') {
+            fields = [
+                ['Case Type',     d.type],
+                ['Title',         d.title],
+                ['Reporter',      record.reportedBy],
+                ['Accused Name',  d.accusedName || '—'],
+                ['Accused Phone', d.accusedPhone || '—'],
+                ['Sector',        d.sector],
+                ['Cell',          d.cell],
+                ['Village',       d.village],
+                ['Priority',      capitalize(d.priority)],
+                ['Status',        capitalize(d.status)],
+                ['Incident Date', formatDate(d.incidentDate)],
+                ['Description',   d.description],
+                ['Date Reported', formatDate(record.dateReported)]
+            ];
+        }
+
+        const rowsHtml = fields.map(([label, value]) => `
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                <span style="min-width:140px;font-weight:600;color:#555;font-size:13px;">${escapeHtml(label)}</span>
+                <span style="color:#222;font-size:13px;flex:1;white-space:pre-wrap;">${value !== undefined && value !== null && value !== '' ? escapeHtml(String(value)) : '—'}</span>
+            </div>
+        `).join('');
+
+        const imageHtml = (record.type === 'infrastructure' || record.type === 'case') && d.image
+            ? `<div style="margin-top:12px;"><img src="${d.image}" alt="Attached image" style="max-width:100%;border-radius:6px;" /></div>`
+            : '';
+
+        bodyEl.innerHTML = `<div style="padding:4px 0;">${rowsHtml}${imageHtml}</div>`;
+    } catch (err) {
+        bodyEl.innerHTML = '<p style="color:#dc3545;padding:16px;">Failed to load report details.</p>';
     }
 }

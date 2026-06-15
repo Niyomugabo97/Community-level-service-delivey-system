@@ -4587,44 +4587,27 @@ function handleCaseSubmit(e) {
 
 async function loadCaseTable() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
-    const leaderSector = currentUser.sector || currentUser.leaderSector || '';
-    const leaderCell = currentUser.cell || currentUser.leaderCell || '';
-    const leaderVillage = currentUser.village || currentUser.leaderVillage || '';
+    const leaderEmail = currentUser.email || '';
 
     const tbody = document.getElementById('caseTableBody');
     if (!tbody) return;
 
+    if (!leaderEmail) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#666;padding:20px;">Leader account has no email — cannot load cases.</td></tr>';
+        return;
+    }
+
+    // Fetch only cases that were routed to this specific leader at submission time
     let records = [];
     try {
-        const res = await fetch('/api/citizen-reports?type=case');
+        const res = await fetch(`/api/citizen-reports?type=case&assignedLeaderEmail=${encodeURIComponent(leaderEmail)}`);
         if (!res.ok) throw new Error('Failed to fetch from MongoDB');
         records = await res.json();
     } catch (err) {
-        console.warn('Could not fetch citizen reports from backend, fallback to local storage:', err);
-        const localCases = JSON.parse(localStorage.getItem('citizenCases')) || [];
-        records = localCases.map(c => ({
-            _id: c._id || String(c.id),
-            type: 'case',
-            reportedBy: 'Citizen',
-            reportedByEmail: '',
-            reportedByPhone: '',
-            dateReported: c.createdAt || new Date().toISOString(),
-            data: c
-        }));
+        console.warn('Could not fetch citizen cases from backend:', err);
     }
 
-    // Filter to leader's location
     let visible = records;
-    if (leaderVillage || leaderCell || leaderSector) {
-        visible = records.filter(r => {
-            const d = r.data || {};
-            return (
-                (leaderVillage && d.village && d.village === leaderVillage) ||
-                (leaderCell && d.cell && d.cell === leaderCell) ||
-                (leaderSector && d.sector && d.sector === leaderSector)
-            );
-        });
-    }
 
     // Check for auto-escalations and shift case level
     let hasEscalatedAny = false;
@@ -4634,22 +4617,8 @@ async function loadCaseTable() {
     }
     if (hasEscalatedAny) {
         try {
-            const res = await fetch('/api/citizen-reports?type=case');
-            if (res.ok) {
-                const fresh = await res.json();
-                if (leaderVillage || leaderCell || leaderSector) {
-                    visible = fresh.filter(r => {
-                        const d = r.data || {};
-                        return (
-                            (leaderVillage && d.village && d.village === leaderVillage) ||
-                            (leaderCell && d.cell && d.cell === leaderCell) ||
-                            (leaderSector && d.sector && d.sector === leaderSector)
-                        );
-                    });
-                } else {
-                    visible = fresh;
-                }
-            }
+            const res = await fetch(`/api/citizen-reports?type=case&assignedLeaderEmail=${encodeURIComponent(leaderEmail)}`);
+            if (res.ok) visible = await res.json();
         } catch (err) {
             console.warn('Failed to refresh after auto-escalation:', err);
         }

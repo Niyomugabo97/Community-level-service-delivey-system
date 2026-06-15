@@ -434,6 +434,20 @@
         </div>
     </main>
 
+    <!-- View Report Modal -->
+    <div id="viewReportModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 id="viewReportTitle">Report Details</h3>
+                <button class="modal-close" onclick="document.getElementById('viewReportModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body" id="viewReportBody" style="max-height:70vh;overflow-y:auto;"></div>
+            <div style="padding:12px 0 0;text-align:right;">
+                <button class="btn btn-secondary" onclick="document.getElementById('viewReportModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Infrastructure Modal -->
     <div id="editInfrastructureModal" class="modal" style="display: none;">
         <div class="modal-content">

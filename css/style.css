@@ -510,9 +510,25 @@
 }
 
 .btn-sm {
-    padding: 8px 12px;
+    padding: 5px 10px;
     font-size: 12px;
-    min-width: auto;
+    min-width: 82px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 4px;
+    font-weight: 500;
+    min-height: unset;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.btn-info:hover {
+    background-color: #138496;
 }
 
 .btn-secondary {
@@ -1856,6 +1872,15 @@ section {
 
 .btn-danger:hover {
     background-color: #b71c1c;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: var(--white);
+}
+
+.btn-info:hover {
+    background-color: #138496;
 }
 
 /* Dashboard */
