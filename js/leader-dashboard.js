@@ -979,43 +979,7 @@ async function handleRegisterSubmit(e) {
 
     } catch (error) {
         console.error('Error saving member to MongoDB:', error);
-        showNotification('Error saving member: ' + error.message, 'error');
-
-        // Fallback to localStorage if API fails
-        const fallbackRecord = {
-            id: isEditing ? JSON.parse(editingInfo).id : Date.now(),
-            ...record,
-            date: new Date().toISOString()
-        };
-
-        if (isEditing) {
-            const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-            const index = records.findIndex(r => r.id === fallbackRecord.id);
-            if (index !== -1) {
-                records[index] = fallbackRecord;
-                localStorage.setItem('registerRecords', JSON.stringify(records));
-                showNotification('Member updated successfully!', 'success');
-            }
-
-            sessionStorage.removeItem('editingMember');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.textContent = 'Register Member';
-            submitBtn.classList.remove('btn-warning');
-            submitBtn.classList.add('btn-primary');
-
-        } else {
-            const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-            records.push(fallbackRecord);
-            localStorage.setItem('registerRecords', JSON.stringify(records));
-
-            initializeAttendanceTracking(fallbackRecord.telephone, fallbackRecord.name);
-            showNotification('Member registered successfully! Current attendance rate: 0%', 'success');
-        }
-
-        e.target.reset();
-        loadRegisterTable();
-        loadAttendanceList();
-        updateSectorVillageFilters();
+        showNotification('Failed to save member: ' + error.message, 'error');
     }
 }
 
