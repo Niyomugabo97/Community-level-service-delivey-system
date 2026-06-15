@@ -76,6 +76,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn('Failed to load tables:', error);
             }
 
+            // Populate location dropdowns now that both caches are ready
+            try {
+                loadSectorsForLeader();
+                loadIntekoSectors();
+                console.log('Location dropdowns populated');
+            } catch (error) {
+                console.warn('Failed to populate location dropdowns:', error);
+            }
+
             try {
                 await loadLeaderHomeUpdates();
                 console.log('Home updates loaded successfully');
