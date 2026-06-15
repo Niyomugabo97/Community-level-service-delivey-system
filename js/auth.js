@@ -69,27 +69,14 @@ function handleQueryParams() {
 // User Type Selection - Show/Hide Fields
 function setupUserTypeFields() {
     const signupUserType = document.getElementById('signupUserType');
-    const leaderFields = document.getElementById('leaderFields');
-    const cellFields = document.getElementById('cellFields');
-    const sectorFields = document.getElementById('sectorFields');
+    const locationFields = document.getElementById('locationFields');
 
     if (!signupUserType) return;
 
     signupUserType.addEventListener('change', () => {
-        // Hide all fields first
-        if (leaderFields) leaderFields.style.display = 'none';
-        if (cellFields) cellFields.style.display = 'none';
-        if (sectorFields) sectorFields.style.display = 'none';
-
-        // Show relevant fields based on selection
-        const selectedType = signupUserType.value;
-
-        if (selectedType === 'leader') {
-            if (leaderFields) leaderFields.style.display = 'block';
-        } else if (selectedType === 'cell') {
-            if (cellFields) cellFields.style.display = 'block';
-        } else if (selectedType === 'sector') {
-            if (sectorFields) sectorFields.style.display = 'block';
+        const t = signupUserType.value;
+        if (locationFields) {
+            locationFields.style.display = ['citizen','leader','cell','sector'].includes(t) ? 'block' : 'none';
         }
     });
 }
@@ -200,57 +187,45 @@ function handleSignupSubmit() {
         return;
     }
 
-    // Validate leader-specific fields
-    if (userType === 'leader') {
-        const village = document.getElementById('signupVillage').value.trim();
-        const cell = document.getElementById('signupCell').value.trim();
-        const sector = document.getElementById('signupSector').value.trim();
-        if (!village || !cell || !sector) {
-            showAlert('Please fill in all location fields for leaders', 'error');
+    // Read the unified location fields
+    const sector  = document.getElementById('signupSector')  ? document.getElementById('signupSector').value.trim()  : '';
+    const cell    = document.getElementById('signupCell')    ? document.getElementById('signupCell').value.trim()    : '';
+    const village = document.getElementById('signupVillage') ? document.getElementById('signupVillage').value.trim() : '';
+
+    // Validate location fields for every role that needs them
+    if (userType === 'citizen') {
+        if (!sector || !cell || !village) {
+            showAlert('Please fill in your Sector, Cell and Village. The system uses this to route your cases to your village leader.', 'error');
+            return;
+        }
+    } else if (userType === 'leader') {
+        if (!sector || !cell || !village) {
+            showAlert('Please fill in Sector, Cell and Village for your area.', 'error');
+            return;
+        }
+    } else if (userType === 'cell') {
+        if (!sector || !cell) {
+            showAlert('Please fill in Sector and Cell for your area.', 'error');
+            return;
+        }
+    } else if (userType === 'sector') {
+        if (!sector) {
+            showAlert('Please fill in your Sector.', 'error');
             return;
         }
     }
 
-    // Validate cell-specific fields
-    if (userType === 'cell') {
-        const cellCell = document.getElementById('signupCellCell').value.trim();
-        const cellSector = document.getElementById('signupCellSector').value.trim();
-        if (!cellCell || !cellSector) {
-            showAlert('Please fill in all location fields for cell leaders', 'error');
-            return;
-        }
-    }
-
-    // Validate sector-specific fields
-    if (userType === 'sector') {
-        const sectorSector = document.getElementById('signupSectorSector').value.trim();
-        if (!sectorSector) {
-            showAlert('Please fill in the sector field', 'error');
-            return;
-        }
-    }
-
-    // Get users from localStorage
-    // prepare payload
+    // Build payload — include location for all roles
     const payload = {
         name: fullName,
         email,
         telephone: phone,
         password,
-        userType
+        userType,
+        sector,
+        cell,
+        village
     };
-
-    // add role-specific fields
-    if (userType === 'leader') {
-        payload.village = document.getElementById('signupVillage').value.trim();
-        payload.cell = document.getElementById('signupCell').value.trim();
-        payload.sector = document.getElementById('signupSector').value.trim();
-    } else if (userType === 'cell') {
-        payload.cell = document.getElementById('signupCellCell').value.trim();
-        payload.sector = document.getElementById('signupCellSector').value.trim();
-    } else if (userType === 'sector') {
-        payload.sector = document.getElementById('signupSectorSector').value.trim();
-    }
 
     const apiUrl = (window.CONFIG && window.CONFIG.API_BASE_URL) ? window.CONFIG.API_BASE_URL : 'https://backen-community-level-servece-delivery-system-production.up.railway.app/api';
     fetch(`${apiUrl}/auth/register`, {

@@ -283,7 +283,42 @@
             <!-- Shift Automate Case Section -->
             <section id="case" class="dashboard-section">
                 <h2><i class="fa-solid fa-scale-balanced"></i> Submit Case / Ikirego</h2>
+
+                <!-- Step 1: Choose Village Leader -->
+                <div class="form-container" style="margin-bottom:16px;">
+                    <h3 style="margin:0 0 10px;font-size:15px;color:#333;"><i class="fa-solid fa-user-tie"></i> Step 1: Select a Village Leader to send your case to</h3>
+                    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" id="leaderSearchInput" placeholder="Search by name, sector, cell or village…" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;" oninput="filterLeadersList()">
+                        <span id="leaderLoadingMsg" style="font-size:13px;color:#666;">Loading leaders…</span>
+                    </div>
+                    <div id="leadersListContainer" style="max-height:260px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;background:#fff;">
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <thead style="position:sticky;top:0;background:#f5f5f5;z-index:1;">
+                                <tr>
+                                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #ddd;">Name</th>
+                                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #ddd;">Sector</th>
+                                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #ddd;">Cell</th>
+                                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #ddd;">Village</th>
+                                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #ddd;">Telephone</th>
+                                    <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #ddd;">Select</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadersListBody">
+                                <tr><td colspan="6" style="padding:16px;text-align:center;color:#999;">Loading village leaders…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Selected leader banner -->
+                    <div id="selectedLeaderBanner" style="display:none;margin-top:10px;padding:10px 14px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;font-size:13px;display:none;align-items:center;gap:10px;">
+                        <i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i>
+                        <span>Sending to: <strong id="selectedLeaderName"></strong> — <span id="selectedLeaderLocation" style="color:#555;"></span></span>
+                        <button type="button" onclick="clearLeaderSelection()" style="margin-left:auto;background:none;border:none;color:#c62828;cursor:pointer;font-size:13px;"><i class="fa-solid fa-xmark"></i> Change</button>
+                    </div>
+                    <input type="hidden" id="caseAssignedLeaderEmail">
+                </div>
+
                 <form id="caseForm" class="form-container">
+                    <h3 style="margin:0 0 10px;font-size:15px;color:#333;"><i class="fa-solid fa-file-pen"></i> Step 2: Fill in case details</h3>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Reporter (Plaintiff / Urega)</label>

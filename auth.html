@@ -164,83 +164,45 @@
                             </div>
                         </div>
 
-                        <!-- Leader-specific fields -->
-                        <div id="leaderFields" class="leader-specific-fields" style="display: none;">
-                            <div class="form-group">
-                                <label for="signupVillage">
-                                    <i class="fa-solid fa-map-pin"></i> Village
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupVillage" 
-                                    name="village"
-                                    placeholder="Enter your village"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="signupCell">
-                                    <i class="fa-solid fa-map-location-dot"></i> Cell
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupCell" 
-                                    name="cell"
-                                    placeholder="Enter your cell"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="signupSector">
-                                    <i class="fa-solid fa-building"></i> Sector
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupSector" 
-                                    name="sector"
-                                    placeholder="Enter your sector"
-                                >
-                            </div>
-                        </div>
-
-                        <!-- Cell-specific fields -->
-                        <div id="cellFields" class="cell-specific-fields" style="display: none;">
-                            <div class="form-group">
-                                <label for="signupCellCell">
-                                    <i class="fa-solid fa-map-location-dot"></i> Cell
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupCellCell" 
-                                    name="cellName"
-                                    placeholder="Enter your cell"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="signupCellSector">
-                                    <i class="fa-solid fa-building"></i> Sector
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupCellSector" 
-                                    name="sectorName"
-                                    placeholder="Enter your sector"
-                                >
+                        <!-- Location fields — shown for both Citizens and Village Leaders -->
+                        <div id="locationFields" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="signupSector">
+                                        <i class="fa-solid fa-building"></i> Sector <span style="color:red;">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="signupSector"
+                                        name="sector"
+                                        placeholder="Enter your sector"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="signupCell">
+                                        <i class="fa-solid fa-map-location-dot"></i> Cell <span style="color:red;">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="signupCell"
+                                        name="cell"
+                                        placeholder="Enter your cell"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="signupVillage">
+                                        <i class="fa-solid fa-map-pin"></i> Village <span style="color:red;">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="signupVillage"
+                                        name="village"
+                                        placeholder="Enter your village"
+                                    >
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Sector-specific fields -->
-                        <div id="sectorFields" class="sector-specific-fields" style="display: none;">
-                            <div class="form-group">
-                                <label for="signupSectorSector">
-                                    <i class="fa-solid fa-building"></i> Sector
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="signupSectorSector" 
-                                    name="sectorFullName"
-                                    placeholder="Enter your sector"
-                                >
-                            </div>
-                        </div>
 
                         <div class="form-row">
                             <div class="form-group">

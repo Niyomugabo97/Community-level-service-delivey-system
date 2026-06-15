@@ -15,21 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeDashboard() {
     // Navigation
     setupNavigation();
-    
+
     // Forms
     setupForms();
-    
+
     // Auto fill location details
     autoFillLocation();
-    
+
     // Load data tables
     loadAllTables();
-    
+
     // Load chat messages
     loadCitizenChatMessages();
 
     // Prepare leader list for private chat
     setupLeaderRecipients();
+
+    // Load village leaders for case assignment
+    loadLeadersList();
 }
 
 // Navigation between sections
@@ -626,36 +629,109 @@ function convertToBase64(file) {
     });
 }
 
+// ===== Village Leader Picker =====
+
+let _allLeaders = [];
+
+async function loadLeadersList() {
+    const loadingMsg = document.getElementById('leaderLoadingMsg');
+    const tbody = document.getElementById('leadersListBody');
+    if (!tbody) return;
+
+    try {
+        const res = await fetch('/api/auth/leaders');
+        if (!res.ok) throw new Error('Failed');
+        _allLeaders = await res.json();
+        if (loadingMsg) loadingMsg.style.display = 'none';
+        renderLeadersList(_allLeaders);
+
+        // Auto-select the leader whose location matches the citizen's registered location
+        const cu = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+        const cs = (cu.sector  || '').trim().toLowerCase();
+        const cc = (cu.cell    || '').trim().toLowerCase();
+        const cv = (cu.village || '').trim().toLowerCase();
+
+        if (cs && cc && cv) {
+            const match = _allLeaders.find(l =>
+                (l.sector  || '').trim().toLowerCase() === cs &&
+                (l.cell    || '').trim().toLowerCase() === cc &&
+                (l.village || '').trim().toLowerCase() === cv
+            );
+            if (match) {
+                const loc = [match.sector, match.cell, match.village].filter(Boolean).join(' / ');
+                selectLeader(match.email, match.name, loc);
+            }
+        }
+    } catch (err) {
+        if (loadingMsg) loadingMsg.textContent = 'Could not load leaders.';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#dc3545;">Unable to load village leaders. Please try refreshing.</td></tr>';
+    }
+}
+
+function renderLeadersList(leaders) {
+    const tbody = document.getElementById('leadersListBody');
+    if (!tbody) return;
+
+    if (leaders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#999;">No village leaders found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = leaders.map(l => `
+        <tr id="leaderRow_${escapeHtml(l.email)}" style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:8px 10px;font-weight:500;">${escapeHtml(l.name || '—')}</td>
+            <td style="padding:8px 10px;color:#555;">${escapeHtml(l.sector || '—')}</td>
+            <td style="padding:8px 10px;color:#555;">${escapeHtml(l.cell || '—')}</td>
+            <td style="padding:8px 10px;color:#555;">${escapeHtml(l.village || '—')}</td>
+            <td style="padding:8px 10px;color:#555;">${escapeHtml(l.telephone || '—')}</td>
+            <td style="padding:8px 10px;text-align:center;">
+                <button type="button" class="btn btn-sm btn-primary" onclick="selectLeader('${escapeHtml(l.email)}','${escapeHtml(l.name || '')}','${escapeHtml([l.sector,l.cell,l.village].filter(Boolean).join(' / '))}')">
+                    <i class="fa-solid fa-hand-pointer"></i> Select
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterLeadersList() {
+    const term = (document.getElementById('leaderSearchInput').value || '').toLowerCase();
+    if (!term) { renderLeadersList(_allLeaders); return; }
+    const filtered = _allLeaders.filter(l =>
+        (l.name    || '').toLowerCase().includes(term) ||
+        (l.sector  || '').toLowerCase().includes(term) ||
+        (l.cell    || '').toLowerCase().includes(term) ||
+        (l.village || '').toLowerCase().includes(term)
+    );
+    renderLeadersList(filtered);
+}
+
+function selectLeader(email, name, location) {
+    document.getElementById('caseAssignedLeaderEmail').value = email;
+    document.getElementById('selectedLeaderName').textContent = name;
+    document.getElementById('selectedLeaderLocation').textContent = location;
+    const banner = document.getElementById('selectedLeaderBanner');
+    banner.style.display = 'flex';
+    // Highlight selected row
+    document.querySelectorAll('#leadersListBody tr').forEach(r => r.style.background = '');
+    const row = document.getElementById('leaderRow_' + email);
+    if (row) row.style.background = '#e8f5e9';
+}
+
+function clearLeaderSelection() {
+    document.getElementById('caseAssignedLeaderEmail').value = '';
+    document.getElementById('selectedLeaderBanner').style.display = 'none';
+    document.querySelectorAll('#leadersListBody tr').forEach(r => r.style.background = '');
+}
+
 // Custom Citizen Case Submit
 async function handleCaseSubmit(e) {
     e.preventDefault();
 
-    // Location must be filled — village leader is matched by exact sector + cell + village
-    const sectorVal  = (document.getElementById('caseSector')  && document.getElementById('caseSector').value.trim())  || '';
-    const cellVal    = (document.getElementById('caseCell')    && document.getElementById('caseCell').value.trim())    || '';
-    const villageVal = (document.getElementById('caseVillage') && document.getElementById('caseVillage').value.trim()) || '';
-
-    if (!sectorVal || !cellVal || !villageVal) {
-        alert('Your case cannot be sent: Sector, Cell, and Village must all be filled in so the system can route it to your village leader. Please update your profile with your location first.');
-        return;
-    }
-
-    // Step 1: Find the village leader for this location
-    let assignedLeaderEmail = '';
-    let assignedLeaderName = '';
-    try {
-        const leaderRes = await fetch(
-            `/api/auth/leader-by-location?sector=${encodeURIComponent(sectorVal)}&cell=${encodeURIComponent(cellVal)}&village=${encodeURIComponent(villageVal)}`
-        );
-        if (!leaderRes.ok) {
-            alert(`No village leader is registered for your location (${sectorVal} / ${cellVal} / ${villageVal}).\n\nYour case cannot be sent. Please contact your local administration to register a leader for your area.`);
-            return;
-        }
-        const leader = await leaderRes.json();
-        assignedLeaderEmail = leader.email;
-        assignedLeaderName  = leader.name;
-    } catch (err) {
-        alert('Could not connect to the server to verify your village leader. Please try again.');
+    // Step 1: Citizen must have selected a village leader
+    const assignedLeaderEmail = (document.getElementById('caseAssignedLeaderEmail') && document.getElementById('caseAssignedLeaderEmail').value.trim()) || '';
+    if (!assignedLeaderEmail) {
+        alert('Please select a village leader to send your case to (Step 1 above).');
+        document.getElementById('leadersListContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
 
@@ -684,9 +760,9 @@ async function handleCaseSubmit(e) {
         type: document.getElementById('caseType').value,
         title: document.getElementById('caseTitle').value,
         description: document.getElementById('caseDescription').value,
-        sector: sectorVal,
-        cell: cellVal,
-        village: villageVal,
+        sector: (document.getElementById('caseSector') && document.getElementById('caseSector').value.trim()) || '',
+        cell:   (document.getElementById('caseCell')   && document.getElementById('caseCell').value.trim())   || '',
+        village:(document.getElementById('caseVillage')&& document.getElementById('caseVillage').value.trim())|| '',
         accusedName: document.getElementById('caseAccusedName').value,
         accusedPhone: document.getElementById('caseAccusedPhone').value,
         incidentDate: document.getElementById('caseIncidentDate').value,
