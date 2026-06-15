@@ -1567,7 +1567,9 @@ function loadLeaderAttendance() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const tbody = document.getElementById('attendanceTableBody');
 
     // Filter members by leader's location
@@ -1710,8 +1712,10 @@ function loadAttendanceList() {
 function markMemberAttendance(memberId, status, index) {
     console.log('markMemberAttendance called with:', { memberId, status, index });
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-    const member = records[index];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const member = records.find(r => r.telephone === memberId) || records[index];
     console.log('Member found:', member);
 
     // Update button states
@@ -1762,7 +1766,9 @@ function markAllPresent() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
     // Get only members for current leader's village
     const locationMembers = records.filter(member =>
@@ -1799,7 +1805,9 @@ function markAllPresent() {
 
 // Mark all members as absent
 function markAllAbsent() {
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const allAbsentAttendance = {};
 
     const tempAttendance = JSON.parse(sessionStorage.getItem('tempAttendance')) || {};
@@ -6568,7 +6576,9 @@ function loadIntekoLeaderAttendance() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const tbody = document.getElementById('intekoAttendanceTableBody');
 
     const locationMembers = records.filter(m =>
@@ -6631,8 +6641,10 @@ function changeIntekoLocation() {
 }
 
 function markIntekoMemberAttendance(memberId, status, index) {
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-    const member = records[index];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const member = records.find(r => r.telephone === memberId) || records[index];
 
     const row = document.querySelector(`tr[data-inteko-member-id="${memberId}"]`);
     if (row) {
@@ -6675,7 +6687,9 @@ function markAllIntekoPresent() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const locationMembers = records.filter(m =>
         m.sector === currentIntekoLocation.sector &&
         m.cell === currentIntekoLocation.cell &&
@@ -6710,7 +6724,9 @@ function markAllIntekoAbsent() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const locationMembers = records.filter(m =>
         m.sector === currentIntekoLocation.sector &&
         m.cell === currentIntekoLocation.cell &&
