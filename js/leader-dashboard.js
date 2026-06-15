@@ -6620,9 +6620,9 @@ function markAllIntekoPresent() {
         ? window._cachedMembers
         : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const locationMembers = records.filter(m =>
-        m.sector === currentIntekoLocation.sector &&
-        m.cell === currentIntekoLocation.cell &&
-        m.village === currentIntekoLocation.village
+        m.sector?.toLowerCase() === currentIntekoLocation.sector?.toLowerCase() &&
+        m.cell?.toLowerCase() === currentIntekoLocation.cell?.toLowerCase() &&
+        m.village?.toLowerCase() === currentIntekoLocation.village?.toLowerCase()
     );
 
     const allPresentAttendance = {};
@@ -6657,9 +6657,9 @@ function markAllIntekoAbsent() {
         ? window._cachedMembers
         : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const locationMembers = records.filter(m =>
-        m.sector === currentIntekoLocation.sector &&
-        m.cell === currentIntekoLocation.cell &&
-        m.village === currentIntekoLocation.village
+        m.sector?.toLowerCase() === currentIntekoLocation.sector?.toLowerCase() &&
+        m.cell?.toLowerCase() === currentIntekoLocation.cell?.toLowerCase() &&
+        m.village?.toLowerCase() === currentIntekoLocation.village?.toLowerCase()
     );
     const tempAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
     const allAbsentAttendance = {};
@@ -6697,9 +6697,9 @@ function updateIntekoAttendanceSummary() {
     const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
 
     const locationMembers = currentIntekoLocation ? records.filter(m =>
-        m.sector === currentIntekoLocation.sector &&
-        m.cell === currentIntekoLocation.cell &&
-        m.village === currentIntekoLocation.village
+        m.sector?.toLowerCase() === currentIntekoLocation.sector?.toLowerCase() &&
+        m.cell?.toLowerCase() === currentIntekoLocation.cell?.toLowerCase() &&
+        m.village?.toLowerCase() === currentIntekoLocation.village?.toLowerCase()
     ) : [];
 
     const presentCount = Object.values(tempAttendance).filter(a => a.status === 'present').length;
