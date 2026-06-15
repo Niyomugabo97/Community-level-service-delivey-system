@@ -57,21 +57,16 @@ class ApiService {
     }
 
     async createMember(memberData) {
-        try {
-            const response = await fetch(`${this.baseURL}/members`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(memberData)
-            });
-            
-            if (!response.ok) throw new Error('Failed to create member');
-            return await response.json();
-        } catch (error) {
-            console.error('Error creating member:', error);
-            throw error;
+        const response = await fetch(`${this.baseURL}/members`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(memberData)
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
         }
+        return await response.json();
     }
 
     async updateMember(memberId, memberData) {
