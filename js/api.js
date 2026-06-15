@@ -518,6 +518,48 @@ class ApiService {
         }
     }
 
+    // Locations API
+    async getLocations() {
+        try {
+            const response = await fetch(`${this.baseURL}/locations`);
+            if (!response.ok) throw new Error('Failed to fetch locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+            return [];
+        }
+    }
+
+    async createLocations(data) {
+        try {
+            const response = await fetch(`${this.baseURL}/locations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Failed to create locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating locations:', error);
+            throw error;
+        }
+    }
+
+    async updateLocations(id, data) {
+        try {
+            const response = await fetch(`${this.baseURL}/locations/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Failed to update locations');
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating locations:', error);
+            throw error;
+        }
+    }
+
     // Image Upload API
     async uploadImage(imageFile) {
         try {

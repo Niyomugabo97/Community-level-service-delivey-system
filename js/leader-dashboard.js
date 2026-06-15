@@ -43,6 +43,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             console.log('Initializing dashboard...');
 
+            // Load locations from MongoDB first so dropdowns are populated
+            try {
+                await loadLocationsFromDB();
+                console.log('Locations loaded from DB');
+            } catch (error) {
+                console.warn('Locations load failed, using defaults:', error);
+            }
+
             // Initialize attendance tracking for existing members
             try {
                 initializeAllMembersAttendanceTracking();
@@ -1005,6 +1013,53 @@ async function handleRegisterSubmit(e) {
 // Module-level cache so edit/delete can look up records by _id
 window._cachedMembers = [];
 
+// Module-level location cache (loaded from MongoDB on init)
+window._cachedLocations = { sectors: ['Ruhuha', 'Nyarugenge', 'Mayange'], cells: [], villages: [] };
+window._cachedLocationsId = null;
+
+async function loadLocationsFromDB() {
+    try {
+        const api = new ApiService();
+        const docs = await api.getLocations();
+        if (docs && docs.length > 0) {
+            window._cachedLocations = {
+                sectors: docs[0].sectors || [],
+                cells: docs[0].cells || [],
+                villages: docs[0].villages || []
+            };
+            window._cachedLocationsId = docs[0]._id;
+        } else {
+            const defaults = { sectors: ['Ruhuha', 'Nyarugenge', 'Mayange'], cells: [], villages: [] };
+            const created = await api.createLocations(defaults);
+            window._cachedLocations = defaults;
+            window._cachedLocationsId = created._id;
+        }
+        localStorage.setItem('systemLocations', JSON.stringify(window._cachedLocations));
+    } catch (err) {
+        console.warn('Failed to load locations from DB, using localStorage:', err);
+        const stored = JSON.parse(localStorage.getItem('systemLocations'));
+        if (stored && Array.isArray(stored.sectors) && stored.sectors.length > 0) {
+            window._cachedLocations = stored;
+        }
+    }
+}
+
+async function saveLocationsToDB(locations) {
+    window._cachedLocations = locations;
+    localStorage.setItem('systemLocations', JSON.stringify(locations));
+    try {
+        const api = new ApiService();
+        if (window._cachedLocationsId) {
+            await api.updateLocations(window._cachedLocationsId, locations);
+        } else {
+            const created = await api.createLocations(locations);
+            window._cachedLocationsId = created._id;
+        }
+    } catch (err) {
+        console.warn('Locations saved to localStorage only (DB unavailable):', err);
+    }
+}
+
 async function loadRegisterTable() {
     const tbody = document.getElementById('registerTableBody');
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#666;">Loading...</td></tr>';
@@ -1201,109 +1256,58 @@ function initializeAllMembersAttendanceTracking() {
 
 // Initialize default locations
 function initializeDefaultLocations() {
-    // Get existing locations from localStorage or initialize with defaults
-    let locations = JSON.parse(localStorage.getItem('systemLocations'));
-
-    if (!locations) {
-        locations = {
-            // Default sectors visible in the dropdown before any custom ones are added
-            sectors: ['Ruhuha', 'Nyarugenge', 'Mayange'],
-            cells: ['Murambi', 'Kamabare'],
-            villages: ['Cyeru', 'Kanombe']
-        };
-
-        // Save to localStorage
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
-        console.log('Initialized default locations:', locations);
+    const cached = window._cachedLocations;
+    if (cached && Array.isArray(cached.sectors) && cached.sectors.length > 0) {
+        return cached;
     }
-
-    return locations;
+    const defaults = {
+        sectors: ['Ruhuha', 'Nyarugenge', 'Mayange'],
+        cells: ['Murambi', 'Kamabare'],
+        villages: ['Cyeru', 'Kanombe']
+    };
+    window._cachedLocations = defaults;
+    return defaults;
 }
 
 // Add new sector
 function addNewSector() {
-    showInputPrompt('Enter new sector name', 'Sector name', (sectorName) => {
-        if (!sectorName) {
-            showNotification('Sector addition cancelled', 'info');
-            return;
-        }
-
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
-
-        // Check for duplicates
-        if (locations.sectors.includes(sectorName.trim())) {
-            showNotification('Sector already exists', 'error');
-            return;
-        }
-
-        // Add new sector
+    showInputPrompt('Enter new sector name', 'Sector name', async (sectorName) => {
+        if (!sectorName) { showNotification('Sector addition cancelled', 'info'); return; }
+        const locations = { ...window._cachedLocations, sectors: [...(window._cachedLocations.sectors || [])] };
+        if (locations.sectors.includes(sectorName.trim())) { showNotification('Sector already exists', 'error'); return; }
         locations.sectors.push(sectorName.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
-
-        // Reload sector dropdown
+        await saveLocationsToDB(locations);
         loadSectorsForLeader();
-
+        loadIntekoSectors();
         showNotification(`Sector "${sectorName}" added successfully`, 'success');
     });
 }
 
 // Add new cell
 function addNewCell() {
-    showInputPrompt('Enter new cell name', 'Cell name', (cellName) => {
-        if (!cellName) {
-            showNotification('Cell addition cancelled', 'info');
-            return;
-        }
-
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
-
-        // Check for duplicates
-        if (locations.cells.includes(cellName.trim())) {
-            showNotification('Cell already exists', 'error');
-            return;
-        }
-
-        // Add new cell
+    showInputPrompt('Enter new cell name', 'Cell name', async (cellName) => {
+        if (!cellName) { showNotification('Cell addition cancelled', 'info'); return; }
+        const locations = { ...window._cachedLocations, cells: [...(window._cachedLocations.cells || [])] };
+        if (locations.cells.includes(cellName.trim())) { showNotification('Cell already exists', 'error'); return; }
         locations.cells.push(cellName.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
-
-        // Reload cell dropdown
+        await saveLocationsToDB(locations);
         const selectedSector = document.getElementById('leaderSector').value;
-        if (selectedSector) {
-            updateLeaderCells();
-        }
-
+        if (selectedSector) updateLeaderCells();
         showNotification(`Cell "${cellName}" added successfully`, 'success');
     });
 }
 
 // Add new village
 function addNewVillage() {
-    showInputPrompt('Enter new village name', 'Village name', (villageName) => {
-        if (!villageName) {
-            showNotification('Village addition cancelled', 'info');
-            return;
-        }
-
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
-
-        // Check for duplicates
-        if (locations.villages.includes(villageName.trim())) {
-            showNotification('Village already exists', 'error');
-            return;
-        }
-
-        // Add new village
+    showInputPrompt('Enter new village name', 'Village name', async (villageName) => {
+        if (!villageName) { showNotification('Village addition cancelled', 'info'); return; }
+        const locations = { ...window._cachedLocations, villages: [...(window._cachedLocations.villages || [])] };
+        if (locations.villages.includes(villageName.trim())) { showNotification('Village already exists', 'error'); return; }
         locations.villages.push(villageName.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
-
-        // Reload village dropdown
+        await saveLocationsToDB(locations);
         const selectedSector = document.getElementById('leaderSector').value;
         const selectedCell = document.getElementById('leaderCell').value;
-        if (selectedSector && selectedCell) {
-            updateLeaderVillages();
-        }
-
+        if (selectedSector && selectedCell) updateLeaderVillages();
         showNotification(`Village "${villageName}" added successfully`, 'success');
     });
 }
@@ -1318,42 +1322,7 @@ function debugSystemLocations() {
 // Add this to the console for testing
 // You can type: debugSystemLocations() in browser console to check current data
 
-// Update updateLeaderCells to use system locations
-function updateLeaderCells() {
-    const selectedSector = document.getElementById('leaderSector').value;
-    const cellSelect = document.getElementById('leaderCell');
-    const villageSelect = document.getElementById('leaderVillage');
-
-    // Reset and disable dependent selects
-    cellSelect.innerHTML = '<option value="">Select your cell</option>';
-    cellSelect.disabled = !selectedSector;
-
-    villageSelect.innerHTML = '<option value="">Select your village</option>';
-    villageSelect.disabled = true;
-
-    if (!selectedSector) return;
-
-    // Get locations from system and member records
-    const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
-
-    // Combine system cells with member cells for selected sector
-    const memberCells = [...new Set(memberRecords
-        .filter(r => r.sector === selectedSector)
-        .map(r => r.cell)
-        .filter(c => c)
-    )];
-    const allCells = [...new Set([...locations.cells, ...memberCells])];
-
-    cellSelect.innerHTML = '<option value="">Select your cell</option>' +
-        allCells.map(cell => `<option value="${cell}">${cell}</option>`).join('');
-
-    // Restore selected value if it exists
-    const currentLocation = currentLeaderLocation;
-    if (currentLocation && currentLocation.cell && currentLocation.sector === selectedSector) {
-        cellSelect.value = currentLocation.cell;
-    }
-}
+// (duplicate removed — see updateLeaderCells below)
 
 // Leader Location Selection Functions
 let currentLeaderLocation = null;
@@ -1414,29 +1383,20 @@ function initializeLeaderLocationSelection() {
 
 // Load sectors for leader selection
 function loadSectorsForLeader() {
-    // Get system locations first
-    let locations;
-    try {
-        locations = JSON.parse(localStorage.getItem('systemLocations'));
-    } catch (e) {
-        locations = null;
-    }
-
-    // If no system locations exist OR sectors array is missing/empty, initialize with defaults
+    let locations = window._cachedLocations;
     if (!locations || !Array.isArray(locations.sectors) || locations.sectors.length === 0) {
         locations = initializeDefaultLocations();
     }
 
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
-    // Combine system sectors with member sectors (in case some sectors only exist via members)
     const memberSectors = [...new Set(memberRecords.map(r => r.sector).filter(s => s))];
     let allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
 
-    // As a final safety net, if still empty, re-initialize defaults
-    if (!allSectors || allSectors.length === 0) {
-        locations = initializeDefaultLocations();
-        allSectors = locations.sectors || [];
+    if (!allSectors.length) {
+        allSectors = initializeDefaultLocations().sectors;
     }
 
     const sectorSelect = document.getElementById('leaderSector');
@@ -1445,10 +1405,8 @@ function loadSectorsForLeader() {
     sectorSelect.innerHTML = '<option value="">Select your sector</option>' +
         allSectors.map(sector => `<option value="${sector}">${sector}</option>`).join('');
 
-    // Restore selected value if it exists
-    const currentLocation = currentLeaderLocation;
-    if (currentLocation && currentLocation.sector) {
-        sectorSelect.value = currentLocation.sector;
+    if (currentLeaderLocation && currentLeaderLocation.sector) {
+        sectorSelect.value = currentLeaderLocation.sector;
     }
 }
 
@@ -1458,33 +1416,20 @@ function updateLeaderCells() {
     const cellSelect = document.getElementById('leaderCell');
     const villageSelect = document.getElementById('leaderVillage');
 
-    // Reset and disable dependent selects
     cellSelect.innerHTML = '<option value="">Select your cell</option>';
     cellSelect.disabled = !selectedSector;
-
     villageSelect.innerHTML = '<option value="">Select your village</option>';
     villageSelect.disabled = true;
 
     if (!selectedSector) return;
 
-    // Get locations from system and member records
-    let locations;
-    try {
-        locations = JSON.parse(localStorage.getItem('systemLocations'));
-    } catch (e) {
-        locations = null;
-    }
-    if (!locations) {
-        locations = initializeDefaultLocations();
-    }
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
-    // Combine system cells with member cells (we don't yet scope cells per sector)
     const memberCells = [...new Set(memberRecords
-        .filter(r => r.sector === selectedSector)
-        .map(r => r.cell)
-        .filter(c => c)
-    )];
+        .filter(r => r.sector === selectedSector).map(r => r.cell).filter(c => c))];
     const systemCells = Array.isArray(locations.cells) ? locations.cells : [];
     const allCells = [...new Set([...systemCells, ...memberCells])];
 
@@ -1498,29 +1443,19 @@ function updateLeaderVillages() {
     const selectedCell = document.getElementById('leaderCell').value;
     const villageSelect = document.getElementById('leaderVillage');
 
-    // Reset village select
     villageSelect.innerHTML = '<option value="">Select your village</option>';
     villageSelect.disabled = !selectedCell;
 
     if (!selectedSector || !selectedCell) return;
 
-    // Load villages from system locations and member records
-    let locations;
-    try {
-        locations = JSON.parse(localStorage.getItem('systemLocations'));
-    } catch (e) {
-        locations = null;
-    }
-    if (!locations) {
-        locations = initializeDefaultLocations();
-    }
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
     const memberVillages = [...new Set(memberRecords
         .filter(r => r.sector === selectedSector && r.cell === selectedCell)
-        .map(r => r.village)
-        .filter(v => v)
-    )];
+        .map(r => r.village).filter(v => v))];
     const systemVillages = Array.isArray(locations.villages) ? locations.villages : [];
     const allVillages = [...new Set([...systemVillages, ...memberVillages])];
 
@@ -6541,11 +6476,11 @@ function updateIntekoLeaderCells() {
 
     if (!selectedSector) return;
 
-    let locations;
-    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
-    if (!locations) locations = initializeDefaultLocations();
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
     const memberCells = [...new Set(memberRecords.filter(r => r.sector === selectedSector).map(r => r.cell).filter(c => c))];
     const systemCells = Array.isArray(locations.cells) ? locations.cells : [];
     const allCells = [...new Set([...systemCells, ...memberCells])];
@@ -6564,11 +6499,11 @@ function updateIntekoLeaderVillages() {
 
     if (!selectedSector || !selectedCell) return;
 
-    let locations;
-    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
-    if (!locations) locations = initializeDefaultLocations();
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
 
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
     const memberVillages = [...new Set(memberRecords
         .filter(r => r.sector === selectedSector && r.cell === selectedCell)
         .map(r => r.village).filter(v => v))];
@@ -7187,13 +7122,12 @@ function downloadAttendanceCSV(type) {
 
 // ── Inteko location: add new Sector / Cell / Village ──────────────────────
 function addNewIntekoSector() {
-    showInputPrompt('Enter new sector name', 'Sector name', (name) => {
+    showInputPrompt('Enter new sector name', 'Sector name', async (name) => {
         if (!name) return;
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        const locations = { ...window._cachedLocations, sectors: [...(window._cachedLocations.sectors || [])] };
         if (locations.sectors.includes(name.trim())) { showNotification('Sector already exists', 'error'); return; }
         locations.sectors.push(name.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
-        // Refresh both Umuganda and Inteko sector dropdowns
+        await saveLocationsToDB(locations);
         loadSectorsForLeader();
         loadIntekoSectors();
         showNotification(`Sector "${name}" added successfully`, 'success');
@@ -7201,12 +7135,12 @@ function addNewIntekoSector() {
 }
 
 function addNewIntekoCell() {
-    showInputPrompt('Enter new cell name', 'Cell name', (name) => {
+    showInputPrompt('Enter new cell name', 'Cell name', async (name) => {
         if (!name) return;
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        const locations = { ...window._cachedLocations, cells: [...(window._cachedLocations.cells || [])] };
         if (locations.cells.includes(name.trim())) { showNotification('Cell already exists', 'error'); return; }
         locations.cells.push(name.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
+        await saveLocationsToDB(locations);
         const sel = document.getElementById('intekoSector');
         if (sel && sel.value) updateIntekoLeaderCells();
         showNotification(`Cell "${name}" added successfully`, 'success');
@@ -7214,12 +7148,12 @@ function addNewIntekoCell() {
 }
 
 function addNewIntekoVillage() {
-    showInputPrompt('Enter new village name', 'Village name', (name) => {
+    showInputPrompt('Enter new village name', 'Village name', async (name) => {
         if (!name) return;
-        const locations = JSON.parse(localStorage.getItem('systemLocations')) || { sectors: [], cells: [], villages: [] };
+        const locations = { ...window._cachedLocations, villages: [...(window._cachedLocations.villages || [])] };
         if (locations.villages.includes(name.trim())) { showNotification('Village already exists', 'error'); return; }
         locations.villages.push(name.trim());
-        localStorage.setItem('systemLocations', JSON.stringify(locations));
+        await saveLocationsToDB(locations);
         const s = document.getElementById('intekoSector');
         const c = document.getElementById('intekoCell');
         if (s && c && s.value && c.value) updateIntekoLeaderVillages();
@@ -7228,11 +7162,10 @@ function addNewIntekoVillage() {
 }
 
 function loadIntekoSectors() {
-    let locations;
-    try { locations = JSON.parse(localStorage.getItem('systemLocations')); } catch (e) { locations = null; }
-    if (!locations || !Array.isArray(locations.sectors) || locations.sectors.length === 0)
-        locations = initializeDefaultLocations();
-    const memberRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const memberSectors = [...new Set(memberRecords.map(r => r.sector).filter(Boolean))];
     const allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
     const sel = document.getElementById('intekoSector');
