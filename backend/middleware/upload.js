@@ -32,7 +32,11 @@ async function cloudinaryUpload(req, res, next) {
     req.file.filename = result.public_id;    // Cloudinary public_id
     next();
   } catch (err) {
-    next(err);
+    // Don't fail the whole request if Cloudinary is unavailable;
+    // save the record without an image instead.
+    console.warn("Cloudinary upload failed, saving without image:", err.message);
+    req.file = undefined;
+    next();
   }
 }
 
