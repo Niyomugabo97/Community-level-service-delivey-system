@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 loadSectorsForLeader();
                 loadIntekoSectors();
+                loadRegSectors();
                 console.log('Location dropdowns populated');
             } catch (error) {
                 console.warn('Failed to populate location dropdowns:', error);
@@ -972,8 +973,11 @@ async function handleRegisterSubmit(e) {
         // Reset form
         e.target.reset();
 
-        // Reload tables
-        loadRegisterTable();
+        // Reload members cache then refresh all location dropdowns
+        await loadRegisterTable();
+        loadSectorsForLeader();
+        loadIntekoSectors();
+        loadRegSectors();
         loadAttendanceList();
         updateSectorVillageFilters();
 
@@ -1383,6 +1387,54 @@ function loadSectorsForLeader() {
     }
 }
 
+// Populate registration form sector dropdown (mirrors loadSectorsForLeader)
+function loadRegSectors() {
+    const sel = document.getElementById('regSector');
+    if (!sel) return;
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const members = window._cachedMembers || [];
+    const memberSectors = [...new Set(members.map(r => r.sector).filter(Boolean))];
+    const allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select sector</option>' +
+        allSectors.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (current) sel.value = current;
+}
+
+function updateRegCells() {
+    const selectedSector = document.getElementById('regSector').value;
+    const cellSel = document.getElementById('regCell');
+    const villageSel = document.getElementById('regVillage');
+    cellSel.innerHTML = '<option value="">Select cell</option>';
+    cellSel.disabled = !selectedSector;
+    villageSel.innerHTML = '<option value="">Select village</option>';
+    villageSel.disabled = true;
+    if (!selectedSector) return;
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const members = window._cachedMembers || [];
+    const memberCells = [...new Set(members.filter(r => r.sector?.toLowerCase() === selectedSector.toLowerCase()).map(r => r.cell).filter(Boolean))];
+    const allCells = [...new Set([...(locations.cells || []), ...memberCells])];
+    cellSel.innerHTML = '<option value="">Select cell</option>' +
+        allCells.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function updateRegVillages() {
+    const selectedSector = document.getElementById('regSector').value;
+    const selectedCell = document.getElementById('regCell').value;
+    const villageSel = document.getElementById('regVillage');
+    villageSel.innerHTML = '<option value="">Select village</option>';
+    villageSel.disabled = !selectedCell;
+    if (!selectedSector || !selectedCell) return;
+    const locations = window._cachedLocations || initializeDefaultLocations();
+    const members = window._cachedMembers || [];
+    const memberVillages = [...new Set(members
+        .filter(r => r.sector?.toLowerCase() === selectedSector.toLowerCase() && r.cell?.toLowerCase() === selectedCell.toLowerCase())
+        .map(r => r.village).filter(Boolean))];
+    const allVillages = [...new Set([...(locations.villages || []), ...memberVillages])];
+    villageSel.innerHTML = '<option value="">Select village</option>' +
+        allVillages.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
 // Update cells based on selected sector
 function updateLeaderCells() {
     const selectedSector = document.getElementById('leaderSector').value;
@@ -1545,11 +1597,11 @@ function loadLeaderAttendance() {
         : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const tbody = document.getElementById('attendanceTableBody');
 
-    // Filter members by leader's location
+    // Filter members by leader's location (case-insensitive)
     const locationMembers = records.filter(member =>
-        member.sector === currentLeaderLocation.sector &&
-        member.cell === currentLeaderLocation.cell &&
-        member.village === currentLeaderLocation.village
+        member.sector?.toLowerCase() === currentLeaderLocation.sector?.toLowerCase() &&
+        member.cell?.toLowerCase() === currentLeaderLocation.cell?.toLowerCase() &&
+        member.village?.toLowerCase() === currentLeaderLocation.village?.toLowerCase()
     );
 
     if (locationMembers.length === 0) {
@@ -4052,9 +4104,15 @@ function editMemberRecord(memberId) {
     document.getElementById('regAge').value = record.age || '';
     document.getElementById('regTelephone').value = record.telephone || '';
     if (document.getElementById('regID')) document.getElementById('regID').value = record.idNumber || '';
+    // Populate dropdowns then pre-select the member's saved values
+    loadRegSectors();
     document.getElementById('regSector').value = record.sector || '';
+    updateRegCells();
     document.getElementById('regCell').value = record.cell || '';
+    document.getElementById('regCell').disabled = false;
+    updateRegVillages();
     document.getElementById('regVillage').value = record.village || '';
+    document.getElementById('regVillage').disabled = false;
     document.getElementById('regStatus').value = record.status || '';
     if (document.getElementById('regArrivalTime')) document.getElementById('regArrivalTime').value = record.arrivalTime || '';
     if (document.getElementById('regReturnTime')) document.getElementById('regReturnTime').value = record.returnTime || '';
@@ -5097,20 +5155,15 @@ function loadNotifications() {
 
 // Load all tables
 async function loadAllTables() {
-    try {
-        await loadIntekoRecords();
-        await loadRegisterTable();
-        await loadInsuranceTable();
-        await loadDrugsTable();
-        await loadViolenceTable();
-        // Leader-specific infrastructure table
-        await loadLeaderInfrastructureTable();
-        await loadCaseTable();
-        await loadLeaderHomeUpdatesList();
-        await loadVisitorReports();
-    } catch (error) {
-        console.warn('Some tables failed to load:', error);
-    }
+    await loadIntekoRecords().catch(err => console.warn('loadIntekoRecords:', err));
+    await loadRegisterTable().catch(err => console.warn('loadRegisterTable:', err));
+    await loadInsuranceTable().catch(err => console.warn('loadInsuranceTable:', err));
+    await loadDrugsTable().catch(err => console.warn('loadDrugsTable:', err));
+    await loadViolenceTable().catch(err => console.warn('loadViolenceTable:', err));
+    await loadLeaderInfrastructureTable().catch(err => console.warn('loadLeaderInfrastructure:', err));
+    await loadCaseTable().catch(err => console.warn('loadCaseTable:', err));
+    await loadLeaderHomeUpdatesList().catch(err => console.warn('loadLeaderHomeUpdatesList:', err));
+    await loadVisitorReports().catch(err => console.warn('loadVisitorReports:', err));
 }
 
 // Format date helper
@@ -6555,9 +6608,9 @@ function loadIntekoLeaderAttendance() {
     const tbody = document.getElementById('intekoAttendanceTableBody');
 
     const locationMembers = records.filter(m =>
-        m.sector === currentIntekoLocation.sector &&
-        m.cell === currentIntekoLocation.cell &&
-        m.village === currentIntekoLocation.village
+        m.sector?.toLowerCase() === currentIntekoLocation.sector?.toLowerCase() &&
+        m.cell?.toLowerCase() === currentIntekoLocation.cell?.toLowerCase() &&
+        m.village?.toLowerCase() === currentIntekoLocation.village?.toLowerCase()
     );
 
     if (locationMembers.length === 0) {

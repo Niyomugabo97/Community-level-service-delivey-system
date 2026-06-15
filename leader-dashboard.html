@@ -82,17 +82,23 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Sector *</label>
-                            <input type="text" id="regSector" required>
+                            <select id="regSector" required onchange="updateRegCells()">
+                                <option value="">Select sector</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Cell *</label>
-                            <input type="text" id="regCell" required>
+                            <select id="regCell" required onchange="updateRegVillages()" disabled>
+                                <option value="">Select cell</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Village *</label>
-                            <input type="text" id="regVillage" required>
+                            <select id="regVillage" required disabled>
+                                <option value="">Select village</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Status</label>
