@@ -17,30 +17,18 @@ class ApiService {
     }
 
     async createHomeUpdate(updateData, imageFile) {
-        try {
-            const formData = new FormData();
-            
-            // Add text fields
-            Object.keys(updateData).forEach(key => {
-                formData.append(key, updateData[key]);
-            });
-            
-            // Add image file if provided
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
-            
-            const response = await fetch(`${this.baseURL}/home-updates`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) throw new Error('Failed to create home update');
-            return await response.json();
-        } catch (error) {
-            console.error('Error creating home update:', error);
-            throw error;
+        const formData = new FormData();
+        Object.keys(updateData).forEach(key => formData.append(key, updateData[key]));
+        if (imageFile) formData.append('image', imageFile);
+        const response = await fetch(`${this.baseURL}/home-updates`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
         }
+        return await response.json();
     }
 
     // Members API

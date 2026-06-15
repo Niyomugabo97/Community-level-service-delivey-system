@@ -5559,7 +5559,6 @@ async function handleLeaderActivitySubmit(e) {
     const fileInput = document.getElementById('leaderActivityImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    // Prepare data for MongoDB
     const updateData = {
         type: 'activity',
         title: 'Activity',
@@ -5570,56 +5569,16 @@ async function handleLeaderActivitySubmit(e) {
     };
 
     try {
-        // Check if ApiService is available
-        if (typeof ApiService === 'undefined') {
-            throw new Error('ApiService not available - falling back to localStorage');
-        }
-
-        // Use API service to save to MongoDB
         const api = new ApiService();
-        const result = await api.createHomeUpdate(updateData, file);
-
-        console.log('Activity saved to MongoDB:', result);
+        await api.createHomeUpdate(updateData, file);
         showNotification('Activity posted successfully!', 'success');
-
-        // Reset form
         e.target.reset();
         document.getElementById('leaderActivityDate').value = new Date().toISOString().slice(0, 10);
-
-        // Refresh home updates list
         loadLeaderHomeUpdatesList();
-
     } catch (error) {
         console.error('Error saving activity to MongoDB:', error);
-        showNotification('Error posting activity: ' + error.message, 'error');
-
-        // Fallback to localStorage if API fails
-        let imageData = 'https://via.placeholder.com/400x200?text=Activity';
-        if (file) {
-            try {
-                const dataUrl = await readImageAsDataUrl(file);
-                if (dataUrl) imageData = dataUrl;
-            } catch (err) {
-                console.warn('Image read failed', err);
-            }
-        }
-        const activities = JSON.parse(localStorage.getItem('activities')) || [];
-        const item = {
-            id: Date.now(),
-            description,
-            place,
-            date,
-            image: imageData,
-            level: HOME_LEVEL,
-            uploadedBy: getCurrentLeaderName()
-        };
-        activities.push(item);
-        localStorage.setItem('activities', JSON.stringify(activities));
-        e.target.reset();
-        document.getElementById('leaderActivityDate').value = new Date().toISOString().slice(0, 10);
+        showNotification('Failed to post activity: ' + error.message, 'error');
     }
-    loadLeaderHomeUpdatesList();
-    alert('Recent activity posted! It will appear on the home page.');
 }
 
 async function handleLeaderUpcomingSubmit(e) {
@@ -5631,7 +5590,6 @@ async function handleLeaderUpcomingSubmit(e) {
     const fileInput = document.getElementById('leaderUpcomingImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    // Prepare data for MongoDB
     const updateData = {
         type: 'upcoming',
         title,
@@ -5642,46 +5600,15 @@ async function handleLeaderUpcomingSubmit(e) {
     };
 
     try {
-        // Check if ApiService is available
-        if (typeof ApiService === 'undefined') {
-            throw new Error('ApiService not available - falling back to localStorage');
-        }
-
-        // Use API service to save to MongoDB
         const api = new ApiService();
-        const result = await api.createHomeUpdate(updateData, file);
-
-        console.log('Upcoming session saved to MongoDB:', result);
+        await api.createHomeUpdate(updateData, file);
         showNotification('Upcoming session posted successfully!', 'success');
-
-        // Reset form
         e.target.reset();
         document.getElementById('leaderUpcomingDate').value = new Date().toISOString().slice(0, 10);
-
-        // Refresh home updates list
         loadLeaderHomeUpdatesList();
-
     } catch (error) {
         console.error('Error saving upcoming session to MongoDB:', error);
-        showNotification('Error posting upcoming session: ' + error.message, 'error');
-
-        // Fallback to localStorage if API fails
-        const news = JSON.parse(localStorage.getItem('news')) || [];
-        const item = {
-            id: Date.now(),
-            title,
-            description,
-            place,
-            date,
-            level: HOME_LEVEL,
-            uploadedBy: getCurrentLeaderName()
-        };
-        news.push(item);
-        localStorage.setItem('news', JSON.stringify(news));
-        e.target.reset();
-        document.getElementById('leaderUpcomingDate').value = new Date().toISOString().slice(0, 10);
-        loadLeaderHomeUpdatesList();
-        alert('Upcoming session posted! It will appear on the home page.');
+        showNotification('Failed to post upcoming session: ' + error.message, 'error');
     }
 }
 
@@ -5693,7 +5620,6 @@ async function handleLeaderTrendingSubmit(e) {
     const fileInput = document.getElementById('leaderTrendingImage');
     const file = fileInput && fileInput.files && fileInput.files[0];
 
-    // Prepare data for MongoDB
     const updateData = {
         type: 'trending',
         title: 'Trending Topic',
@@ -5704,45 +5630,15 @@ async function handleLeaderTrendingSubmit(e) {
     };
 
     try {
-        // Check if ApiService is available
-        if (typeof ApiService === 'undefined') {
-            throw new Error('ApiService not available - falling back to localStorage');
-        }
-
-        // Use API service to save to MongoDB
         const api = new ApiService();
-        const result = await api.createHomeUpdate(updateData, file);
-
-        console.log('Trending topic saved to MongoDB:', result);
+        await api.createHomeUpdate(updateData, file);
         showNotification('Trending topic posted successfully!', 'success');
-
-        // Reset form
         e.target.reset();
         document.getElementById('leaderTrendingDate').value = new Date().toISOString().slice(0, 10);
-
-        // Refresh home updates list
         loadLeaderHomeUpdatesList();
-
     } catch (error) {
         console.error('Error saving trending topic to MongoDB:', error);
-        showNotification('Error posting trending topic: ' + error.message, 'error');
-
-        // Fallback to localStorage if API fails
-        const trending = JSON.parse(localStorage.getItem('trending')) || [];
-        const item = {
-            id: Date.now(),
-            description,
-            place,
-            date,
-            level: HOME_LEVEL,
-            uploadedBy: getCurrentLeaderName()
-        };
-        trending.push(item);
-        localStorage.setItem('trending', JSON.stringify(trending));
-        e.target.reset();
-        document.getElementById('leaderTrendingDate').value = new Date().toISOString().slice(0, 10);
-        loadLeaderHomeUpdatesList();
-        alert('Trending topic posted! It will appear on the home page.');
+        showNotification('Failed to post trending topic: ' + error.message, 'error');
     }
 }
 
@@ -5754,25 +5650,32 @@ async function loadLeaderHomeUpdates() {
 async function loadLeaderHomeUpdatesList() {
     const listEl = document.getElementById('leaderHomeUpdatesList');
     if (!listEl) return;
-    const activities = JSON.parse(localStorage.getItem('activities')) || [];
-    const news = JSON.parse(localStorage.getItem('news')) || [];
-    const trending = JSON.parse(localStorage.getItem('trending')) || [];
+
+    let updates = [];
+    try {
+        const api = new ApiService();
+        updates = await api.getHomeUpdates();
+    } catch (err) {
+        console.warn('Failed to load home updates from DB:', err);
+    }
+
     const myName = getCurrentLeaderName();
-    const myActivities = activities.filter(a => a.level === HOME_LEVEL && a.uploadedBy === myName);
-    const myNews = news.filter(n => n.level === HOME_LEVEL && n.uploadedBy === myName);
-    const myTrending = trending.filter(t => t.level === HOME_LEVEL && t.uploadedBy === myName);
-    const all = [
-        ...myActivities.map(a => ({ type: 'Activity', date: a.date, text: a.description })),
-        ...myNews.map(n => ({ type: 'Upcoming', date: n.date, text: n.title })),
-        ...myTrending.map(t => ({ type: 'Trending', date: t.date, text: t.description }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
-    if (all.length === 0) {
+    const myUpdates = updates
+        .filter(u => u.postedBy === myName)
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+        .slice(0, 15);
+
+    if (myUpdates.length === 0) {
         listEl.innerHTML = '<p>No posts yet. Use the forms above to post.</p>';
         return;
     }
-    listEl.innerHTML = '<ul class="simple-list">' + all.map(item =>
-        `<li><strong>${item.type}</strong> — ${formatDate(item.date)}: ${escapeHtml(item.text.slice(0, 60))}${item.text.length > 60 ? '…' : ''}</li>`
-    ).join('') + '</ul>';
+
+    listEl.innerHTML = '<ul class="simple-list">' + myUpdates.map(item => {
+        const label = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+        const text = item.description || item.title || '';
+        const dateStr = formatDate(item.date || item.createdAt);
+        return `<li><strong>${label}</strong> — ${dateStr}: ${escapeHtml(text.slice(0, 60))}${text.length > 60 ? '…' : ''}</li>`;
+    }).join('') + '</ul>';
 }
 
 // Face Recognition Functions
