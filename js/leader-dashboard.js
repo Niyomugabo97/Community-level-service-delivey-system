@@ -1002,20 +1002,33 @@ async function handleRegisterSubmit(e) {
     }
 }
 
+// Module-level cache so edit/delete can look up records by _id
+window._cachedMembers = [];
+
 async function loadRegisterTable() {
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
     const tbody = document.getElementById('registerTableBody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#666;">Loading...</td></tr>';
+
+    let records = [];
+    try {
+        const api = new ApiService();
+        records = await api.getMembers();
+    } catch (err) {
+        console.warn('API fetch failed, falling back to localStorage:', err);
+        records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    }
+
+    window._cachedMembers = records;
 
     if (records.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #666;">No registered members found</td></tr>';
         return;
     }
 
-    tbody.innerHTML = records.map((record, index) => {
-        // Calculate attendance percentage
+    tbody.innerHTML = records.map((record) => {
+        const memberId = record._id || record.id;
         const attendancePercentage = calculateAttendancePercentage(record.telephone, record.name);
 
-        // Determine attendance color and icon
         let attendanceDisplay = '';
         if (attendancePercentage === 0) {
             attendanceDisplay = `<span style="color: #dc3545; font-weight: bold;">${attendancePercentage}% <i class="fa-solid fa-circle-xmark"></i></span>`;
@@ -1028,7 +1041,7 @@ async function loadRegisterTable() {
         }
 
         return `
-            <tr data-index="${index}">
+            <tr data-member-id="${memberId}">
                 <td>${record.name}</td>
                 <td>${record.sex}</td>
                 <td>${record.telephone}</td>
@@ -1038,10 +1051,10 @@ async function loadRegisterTable() {
                 <td>${record.age}</td>
                 <td>${record.status}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editMemberRecord(${index})">
+                    <button class="btn btn-sm btn-primary" onclick="editMemberRecord('${memberId}')">
                         <i class="fa-solid fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteMemberRecord(${index})">
+                    <button class="btn btn-sm btn-danger" onclick="deleteMemberRecord('${memberId}')">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
@@ -1693,7 +1706,9 @@ function changeLocation() {
 
 // Load attendance list for manual marking (updated for leader system)
 function loadAttendanceList() {
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    const records = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : JSON.parse(localStorage.getItem('registerRecords')) || [];
     const tbody = document.getElementById('attendanceTableBody');
 
     if (records.length === 0) {
@@ -4107,9 +4122,8 @@ function addNotificationStyles() {
 }
 
 // Member Record Management
-function editMemberRecord(index) {
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-    const record = records[index];
+function editMemberRecord(memberId) {
+    const record = (window._cachedMembers || []).find(r => (r._id || r.id) == memberId);
 
     if (!record) {
         alert('Member record not found');
@@ -4121,18 +4135,17 @@ function editMemberRecord(index) {
     document.getElementById('regSex').value = record.sex || '';
     document.getElementById('regAge').value = record.age || '';
     document.getElementById('regTelephone').value = record.telephone || '';
-    document.getElementById('regID').value = record.idNumber || '';
+    if (document.getElementById('regID')) document.getElementById('regID').value = record.idNumber || '';
     document.getElementById('regSector').value = record.sector || '';
     document.getElementById('regCell').value = record.cell || '';
     document.getElementById('regVillage').value = record.village || '';
     document.getElementById('regStatus').value = record.status || '';
-    document.getElementById('regArrivalTime').value = record.arrivalTime || '';
-    document.getElementById('regReturnTime').value = record.returnTime || '';
+    if (document.getElementById('regArrivalTime')) document.getElementById('regArrivalTime').value = record.arrivalTime || '';
+    if (document.getElementById('regReturnTime')) document.getElementById('regReturnTime').value = record.returnTime || '';
 
     // Store editing info
     sessionStorage.setItem('editingMember', JSON.stringify({
-        index: index,
-        id: record.id
+        id: record._id || record.id
     }));
 
     // Change button text
@@ -4145,32 +4158,34 @@ function editMemberRecord(index) {
     document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
 }
 
-function deleteMemberRecord(index) {
+async function deleteMemberRecord(memberId) {
     if (!confirm('Are you sure you want to delete this member record?')) {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
-    const recordToDelete = records[index];
+    const recordToDelete = (window._cachedMembers || []).find(r => (r._id || r.id) == memberId);
 
-    if (!recordToDelete) {
-        showNotification('Member record not found', 'error');
-        return;
+    try {
+        const api = new ApiService();
+        await api.deleteMember(memberId);
+        showNotification('Member record deleted successfully', 'success');
+    } catch (err) {
+        console.warn('API delete failed, removing from localStorage:', err);
+        const records = JSON.parse(localStorage.getItem('registerRecords')) || [];
+        const idx = records.findIndex(r => (r._id || r.id) == memberId);
+        if (idx !== -1) records.splice(idx, 1);
+        localStorage.setItem('registerRecords', JSON.stringify(records));
+        showNotification('Member record deleted successfully', 'success');
     }
 
-    // Remove from records
-    records.splice(index, 1);
-    localStorage.setItem('registerRecords', JSON.stringify(records));
-
     // Also remove from face database if exists
-    if (faceSystem && recordToDelete.idNumber) {
+    if (faceSystem && recordToDelete && recordToDelete.idNumber) {
         const faceRemoved = faceSystem.deleteCitizen(recordToDelete.idNumber);
         if (faceRemoved) {
             console.log(`Face data removed for ${recordToDelete.name}`);
         }
     }
 
-    showNotification('Member record deleted successfully', 'success');
     loadRegisterTable();
 }
 
