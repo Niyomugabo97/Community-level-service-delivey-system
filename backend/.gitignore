@@ -1,0 +1,54 @@
+# =========================
+# Dependencies
+# =========================
+node_modules
+**/node_modules
+
+# =========================
+# Environment variables
+# =========================
+.env
+**/.env
+
+# =========================
+# Build outputs
+# =========================
+dist
+build
+
+# =========================
+# Logs
+# =========================
+npm-debug.log
+yarn-error.log
+debug.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Vercel (frontend deploy)
+# =========================
+.vercel
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode
+.idea
+.claude
+
+# =========================
+# Frontend folder (backend-only repo)
+# =========================
+frontend/
+
+# =========================
+# Temporary / misc files
+# =========================
+*.docx
+*.py
+*.log

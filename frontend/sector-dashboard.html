@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sector Level Dashboard - UMUTURAGE KU ISONGA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/new-styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo"><i class="fa-solid fa-building"></i> Sector Level Dashboard</h1>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <ul class="dashboard-menu">
+                <li><a href="#" data-section="cases" class="active"><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases</a></li>
+                <li><a href="#" data-section="activities"><i class="fa-solid fa-chart-line"></i> Cell Activities</a></li>
+                <li><a href="#" data-section="reports"><i class="fa-solid fa-file-lines"></i> All Reports</a></li>
+                <li><a href="#" data-section="statistics"><i class="fa-solid fa-chart-pie"></i> Statistics</a></li>
+                <li><a href="#" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> Activities & Home Updates</a></li>
+                <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat</a></li>
+            </ul>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Escalated Cases Section -->
+            <section id="cases" class="dashboard-section active">
+                <h2><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases from Cells</h2>
+                <div class="info-banner">
+                    <p>These cases were escalated from Cell level. Please review and resolve them.</p>
+                </div>
+                <div class="data-table-container">
+                    <table id="caseTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Plaintiff</th>
+                                <th>Defendant</th>
+                                <th>Cell</th>
+                                <th>Village</th>
+                                <th>Original Leader</th>
+                                <th>Case Description</th>
+                                <th>Status</th>
+                                <th>Escalated Date</th>
+                                <th>Countdown</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="caseTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Case Resolution Form -->
+                <div class="form-container" style="margin-top: 2rem;">
+                    <h3>Resolve Case</h3>
+                    <form id="resolveCaseForm">
+                        <div class="form-group">
+                            <label>Select Case ID</label>
+                            <select id="resolveCaseId" required>
+                                <option value="">Select a case to resolve</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Resolution Days</label>
+                                <input type="number" id="sectorResolutionDays" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Resolution Date</label>
+                                <input type="date" id="sectorResolutionDate" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Resolution Notes</label>
+                            <textarea id="sectorResolutionNotes" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Case Status</label>
+                            <select id="sectorCaseStatus" required>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Solved">Solved</option>
+                                <option value="Referred to Authorities">Referred to Authorities</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Case</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Cell Activities Section -->
+            <section id="activities" class="dashboard-section">
+                <h2>Cell Activities Monitoring</h2>
+                <div class="activities-summary">
+                    <div class="summary-card">
+                        <h3>All Umuganda Attendance</h3>
+                        <div id="umugandaSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>All Inteko Meetings</h3>
+                        <div id="intekoSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>All Registrations</h3>
+                        <div id="registrationSummary"></div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>All Reports</h3>
+                        <div id="reportsSummary"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section (full details from citizens & village leaders) -->
+            <section id="reports" class="dashboard-section">
+                <h2><i class="fa-solid fa-file-lines"></i> All Reports (Full Details)</h2>
+                <p class="section-desc">Drug and sexual violence reports from citizens and village leaders in your sector. All details are visible automatically.</p>
+                <div class="reports-container">
+                    <div class="report-section">
+                        <h3>Drug/Illegal Drinks Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Sector</th>
+                                    <th>Cell</th>
+                                    <th>Village</th>
+                                    <th>Description</th>
+                                    <th>Reported by</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drugsReportsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-section">
+                        <h3>Sexual Violence Reports</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Victim Name</th>
+                                    <th>Telephone</th>
+                                    <th>Sector</th>
+                                    <th>Cell</th>
+                                    <th>Village</th>
+                                    <th>Description</th>
+                                    <th>Reported by</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violenceReportsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="statistics" class="dashboard-section">
+                <h2><i class="fa-solid fa-chart-pie"></i> Sector Level Statistics</h2>
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <h3>Total Cases</h3>
+                        <p class="stat-number" id="totalCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pending Cases</h3>
+                        <p class="stat-number" id="pendingCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Solved Cases</h3>
+                        <p class="stat-number" id="solvedCases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Referred Cases</h3>
+                        <p class="stat-number" id="referredCases">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activities & Home Updates Section -->
+            <section id="homeupdates" class="dashboard-section">
+                <h2><i class="fa-solid fa-bullhorn"></i> Post to Home Page (Sector)</h2>
+                <p class="section-desc">Upload recent activities, upcoming sessions, and trending topics. These will appear on the home page.</p>
+                <div class="home-updates-tabs">
+                    <button type="button" class="tab-btn active" data-tab="activity">Recent Activity</button>
+                    <button type="button" class="tab-btn" data-tab="upcoming">Upcoming Session</button>
+                    <button type="button" class="tab-btn" data-tab="trending">Trending</button>
+                </div>
+                <div id="tab-activity" class="home-update-form active">
+                    <h3>Post Recent Activity</h3>
+                    <form id="sectorActivityForm" class="form-container">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="sectorActivityDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place / Venue</label>
+                                <input type="text" id="sectorActivityPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="sectorActivityDate" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload image (optional)</label>
+                            <input type="file" id="sectorActivityImage" accept="image/*" capture="environment">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Activity</button>
+                    </form>
+                </div>
+                <div id="tab-upcoming" class="home-update-form">
+                    <h3>Post Upcoming Session</h3>
+                    <form id="sectorUpcomingForm" class="form-container">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="sectorUpcomingTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="sectorUpcomingDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place / Venue</label>
+                                <input type="text" id="sectorUpcomingPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="sectorUpcomingDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Upcoming Session</button>
+                    </form>
+                </div>
+                <div id="tab-trending" class="home-update-form">
+                    <h3>Post Trending Topic</h3>
+                    <form id="sectorTrendingForm" class="form-container">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="sectorTrendingDesc" rows="3" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Place</label>
+                                <input type="text" id="sectorTrendingPlace" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="sectorTrendingDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Trending</button>
+                    </form>
+                </div>
+                <div class="data-table-container" style="margin-top: 1.5rem;">
+                    <h3>Your recent posts (Sector)</h3>
+                    <div id="sectorHomeUpdatesList"></div>
+                </div>
+            </section>
+
+            <!-- Chat Section -->
+            <section id="chat" class="dashboard-section">
+                <h2><i class="fa-solid fa-comments"></i> Chat with Citizens, Village and Cell Leaders</h2>
+                <div class="form-container">
+                    <form id="sectorChatForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sectorChatRecipientRole">Send To</label>
+                                <select id="sectorChatRecipientRole" required>
+                                    <option value="citizen">Citizens</option>
+                                    <option value="leader">Village Leader</option>
+                                    <option value="cell">Cell Leader</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="sectorChatMessage">Message</label>
+                            <textarea id="sectorChatMessage" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+                <div class="data-table-container">
+                    <h3>Conversation</h3>
+                    <div id="sectorChatMessages" class="chat-messages"></div>
+                </div>
+                <div class="data-table-container">
+                    <h3>Citizens who contacted you</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Citizen</th>
+                                <th>Telephone</th>
+                                <th>Last Message</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sectorInboxBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/sector-dashboard.js"></script>
+    <script src="js/navbar.js"></script>
+</body>
+</html>
+
+
