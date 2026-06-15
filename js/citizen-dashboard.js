@@ -87,6 +87,22 @@ function setupForms() {
     // Case form
     const caseForm = document.getElementById('caseForm');
     if (caseForm) caseForm.addEventListener('submit', handleCaseSubmit);
+
+    // Edit modal forms
+    const editDrugsForm = document.getElementById('editDrugsForm');
+    if (editDrugsForm) editDrugsForm.addEventListener('submit', handleEditDrugsSubmit);
+
+    const editViolenceForm = document.getElementById('editViolenceForm');
+    if (editViolenceForm) editViolenceForm.addEventListener('submit', handleEditViolenceSubmit);
+
+    const editVisitorsForm = document.getElementById('editVisitorsForm');
+    if (editVisitorsForm) editVisitorsForm.addEventListener('submit', handleEditVisitorsSubmit);
+
+    const editCaseForm = document.getElementById('editCaseForm');
+    if (editCaseForm) editCaseForm.addEventListener('submit', handleEditCaseSubmit);
+
+    const editInfrastructureForm = document.getElementById('editInfrastructureForm');
+    if (editInfrastructureForm) editInfrastructureForm.addEventListener('submit', handleEditInfrastructureSubmit);
 }
 
 // Send report to backend API; returns true on success, false on failure
@@ -201,8 +217,12 @@ async function loadDrugsTable() {
                 <td>${escapeHtml(r.data.village)}</td>
                 <td>${trunc(r.data.description, 40)}</td>
                 <td>${formatDate(r.dateReported)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editDrugsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteDrugsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="6">No reports yet</td></tr>';
+        `).join('') : '<tr><td colspan="7">No reports yet</td></tr>';
     } catch (err) {
         console.warn('Could not load drugs reports:', err);
         tbody.innerHTML = '<tr><td colspan="6">Unable to load reports</td></tr>';
@@ -261,8 +281,12 @@ async function loadViolenceTable() {
                 <td>${escapeHtml(r.data.village)}</td>
                 <td>${trunc(r.data.description, 40)}</td>
                 <td>${formatDate(r.dateReported)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editViolenceReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteViolenceReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="7">No reports yet</td></tr>';
+        `).join('') : '<tr><td colspan="8">No reports yet</td></tr>';
     } catch (err) {
         console.warn('Could not load violence reports:', err);
         tbody.innerHTML = '<tr><td colspan="7">Unable to load reports</td></tr>';
@@ -420,8 +444,12 @@ async function loadVisitorsTable() {
                 <td>${truncateDesc(r.data.reason, 60)}</td>
                 <td>${r.data.returnDate ? formatDate(r.data.returnDate) : '—'}</td>
                 <td>${formatDate(r.dateReported)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editVisitorsReport('${r._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteVisitorsReport('${r._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="7">No visitor reports yet</td></tr>';
+        `).join('') : '<tr><td colspan="8">No visitor reports yet</td></tr>';
     } catch (err) {
         console.warn('Could not load visitor reports:', err);
         tbody.innerHTML = '<tr><td colspan="7">Unable to load reports</td></tr>';
@@ -683,7 +711,7 @@ async function loadCaseTable() {
     if (cases.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" style="text-align: center; color: #666; padding: 20px;">No cases submitted yet</td>
+                <td colspan="10" style="text-align: center; color: #666; padding: 20px;">No cases submitted yet</td>
             </tr>
         `;
         return;
@@ -717,6 +745,10 @@ async function loadCaseTable() {
                     ${c.image ? `<img src="${c.image}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : 'No Image'}
                 </td>
                 <td>${formatDate(c.incidentDate || c.createdAt)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editCaseReport('${c._id}')"><i class="fa-solid fa-edit"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCaseReport('${c._id}')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
             </tr>
         `;
     }).join('');
@@ -782,30 +814,301 @@ function startCountdownUpdates() {
         }
     }, 30000);
 }
-// Edit Infrastructure Report
-function editInfrastructureReport(reportId) {
-    alert('Edit functionality for report ID: ' + reportId + ' will be implemented');
-    // TODO: Implement edit modal or redirect to edit page
+// ===== Shared helpers for edit/delete =====
+
+async function fetchReportById(reportId) {
+    const res = await fetch('/api/citizen-reports/' + reportId);
+    if (!res.ok) throw new Error('Server error');
+    return await res.json();
 }
 
-// Delete Infrastructure Report
-async function deleteInfrastructureReport(reportId) {
-    if (!confirm('Are you sure you want to delete this report?')) {
-        return;
-    }
+async function updateReportData(reportId, updatedData) {
+    const res = await fetch('/api/citizen-reports/' + reportId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: updatedData })
+    });
+    if (!res.ok) throw new Error('Server error');
+    return await res.json();
+}
 
+async function deleteReportById(reportId) {
+    const res = await fetch('/api/citizen-reports/' + reportId, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Server error');
+}
+
+// ===== Infrastructure Edit/Delete =====
+
+let currentEditingInfraId = null;
+
+async function editInfrastructureReport(reportId) {
+    currentEditingInfraId = reportId;
     try {
-        const res = await fetch('/api/citizen-reports/' + reportId, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (!res.ok) throw new Error('Server error');
-        
-        alert('Report deleted successfully');
+        const record = await fetchReportById(reportId);
+        const d = record.data;
+        document.getElementById('editInfraPlace').value = d.place || '';
+        document.getElementById('editInfraDate').value = d.date || '';
+        document.getElementById('editInfraDescription').value = d.description || '';
+        document.getElementById('editInfrastructureModal').style.display = 'flex';
+    } catch (err) {
+        alert('Failed to load report data');
+    }
+}
+
+async function handleEditInfrastructureSubmit(e) {
+    e.preventDefault();
+    if (!currentEditingInfraId) return;
+    const updatedData = {
+        place: document.getElementById('editInfraPlace').value,
+        date: document.getElementById('editInfraDate').value,
+        description: document.getElementById('editInfraDescription').value
+    };
+    try {
+        await updateReportData(currentEditingInfraId, updatedData);
+        document.getElementById('editInfrastructureModal').style.display = 'none';
+        currentEditingInfraId = null;
+        loadInfrastructureTable();
+    } catch (err) {
+        alert('Failed to save changes');
+    }
+}
+
+function closeEditModal() {
+    document.getElementById('editInfrastructureModal').style.display = 'none';
+}
+
+async function deleteInfrastructureReport(reportId) {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+        await deleteReportById(reportId);
         loadInfrastructureTable();
     } catch (err) {
         console.error('Error deleting report:', err);
         alert('Failed to delete report');
+    }
+}
+
+// ===== Drugs Edit/Delete =====
+
+let currentEditingDrugsId = null;
+
+async function editDrugsReport(reportId) {
+    currentEditingDrugsId = reportId;
+    try {
+        const record = await fetchReportById(reportId);
+        const d = record.data;
+        document.getElementById('editDrugsName').value = d.name || '';
+        document.getElementById('editDrugsSector').value = d.sector || '';
+        document.getElementById('editDrugsCell').value = d.cell || '';
+        document.getElementById('editDrugsVillage').value = d.village || '';
+        document.getElementById('editDrugsDescription').value = d.description || '';
+        document.getElementById('editDrugsModal').style.display = 'flex';
+    } catch (err) {
+        alert('Failed to load report data');
+    }
+}
+
+async function handleEditDrugsSubmit(e) {
+    e.preventDefault();
+    if (!currentEditingDrugsId) return;
+    const updatedData = {
+        name: document.getElementById('editDrugsName').value,
+        sector: document.getElementById('editDrugsSector').value,
+        cell: document.getElementById('editDrugsCell').value,
+        village: document.getElementById('editDrugsVillage').value,
+        description: document.getElementById('editDrugsDescription').value
+    };
+    try {
+        await updateReportData(currentEditingDrugsId, updatedData);
+        document.getElementById('editDrugsModal').style.display = 'none';
+        currentEditingDrugsId = null;
+        loadDrugsTable();
+    } catch (err) {
+        alert('Failed to save changes');
+    }
+}
+
+async function deleteDrugsReport(reportId) {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+        await deleteReportById(reportId);
+        loadDrugsTable();
+    } catch (err) {
+        alert('Failed to delete report');
+    }
+}
+
+// ===== Violence Edit/Delete =====
+
+let currentEditingViolenceId = null;
+
+async function editViolenceReport(reportId) {
+    currentEditingViolenceId = reportId;
+    try {
+        const record = await fetchReportById(reportId);
+        const d = record.data;
+        document.getElementById('editViolenceVictimName').value = d.victimName || '';
+        document.getElementById('editViolenceTelephone').value = d.telephone || '';
+        document.getElementById('editViolenceSector').value = d.sector || '';
+        document.getElementById('editViolenceCell').value = d.cell || '';
+        document.getElementById('editViolenceVillage').value = d.village || '';
+        document.getElementById('editViolenceDescription').value = d.description || '';
+        document.getElementById('editViolenceModal').style.display = 'flex';
+    } catch (err) {
+        alert('Failed to load report data');
+    }
+}
+
+async function handleEditViolenceSubmit(e) {
+    e.preventDefault();
+    if (!currentEditingViolenceId) return;
+    const updatedData = {
+        victimName: document.getElementById('editViolenceVictimName').value,
+        telephone: document.getElementById('editViolenceTelephone').value,
+        sector: document.getElementById('editViolenceSector').value,
+        cell: document.getElementById('editViolenceCell').value,
+        village: document.getElementById('editViolenceVillage').value,
+        description: document.getElementById('editViolenceDescription').value
+    };
+    try {
+        await updateReportData(currentEditingViolenceId, updatedData);
+        document.getElementById('editViolenceModal').style.display = 'none';
+        currentEditingViolenceId = null;
+        loadViolenceTable();
+    } catch (err) {
+        alert('Failed to save changes');
+    }
+}
+
+async function deleteViolenceReport(reportId) {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+        await deleteReportById(reportId);
+        loadViolenceTable();
+    } catch (err) {
+        alert('Failed to delete report');
+    }
+}
+
+// ===== Visitors Edit/Delete =====
+
+let currentEditingVisitorsId = null;
+
+async function editVisitorsReport(reportId) {
+    currentEditingVisitorsId = reportId;
+    try {
+        const record = await fetchReportById(reportId);
+        const d = record.data;
+        document.getElementById('editVisitorNames').value = d.visitorNames || '';
+        document.getElementById('editVisitorCount').value = d.visitorCount || 1;
+        document.getElementById('editVisitorIDs').value = d.visitorIDs || '';
+        document.getElementById('editVisitorFromProvince').value = d.fromProvince || '';
+        document.getElementById('editVisitorFromDistrict').value = d.fromDistrict || '';
+        document.getElementById('editVisitorFromSector').value = d.fromSector || '';
+        document.getElementById('editVisitorFromCell').value = d.fromCell || '';
+        document.getElementById('editVisitorFromVillage').value = d.fromVillage || '';
+        document.getElementById('editVisitorReason').value = d.reason || '';
+        document.getElementById('editVisitorReturnDate').value = d.returnDate || '';
+        document.getElementById('editVisitorsModal').style.display = 'flex';
+    } catch (err) {
+        alert('Failed to load report data');
+    }
+}
+
+async function handleEditVisitorsSubmit(e) {
+    e.preventDefault();
+    if (!currentEditingVisitorsId) return;
+    const updatedData = {
+        visitorNames: document.getElementById('editVisitorNames').value,
+        visitorCount: parseInt(document.getElementById('editVisitorCount').value) || 1,
+        visitorIDs: document.getElementById('editVisitorIDs').value,
+        fromProvince: document.getElementById('editVisitorFromProvince').value,
+        fromDistrict: document.getElementById('editVisitorFromDistrict').value,
+        fromSector: document.getElementById('editVisitorFromSector').value,
+        fromCell: document.getElementById('editVisitorFromCell').value,
+        fromVillage: document.getElementById('editVisitorFromVillage').value,
+        reason: document.getElementById('editVisitorReason').value,
+        returnDate: document.getElementById('editVisitorReturnDate').value
+    };
+    try {
+        await updateReportData(currentEditingVisitorsId, updatedData);
+        document.getElementById('editVisitorsModal').style.display = 'none';
+        currentEditingVisitorsId = null;
+        loadVisitorsTable();
+    } catch (err) {
+        alert('Failed to save changes');
+    }
+}
+
+async function deleteVisitorsReport(reportId) {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+        await deleteReportById(reportId);
+        loadVisitorsTable();
+    } catch (err) {
+        alert('Failed to delete report');
+    }
+}
+
+// ===== Case Edit/Delete =====
+
+let currentEditingCaseId = null;
+
+async function editCaseReport(reportId) {
+    currentEditingCaseId = reportId;
+    try {
+        const record = await fetchReportById(reportId);
+        const d = record.data;
+        document.getElementById('editCaseType').value = d.type || '';
+        document.getElementById('editCaseTitle').value = d.title || '';
+        document.getElementById('editCaseDescription').value = d.description || '';
+        document.getElementById('editCaseSector').value = d.sector || '';
+        document.getElementById('editCaseCell').value = d.cell || '';
+        document.getElementById('editCaseVillage').value = d.village || '';
+        document.getElementById('editCaseAccusedName').value = d.accusedName || '';
+        document.getElementById('editCaseAccusedPhone').value = d.accusedPhone || '';
+        document.getElementById('editCaseIncidentDate').value = d.incidentDate || '';
+        document.getElementById('editCasePriority').value = d.priority || 'medium';
+        document.getElementById('editCaseModal').style.display = 'flex';
+    } catch (err) {
+        alert('Failed to load case data');
+    }
+}
+
+async function handleEditCaseSubmit(e) {
+    e.preventDefault();
+    if (!currentEditingCaseId) return;
+    const updatedData = {
+        type: document.getElementById('editCaseType').value,
+        title: document.getElementById('editCaseTitle').value,
+        description: document.getElementById('editCaseDescription').value,
+        sector: document.getElementById('editCaseSector').value,
+        cell: document.getElementById('editCaseCell').value,
+        village: document.getElementById('editCaseVillage').value,
+        accusedName: document.getElementById('editCaseAccusedName').value,
+        accusedPhone: document.getElementById('editCaseAccusedPhone').value,
+        incidentDate: document.getElementById('editCaseIncidentDate').value,
+        priority: document.getElementById('editCasePriority').value
+    };
+    try {
+        await updateReportData(currentEditingCaseId, updatedData);
+        document.getElementById('editCaseModal').style.display = 'none';
+        currentEditingCaseId = null;
+        loadCaseTable();
+    } catch (err) {
+        alert('Failed to save changes');
+    }
+}
+
+async function deleteCaseReport(reportId) {
+    if (!confirm('Are you sure you want to delete this case?')) return;
+    try {
+        await deleteReportById(reportId);
+        loadCaseTable();
+    } catch (err) {
+        alert('Failed to delete case');
     }
 }

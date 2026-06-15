@@ -260,40 +260,6 @@ function setupForms() {
 
     // Register form
     document.getElementById('registerForm').addEventListener('submit', handleRegisterSubmit);
-    // Toggle return-time visibility based on status
-    const regStatusEl = document.getElementById('regStatus');
-    const regReturnGroup = document.getElementById('regReturnGroup');
-    const regReturnInput = document.getElementById('regReturnTime');
-    const regArrivalGroup = document.getElementById('regArrivalGroup');
-    const regArrivalInput = document.getElementById('regArrivalTime');
-    function updateRegReturnVisibility() {
-        if (!regStatusEl) return;
-
-        // If New Member: show arrival, hide return
-        if (regStatusEl.value === 'New Member') {
-            if (regArrivalGroup) regArrivalGroup.style.display = '';
-            if (regArrivalInput) regArrivalInput.required = true;
-
-            if (regReturnGroup) regReturnGroup.style.display = 'none';
-            if (regReturnInput) { regReturnInput.required = false; regReturnInput.value = ''; }
-
-            // If Current Member: hide both arrival and return
-        } else if (regStatusEl.value === 'Current Member') {
-            if (regArrivalGroup) { regArrivalGroup.style.display = 'none'; if (regArrivalInput) { regArrivalInput.required = false; regArrivalInput.value = ''; } }
-            if (regReturnGroup) { regReturnGroup.style.display = 'none'; if (regReturnInput) { regReturnInput.required = false; regReturnInput.value = ''; } }
-
-            // Default: show both but keep not required
-        } else {
-            if (regArrivalGroup) regArrivalGroup.style.display = '';
-            if (regArrivalInput) regArrivalInput.required = false;
-            if (regReturnGroup) regReturnGroup.style.display = '';
-            if (regReturnInput) regReturnInput.required = false;
-        }
-    }
-    if (regStatusEl) {
-        regStatusEl.addEventListener('change', updateRegReturnVisibility);
-        updateRegReturnVisibility();
-    }
 
     // Insurance form
     document.getElementById('insuranceForm').addEventListener('submit', handleInsuranceSubmit);
@@ -947,9 +913,31 @@ async function handleRegisterSubmit(e) {
         if (isEditing) {
             // Update existing member in MongoDB
             const editingRecord = JSON.parse(editingInfo);
-            const result = await api.updateMember(editingRecord.id, record);
+            const updatedMember = await api.updateMember(editingRecord.id, record);
+            const memberToShow = updatedMember || record;
 
-            console.log('Member updated in MongoDB:', result);
+            // Update the in-memory cache with the confirmed server response
+            const cacheIdx = (window._cachedMembers || []).findIndex(
+                r => String(r._id || r.id) === String(editingRecord.id)
+            );
+            if (cacheIdx !== -1) {
+                window._cachedMembers[cacheIdx] = memberToShow;
+            }
+
+            // Directly update the table row in the DOM — no re-fetch needed
+            const row = document.querySelector(`tr[data-member-id="${editingRecord.id}"]`);
+            if (row) {
+                const cells = row.querySelectorAll('td');
+                cells[0].textContent = memberToShow.name || '';
+                cells[1].textContent = memberToShow.sex || '';
+                cells[2].textContent = memberToShow.telephone || '';
+                cells[3].textContent = memberToShow.sector || '';
+                cells[4].textContent = memberToShow.cell || '';
+                cells[5].textContent = memberToShow.village || '';
+                cells[6].textContent = memberToShow.age || '';
+                cells[7].textContent = memberToShow.status || '';
+            }
+
             showNotification('Member updated successfully!', 'success');
 
             // Reset editing state
@@ -958,6 +946,12 @@ async function handleRegisterSubmit(e) {
             submitBtn.textContent = 'Register Member';
             submitBtn.classList.remove('btn-warning');
             submitBtn.classList.add('btn-primary');
+
+            e.target.reset();
+            loadSectorsForLeader();
+            loadIntekoSectors();
+            loadAttendanceList();
+            updateSectorVillageFilters();
 
         } else {
             // Add new member to MongoDB
@@ -968,18 +962,16 @@ async function handleRegisterSubmit(e) {
 
             // Initialize attendance tracking for new member
             initializeAttendanceTracking(record.telephone, record.name);
+
+            // Reset form and reload the full table for new registrations
+            e.target.reset();
+            await loadRegisterTable();
+            loadSectorsForLeader();
+            loadIntekoSectors();
+            loadRegSectors();
+            loadAttendanceList();
+            updateSectorVillageFilters();
         }
-
-        // Reset form
-        e.target.reset();
-
-        // Reload members cache then refresh all location dropdowns
-        await loadRegisterTable();
-        loadSectorsForLeader();
-        loadIntekoSectors();
-        loadRegSectors();
-        loadAttendanceList();
-        updateSectorVillageFilters();
 
     } catch (error) {
         console.error('Error saving member to MongoDB:', error);
@@ -1387,53 +1379,10 @@ function loadSectorsForLeader() {
     }
 }
 
-// Populate registration form sector dropdown (mirrors loadSectorsForLeader)
-function loadRegSectors() {
-    const sel = document.getElementById('regSector');
-    if (!sel) return;
-    const locations = window._cachedLocations || initializeDefaultLocations();
-    const members = window._cachedMembers || [];
-    const memberSectors = [...new Set(members.map(r => r.sector).filter(Boolean))];
-    const allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Select sector</option>' +
-        allSectors.map(s => `<option value="${s}">${s}</option>`).join('');
-    if (current) sel.value = current;
-}
-
-function updateRegCells() {
-    const selectedSector = document.getElementById('regSector').value;
-    const cellSel = document.getElementById('regCell');
-    const villageSel = document.getElementById('regVillage');
-    cellSel.innerHTML = '<option value="">Select cell</option>';
-    cellSel.disabled = !selectedSector;
-    villageSel.innerHTML = '<option value="">Select village</option>';
-    villageSel.disabled = true;
-    if (!selectedSector) return;
-    const locations = window._cachedLocations || initializeDefaultLocations();
-    const members = window._cachedMembers || [];
-    const memberCells = [...new Set(members.filter(r => r.sector?.toLowerCase() === selectedSector.toLowerCase()).map(r => r.cell).filter(Boolean))];
-    const allCells = [...new Set([...(locations.cells || []), ...memberCells])];
-    cellSel.innerHTML = '<option value="">Select cell</option>' +
-        allCells.map(c => `<option value="${c}">${c}</option>`).join('');
-}
-
-function updateRegVillages() {
-    const selectedSector = document.getElementById('regSector').value;
-    const selectedCell = document.getElementById('regCell').value;
-    const villageSel = document.getElementById('regVillage');
-    villageSel.innerHTML = '<option value="">Select village</option>';
-    villageSel.disabled = !selectedCell;
-    if (!selectedSector || !selectedCell) return;
-    const locations = window._cachedLocations || initializeDefaultLocations();
-    const members = window._cachedMembers || [];
-    const memberVillages = [...new Set(members
-        .filter(r => r.sector?.toLowerCase() === selectedSector.toLowerCase() && r.cell?.toLowerCase() === selectedCell.toLowerCase())
-        .map(r => r.village).filter(Boolean))];
-    const allVillages = [...new Set([...(locations.villages || []), ...memberVillages])];
-    villageSel.innerHTML = '<option value="">Select village</option>' +
-        allVillages.map(v => `<option value="${v}">${v}</option>`).join('');
-}
+// Registration form now uses plain text inputs — these are kept as no-ops for any remaining call sites
+function loadRegSectors() {}
+function updateRegCells() {}
+function updateRegVillages() {}
 
 // Update cells based on selected sector
 function updateLeaderCells() {
@@ -4104,15 +4053,9 @@ function editMemberRecord(memberId) {
     document.getElementById('regAge').value = record.age || '';
     document.getElementById('regTelephone').value = record.telephone || '';
     if (document.getElementById('regID')) document.getElementById('regID').value = record.idNumber || '';
-    // Populate dropdowns then pre-select the member's saved values
-    loadRegSectors();
     document.getElementById('regSector').value = record.sector || '';
-    updateRegCells();
     document.getElementById('regCell').value = record.cell || '';
-    document.getElementById('regCell').disabled = false;
-    updateRegVillages();
     document.getElementById('regVillage').value = record.village || '';
-    document.getElementById('regVillage').disabled = false;
     document.getElementById('regStatus').value = record.status || '';
     if (document.getElementById('regArrivalTime')) document.getElementById('regArrivalTime').value = record.arrivalTime || '';
     if (document.getElementById('regReturnTime')) document.getElementById('regReturnTime').value = record.returnTime || '';

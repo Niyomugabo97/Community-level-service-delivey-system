@@ -79,6 +79,7 @@
                                 <th>Village</th>
                                 <th>Description</th>
                                 <th>Date Reported</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="drugsTableBody">
@@ -131,6 +132,7 @@
                                 <th>Village</th>
                                 <th>Description</th>
                                 <th>Date Reported</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="violenceTableBody">
@@ -270,6 +272,7 @@
                                 <th>Reason</th>
                                 <th>Return</th>
                                 <th>Date Reported</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="visitorsTableBody"></tbody>
@@ -383,6 +386,7 @@
                                 <th>Time Left</th>
                                 <th>Evidence</th>
                                 <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="caseTableBody">
@@ -460,6 +464,231 @@
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                         <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Drugs Modal -->
+    <div id="editDrugsModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Drugs Report</h3>
+                <button class="modal-close" onclick="document.getElementById('editDrugsModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editDrugsForm">
+                    <div class="form-group">
+                        <label>Name(s) of Selling Illegal Drinks</label>
+                        <input type="text" id="editDrugsName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="editDrugsSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="editDrugsCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="editDrugsVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="editDrugsDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editDrugsModal').style.display='none'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Violence Modal -->
+    <div id="editViolenceModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Violence Report</h3>
+                <button class="modal-close" onclick="document.getElementById('editViolenceModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editViolenceForm">
+                    <div class="form-group">
+                        <label>Name of Victim</label>
+                        <input type="text" id="editViolenceVictimName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Telephone</label>
+                        <input type="tel" id="editViolenceTelephone" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="editViolenceSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="editViolenceCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="editViolenceVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Case Description</label>
+                        <textarea id="editViolenceDescription" rows="4" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editViolenceModal').style.display='none'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Visitors Modal -->
+    <div id="editVisitorsModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Visitor Report</h3>
+                <button class="modal-close" onclick="document.getElementById('editVisitorsModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editVisitorsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Visitor Names</label>
+                            <input type="text" id="editVisitorNames" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Visitors</label>
+                            <input type="number" id="editVisitorCount" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Visitor IDs</label>
+                            <input type="text" id="editVisitorIDs">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Province</label>
+                            <input type="text" id="editVisitorFromProvince">
+                        </div>
+                        <div class="form-group">
+                            <label>District</label>
+                            <input type="text" id="editVisitorFromDistrict">
+                        </div>
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="editVisitorFromSector">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="editVisitorFromCell">
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="editVisitorFromVillage">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Visit</label>
+                            <input type="text" id="editVisitorReason">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Return Date</label>
+                        <input type="date" id="editVisitorReturnDate">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editVisitorsModal').style.display='none'">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Case Modal -->
+    <div id="editCaseModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Case Report</h3>
+                <button class="modal-close" onclick="document.getElementById('editCaseModal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editCaseForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Case Type</label>
+                            <select id="editCaseType" required>
+                                <option value="Land Conflict">Land Conflict</option>
+                                <option value="Violence">Violence</option>
+                                <option value="Theft">Theft</option>
+                                <option value="Family Conflict">Family Conflict</option>
+                                <option value="Corruption">Corruption</option>
+                                <option value="Property Damage">Property Damage</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Case Title</label>
+                            <input type="text" id="editCaseTitle" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Description</label>
+                        <textarea id="editCaseDescription" rows="4" required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Sector</label>
+                            <input type="text" id="editCaseSector" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cell</label>
+                            <input type="text" id="editCaseCell" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="editCaseVillage" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Accused Name</label>
+                            <input type="text" id="editCaseAccusedName">
+                        </div>
+                        <div class="form-group">
+                            <label>Accused Phone</label>
+                            <input type="tel" id="editCaseAccusedPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Incident</label>
+                            <input type="date" id="editCaseIncidentDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select id="editCasePriority">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editCaseModal').style.display='none'">Cancel</button>
                     </div>
                 </form>
             </div>
