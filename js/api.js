@@ -31,6 +31,30 @@ class ApiService {
         return await response.json();
     }
 
+    async updateHomeUpdate(id, updateData, imageFile) {
+        const formData = new FormData();
+        Object.keys(updateData).forEach(key => formData.append(key, updateData[key]));
+        if (imageFile) formData.append('image', imageFile);
+        const response = await fetch(`${this.baseURL}/home-updates/${id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
+        }
+        return await response.json();
+    }
+
+    async deleteHomeUpdate(id) {
+        const response = await fetch(`${this.baseURL}/home-updates/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.error || `Server error ${response.status}`);
+        }
+        return await response.json();
+    }
+
     // Members API
     async getMembers(filters = {}) {
         try {
