@@ -1387,17 +1387,24 @@ function loadSectorsForLeader() {
     if (!locations || !Array.isArray(locations.sectors) || locations.sectors.length === 0) {
         locations = initializeDefaultLocations();
     }
+
     const memberRecords = window._cachedMembers && window._cachedMembers.length > 0
         ? window._cachedMembers
         : JSON.parse(localStorage.getItem('registerRecords')) || [];
+
     const memberSectors = [...new Set(memberRecords.map(r => r.sector).filter(s => s))];
     let allSectors = [...new Set([...(locations.sectors || []), ...memberSectors])];
-    if (!allSectors.length) allSectors = initializeDefaultLocations().sectors;
+
+    if (!allSectors.length) {
+        allSectors = initializeDefaultLocations().sectors;
+    }
 
     const sectorSelect = document.getElementById('leaderSector');
     if (!sectorSelect) return;
+
     sectorSelect.innerHTML = '<option value="">Select your sector</option>' +
         allSectors.map(sector => `<option value="${sector}">${sector}</option>`).join('');
+
     if (currentLeaderLocation && currentLeaderLocation.sector) {
         sectorSelect.value = currentLeaderLocation.sector;
     }
