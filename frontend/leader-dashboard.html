@@ -82,17 +82,23 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Sector *</label>
-                            <input type="text" id="regSector" required>
+                            <select id="regSector" required onchange="updateRegCells()">
+                                <option value="">Select sector</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Cell *</label>
-                            <input type="text" id="regCell" required>
+                            <select id="regCell" required onchange="updateRegVillages()" disabled>
+                                <option value="">Select cell</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Village *</label>
-                            <input type="text" id="regVillage" required>
+                            <select id="regVillage" required disabled>
+                                <option value="">Select village</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Status</label>
@@ -1462,6 +1468,47 @@
     <script src="js/leader-dashboard.js"></script>
     <script src="js/leader-profile.js"></script>
     <script src="js/navbar.js"></script>
+
+<!-- Edit Home Update Modal -->
+<div id="editHomeUpdateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:8px;padding:28px 32px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,.2);">
+        <h3 style="margin:0 0 18px">Edit Post</h3>
+        <form id="editHomeUpdateForm" onsubmit="handleHomeUpdateEditSubmit(event)">
+            <input type="hidden" id="editHomeUpdateId">
+            <input type="hidden" id="editHomeUpdateType">
+            <div class="form-group">
+                <label>Title (for Upcoming sessions)</label>
+                <input type="text" id="editHomeUpdateTitle" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+                <label>Description</label>
+                <textarea id="editHomeUpdateDesc" rows="3" required style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;resize:vertical;"></textarea>
+            </div>
+            <div class="form-row" style="display:flex;gap:12px;margin-top:10px;">
+                <div class="form-group" style="flex:1">
+                    <label>Place / Venue</label>
+                    <input type="text" id="editHomeUpdatePlace" required style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Date</label>
+                    <input type="date" id="editHomeUpdateDate" required style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+                <label>Current Image</label><br>
+                <img id="editHomeUpdateImgPreview" src="" alt="Current image" style="display:none;width:120px;height:80px;object-fit:cover;border-radius:4px;margin-bottom:6px;">
+            </div>
+            <div class="form-group" style="margin-top:6px;">
+                <label>Replace Image (optional)</label>
+                <input type="file" id="editHomeUpdateImage" accept="image/*" style="width:100%;padding:4px;">
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('editHomeUpdateModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Edit Infrastructure Modal -->
 <div id="editInfrastructureModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">

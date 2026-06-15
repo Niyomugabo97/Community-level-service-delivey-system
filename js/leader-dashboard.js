@@ -5663,19 +5663,101 @@ async function loadLeaderHomeUpdatesList() {
     const myUpdates = updates
         .filter(u => u.postedBy === myName)
         .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
-        .slice(0, 15);
+        .slice(0, 30);
 
     if (myUpdates.length === 0) {
         listEl.innerHTML = '<p>No posts yet. Use the forms above to post.</p>';
         return;
     }
 
-    listEl.innerHTML = '<ul class="simple-list">' + myUpdates.map(item => {
-        const label = item.type.charAt(0).toUpperCase() + item.type.slice(1);
-        const text = item.description || item.title || '';
-        const dateStr = formatDate(item.date || item.createdAt);
-        return `<li><strong>${label}</strong> — ${dateStr}: ${escapeHtml(text.slice(0, 60))}${text.length > 60 ? '…' : ''}</li>`;
-    }).join('') + '</ul>';
+    listEl.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Place</th>
+                    <th>Image</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${myUpdates.map(item => {
+                    const label = item.type ? item.type.charAt(0).toUpperCase() + item.type.slice(1) : '—';
+                    const text = item.description || item.title || '—';
+                    const dateStr = formatDate(item.date || item.createdAt);
+                    const imgTag = item.imageUrl
+                        ? `<img src="${escapeHtml(item.imageUrl)}" alt="img" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">`
+                        : '<span style="color:#aaa;">—</span>';
+                    const encodedId = escapeHtml(item._id);
+                    return `<tr>
+                        <td><span class="badge badge-info">${label}</span></td>
+                        <td>${dateStr}</td>
+                        <td>${escapeHtml(text.slice(0, 70))}${text.length > 70 ? '…' : ''}</td>
+                        <td>${escapeHtml(item.place || '—')}</td>
+                        <td>${imgTag}</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="editHomeUpdateRecord(${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteHomeUpdateRecord('${encodedId}')">Delete</button>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+}
+
+async function deleteHomeUpdateRecord(id) {
+    if (!confirm('Delete this post? It will be removed from the home page too.')) return;
+    try {
+        const api = new ApiService();
+        await api.deleteHomeUpdate(id);
+        showNotification('Post deleted successfully.', 'success');
+        loadLeaderHomeUpdatesList();
+    } catch (err) {
+        console.error('Error deleting home update:', err);
+        showNotification('Failed to delete: ' + err.message, 'error');
+    }
+}
+
+function editHomeUpdateRecord(item) {
+    document.getElementById('editHomeUpdateId').value = item._id || '';
+    document.getElementById('editHomeUpdateType').value = item.type || '';
+    document.getElementById('editHomeUpdateTitle').value = item.title || '';
+    document.getElementById('editHomeUpdateDesc').value = item.description || '';
+    document.getElementById('editHomeUpdatePlace').value = item.place || '';
+    document.getElementById('editHomeUpdateDate').value = item.date ? item.date.slice(0, 10) : '';
+    const preview = document.getElementById('editHomeUpdateImgPreview');
+    if (preview) {
+        preview.src = item.imageUrl || '';
+        preview.style.display = item.imageUrl ? 'block' : 'none';
+    }
+    document.getElementById('editHomeUpdateModal').style.display = 'flex';
+}
+
+async function handleHomeUpdateEditSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('editHomeUpdateId').value;
+    const updateData = {
+        type: document.getElementById('editHomeUpdateType').value,
+        title: document.getElementById('editHomeUpdateTitle').value.trim(),
+        description: document.getElementById('editHomeUpdateDesc').value.trim(),
+        place: document.getElementById('editHomeUpdatePlace').value.trim(),
+        date: document.getElementById('editHomeUpdateDate').value,
+        postedBy: getCurrentLeaderName()
+    };
+    const fileInput = document.getElementById('editHomeUpdateImage');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+    try {
+        const api = new ApiService();
+        await api.updateHomeUpdate(id, updateData, file);
+        showNotification('Post updated successfully!', 'success');
+        document.getElementById('editHomeUpdateModal').style.display = 'none';
+        loadLeaderHomeUpdatesList();
+    } catch (err) {
+        console.error('Error updating home update:', err);
+        showNotification('Failed to update: ' + err.message, 'error');
+    }
 }
 
 // Face Recognition Functions
