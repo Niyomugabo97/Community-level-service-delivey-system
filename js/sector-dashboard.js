@@ -86,6 +86,64 @@ async function loadAllData() {
     await loadSectorHomeUpdatesList();
 }
 
+// Normalise a location/level string for tolerant matching (trim + case-insensitive)
+function normLoc(s) { return (s || '').trim().toLowerCase(); }
+
+// A case is "at sector level" if explicitly marked Sector, or it carries any
+// signal that a cell escalated/handed it to the sector. Used for the resolve action.
+function atSectorLevel(d) {
+    if (!d) return false;
+    return normLoc(d.level) === 'sector'
+        || !!d.escalatedToSectorAt
+        || !!d.sectorResolutionDate
+        || normLoc(d.status) === 'escalated';
+}
+
+// A case is visible to the sector if it has reached AT LEAST cell level
+// (handled by a cell or escalated up). This includes solved cases, so the
+// sector sees the full history of cases that came up from cell level.
+function reachedCellLevel(d) {
+    if (!d) return false;
+    const lvl = normLoc(d.level);
+    return lvl === 'cell' || lvl === 'sector'
+        || !!d.escalatedToCellAt || !!d.escalatedToSectorAt
+        || !!d.cellResolutionDate || !!d.sectorResolutionDate
+        || normLoc(d.status) === 'escalated';
+}
+
+// Is this case still open (i.e. the sector can act on it)?
+function isOpenCase(d) {
+    return !['solved', 'resolved', 'referred'].includes(normLoc(d && d.status));
+}
+
+// ===== Detail modal (replaces raw alert() popups) =====
+function detailRow(label, value) {
+    const v = (value === null || value === undefined || value === '') ? '—' : value;
+    return `<div class="detail-row"><span class="detail-label">${escapeHtml(label)}</span><span class="detail-value">${escapeHtml(v)}</span></div>`;
+}
+function showDetailModal(title, bodyHtml) {
+    const old = document.getElementById('detailModal');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'detailModal';
+    overlay.className = 'detail-modal-overlay';
+    overlay.innerHTML = `
+        <div class="detail-modal" role="dialog" aria-modal="true">
+            <div class="detail-modal-head">
+                <h3>${escapeHtml(title)}</h3>
+                <button class="detail-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="detail-modal-body">${bodyHtml}</div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('.detail-modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+    });
+}
+
 // Load escalated cases
 async function loadCaseTable() {
     try {
@@ -95,39 +153,44 @@ async function loadCaseTable() {
         const response = await fetch('/api/citizen-reports?type=case');
         const records = await response.json();
         
-        // Filter cases escalated to Sector level
-        const sectorCases = records.filter(record => 
-            record.level === 'Sector' && 
-            record.status !== 'Solved' &&
-            record.data?.sector === currentUser.sector
+        // Show ALL cases from cell level in this sector — escalated AND solved.
+        // NOTE: status/level live inside record.data (not on the top-level record).
+        const sectorCases = records.filter(record =>
+            normLoc(record.data?.sector) === normLoc(currentUser.sector) &&
+            reachedCellLevel(record.data)
         );
     
     const tbody = document.getElementById('caseTableBody');
     
     if (sectorCases.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">No escalated cases at Sector level</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center;">No cases from cell level yet.</td></tr>';
         return;
     }
     
     tbody.innerHTML = sectorCases.map(record => {
         const data = record.data || {};
-        const statusClass = data.status === 'Solved' ? 'status-solved' : 
-                           data.status === 'Escalated' ? 'status-escalated' : 
-                           data.status === 'In Progress' ? 'status-in-progress' : 'status-pending';
-        
-        // Calculate countdown
+        const status = data.status || 'Pending';
+        const level  = data.level  || 'Village';
+        const statusClass = (status === 'Solved' || status === 'resolved') ? 'status-solved' :
+                           (status === 'Escalated' || status === 'Referred') ? 'status-escalated' :
+                           status === 'In Progress' ? 'status-in-progress' : 'status-pending';
+        const levelClass = level === 'Cell' ? 'status-in-progress' :
+                           level === 'Sector' ? 'status-escalated' : 'status-pending';
         const countdown = calculateCountdown(record);
-        
+        const shortId = record._id ? record._id.slice(-6) : '—';
+        const desc = data.description || '';
+
         return `
             <tr>
-                <td>#${data.id || record._id}</td>
-                <td>${data.plaintiff || '—'}</td>
-                <td>${data.defendant || '—'}</td>
-                <td>${data.cell || '—'}</td>
-                <td>${data.village || '—'}</td>
-                <td>${data.leaderName || '—'}</td>
-                <td>${(data.description || '').substring(0, 50)}${(data.description || '').length > 50 ? '...' : ''}</td>
-                <td><span class="status-badge ${statusClass}">${data.status || 'Pending'}</span></td>
+                <td>#${shortId}</td>
+                <td>${escapeHtml(data.plaintiff || '—')}</td>
+                <td>${escapeHtml(data.defendant || '—')}</td>
+                <td>${escapeHtml(data.cell || '—')}</td>
+                <td>${escapeHtml(data.village || '—')}</td>
+                <td>${escapeHtml(data.leaderName || '—')}</td>
+                <td>${escapeHtml(desc.substring(0, 50))}${desc.length > 50 ? '…' : ''}</td>
+                <td><span class="status-badge ${statusClass}">${escapeHtml(status)}</span></td>
+                <td><span class="status-badge ${levelClass}">${escapeHtml(level)}</span></td>
                 <td>${data.escalatedDate ? formatDate(data.escalatedDate) : formatDate(data.caseDate || data.dateReported)}</td>
                 <td>
                     <div class="countdown-timer" data-case-id="${record._id}" data-resolution-date="${data.sectorResolutionDate || data.expectedResolutionDate || ''}">
@@ -136,8 +199,8 @@ async function loadCaseTable() {
                 </td>
                 <td>
                     <button class="btn btn-secondary" onclick="viewCaseDetails('${record._id}')">View</button>
-                    ${(data.status === 'Pending' || data.status === 'In Progress') ? 
-                        `<button class="btn btn-primary" onclick="selectCaseForResolution('${record._id}')">Resolve</button>` : 
+                    ${(atSectorLevel(data) && isOpenCase(data)) ?
+                        `<button class="btn btn-primary" onclick="selectCaseForResolution('${record._id}')">Resolve</button>` :
                         ''}
                 </td>
             </tr>
@@ -150,7 +213,7 @@ async function loadCaseTable() {
         console.error('Error loading cases:', err);
         const tbody = document.getElementById('caseTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: red;">Error loading cases</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: red;">Error loading cases</td></tr>';
         }
     }
 }
@@ -327,12 +390,12 @@ async function updateCaseSelect() {
         const response = await fetch('/api/citizen-reports?type=case');
         const records = await response.json();
         
-        const sectorCases = records.filter(record => 
-            record.data?.level === 'Sector' && 
-            record.data?.status !== 'Solved' &&
-            record.data?.sector === currentUser.sector
+        const sectorCases = records.filter(record =>
+            atSectorLevel(record.data) &&
+            normLoc(record.data?.status) !== 'solved' &&
+            normLoc(record.data?.sector) === normLoc(currentUser.sector)
         );
-        
+
         const select = document.getElementById('resolveCaseId');
         select.innerHTML = '<option value="">Select a case to resolve</option>' +
             sectorCases.map(record => 
@@ -357,31 +420,34 @@ window.viewCaseDetails = async function(caseId) {
         const record = records.find(r => r._id === caseId);
         
         if (record) {
-            const data = record.data || {};
-            const details = `
-Case ID: #${data.id || '?'}
-Plaintiff: ${data.plaintiff || '?'}
-Defendant: ${data.defendant || '?'}
-Village: ${data.village || '?'}
-Cell: ${data.cell || '?'}
-Sector: ${data.sector || '?'}
-Original Leader: ${data.leaderName || '?'}
-Status: ${data.status || '?'}
-Level: ${data.level || '?'}
-Case Date: ${data.caseDate ? formatDate(data.caseDate) : 'N/A'}
-Escalated Date: ${data.escalatedDate ? formatDate(data.escalatedDate) : 'N/A'}
-
-Description:
-${data.description || 'N/A'}
-
-${data.cellResolutionNotes ? `\nCell Resolution Notes:\n${data.cellResolutionNotes}` : ''}
-${data.sectorResolutionNotes ? `\nSector Resolution Notes:\n${data.sectorResolutionNotes}` : ''}
+            const d = record.data || {};
+            const escalated = d.escalatedDate ? formatDate(d.escalatedDate)
+                            : (d.escalatedToSectorAt ? formatDate(d.escalatedToSectorAt) : 'N/A');
+            const body = `
+                <div class="detail-grid">
+                    <p class="detail-section-title">Parties</p>
+                    ${detailRow('Plaintiff', d.plaintiff)}
+                    ${detailRow('Defendant', d.defendant)}
+                    ${detailRow('Original Leader', d.leaderName)}
+                    <p class="detail-section-title">Location</p>
+                    ${detailRow('Village', d.village)}
+                    ${detailRow('Cell', d.cell)}
+                    ${detailRow('Sector', d.sector)}
+                    <p class="detail-section-title">Status</p>
+                    ${detailRow('Status', d.status)}
+                    ${detailRow('Level', d.level)}
+                    ${detailRow('Case Date', d.caseDate ? formatDate(d.caseDate) : 'N/A')}
+                    ${detailRow('Escalated to Sector', escalated)}
+                </div>
+                <p class="detail-section-title">Description</p>
+                <p class="detail-text">${escapeHtml(d.description || '—')}</p>
+                ${d.cellResolutionNotes ? `<p class="detail-section-title">Cell Resolution Notes</p><p class="detail-text">${escapeHtml(d.cellResolutionNotes)}</p>` : ''}
+                ${d.sectorResolutionNotes ? `<p class="detail-section-title">Sector Resolution Notes</p><p class="detail-text">${escapeHtml(d.sectorResolutionNotes)}</p>` : ''}
             `;
-            alert(details);
+            showDetailModal('Case #' + (d.id || record._id.slice(-6)), body);
         }
     } catch (err) {
         console.error('Error viewing case details:', err);
-        alert('Error loading case details');
     }
 };
 
@@ -389,53 +455,48 @@ ${data.sectorResolutionNotes ? `\nSector Resolution Notes:\n${data.sectorResolut
 async function loadActivities() {
     try {
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        
-        // Fetch home updates for activities
-        const homeResponse = await fetch('/api/home-updates');
-        const homeUpdates = await homeResponse.json();
-        const activities = homeUpdates.filter(r => r.type === 'activity');
-        
-        // Fetch inteko meetings
-        const intekoResponse = await fetch('/api/inteko');
-        const intekoRecords = await intekoResponse.json();
-        
-        // Fetch members for registration summary
-        const memberResponse = await fetch('/api/members?sector=' + currentUser.sector);
-        const members = await memberResponse.json();
-        
-        // Fetch citizen reports for drug and violence reports
-        const reportsResponse = await fetch('/api/citizen-reports');
-        const reports = await reportsResponse.json();
-        const drugsRecords = reports.filter(r => r.type === 'drugs');
-        const violenceRecords = reports.filter(r => r.type === 'violence');
-        
-        document.getElementById('umugandaSummary').innerHTML = `
-            <p><strong>Total Activities:</strong> ${activities.length}</p>
-            <p><strong>This Month:</strong> ${activities.filter(r => {
-                const date = new Date(r.createdAt || r.date);
-                const now = new Date();
-                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-            }).length}</p>
-        `;
-        
-        document.getElementById('intekoSummary').innerHTML = `
-            <p><strong>Total Meetings:</strong> ${intekoRecords.length}</p>
-            <p><strong>This Month:</strong> ${intekoRecords.filter(r => {
-                const date = new Date(r.meetingDate);
-                const now = new Date();
-                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-            }).length}</p>
-        `;
-        
+        const sector = currentUser.sector || '';
+        const q = 'sector=' + encodeURIComponent(sector);
+
+        // Real attendance (umuganda + inteko), registrations and reports for this sector
+        const [umuganda, inteko, members, reports] = await Promise.all([
+            fetch('/api/attendance?' + q).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/inteko-attendance?' + q).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/members?' + q).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/citizen-reports').then(r => r.ok ? r.json() : []).catch(() => [])
+        ]);
+
+        const countPresent = arr => arr.filter(r => (r.status || '').toLowerCase() === 'present').length;
+        const countAbsent  = arr => arr.filter(r => (r.status || '').toLowerCase() === 'absent').length;
+        const rateOf       = arr => arr.length ? Math.round((countPresent(arr) / arr.length) * 100) : 0;
+
+        const attendanceCard = (arr) => `
+            <div class="metric-lead"><span class="metric-num">${rateOf(arr)}%</span><span class="metric-cap">attendance rate</span></div>
+            <div class="metric-breakdown">
+                <span><i class="fa-solid fa-user-check stat-present"></i> ${countPresent(arr)} present</span>
+                <span><i class="fa-solid fa-user-xmark stat-absent"></i> ${countAbsent(arr)} absent</span>
+                <span><i class="fa-solid fa-list-ol"></i> ${arr.length} records</span>
+            </div>`;
+
+        document.getElementById('umugandaSummary').innerHTML = attendanceCard(umuganda);
+        document.getElementById('intekoSummary').innerHTML   = attendanceCard(inteko);
+
+        const newMembers = members.filter(r => r.status === 'New Member').length;
         document.getElementById('registrationSummary').innerHTML = `
-            <p><strong>Total Registered:</strong> ${members.length}</p>
-            <p><strong>New Members:</strong> ${members.filter(r => r.status === 'New Member').length}</p>
-        `;
-        
+            <div class="metric-lead"><span class="metric-num">${members.length}</span><span class="metric-cap">registered members</span></div>
+            <div class="metric-breakdown">
+                <span><i class="fa-solid fa-user-plus stat-present"></i> ${newMembers} new</span>
+                <span><i class="fa-solid fa-user-check"></i> ${members.length - newMembers} current</span>
+            </div>`;
+
+        const drugsRecords    = reports.filter(r => r.type === 'drugs'    && normLoc(r.data?.sector) === normLoc(sector));
+        const violenceRecords = reports.filter(r => r.type === 'violence' && normLoc(r.data?.sector) === normLoc(sector));
         document.getElementById('reportsSummary').innerHTML = `
-            <p><strong>Drug Reports:</strong> ${drugsRecords.length}</p>
-            <p><strong>Violence Reports:</strong> ${violenceRecords.length}</p>
-        `;
+            <div class="metric-lead"><span class="metric-num">${drugsRecords.length + violenceRecords.length}</span><span class="metric-cap">total reports</span></div>
+            <div class="metric-breakdown">
+                <span><i class="fa-solid fa-wine-bottle"></i> ${drugsRecords.length} drugs</span>
+                <span><i class="fa-solid fa-triangle-exclamation"></i> ${violenceRecords.length} violence</span>
+            </div>`;
     } catch (err) {
         console.error('Error loading activities:', err);
     }
@@ -452,18 +513,21 @@ async function loadReports() {
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
         const reportedByLabel = (r) => r.reportedBy || r.data?.reportedBy || '—';
         
-        // Fetch citizen reports from database
-        const response = await fetch('/api/citizen-reports');
-        const reports = await response.json();
-        
+        // Fetch reports from both citizens and village leaders
+        const [crReports, lrReports] = await Promise.all([
+            fetch('/api/citizen-reports').then(r => r.json()).catch(() => []),
+            fetch('/api/leader-reports').then(r => r.json()).catch(() => [])
+        ]);
+        const reports = [...crReports, ...lrReports];
+
         // Filter by sector and type
-        const sectorDrugs = reports.filter(r => 
-            r.type === 'drugs' && 
-            r.data?.sector === currentUser.sector
+        const sectorDrugs = reports.filter(r =>
+            r.type === 'drugs' &&
+            normLoc(r.data?.sector) === normLoc(currentUser.sector)
         );
-        const sectorViolence = reports.filter(r => 
-            r.type === 'violence' && 
-            r.data?.sector === currentUser.sector
+        const sectorViolence = reports.filter(r =>
+            r.type === 'violence' &&
+            normLoc(r.data?.sector) === normLoc(currentUser.sector)
         );
         
         // Drugs reports
@@ -511,13 +575,26 @@ async function loadReports() {
 
 window.viewDrugsDetailsSector = async function(id) {
     try {
-        const response = await fetch('/api/citizen-reports');
-        const records = await response.json();
-        const record = records.find(r => r._id === id);
+        const [cr, lr] = await Promise.all([
+            fetch('/api/citizen-reports').then(r => r.json()).catch(() => []),
+            fetch('/api/leader-reports').then(r => r.json()).catch(() => [])
+        ]);
+        const record = [...cr, ...lr].find(r => r._id === id);
         if (record) {
-            const data = record.data || {};
-            const details = `Name(s): ${data.name || '—'}\nLocation: ${data.village || '—'}, ${data.cell || '—'}, ${data.sector || '—'}\nReported by: ${data.reportedBy || record.reportedBy || '—'}\nDescription: ${data.description || '—'}\nDate: ${formatDate(record.dateReported || record.createdAt)}`;
-            alert(details);
+            const d = record.data || {};
+            const body = `
+                <div class="detail-grid">
+                    ${detailRow('Name(s)', d.name)}
+                    ${detailRow('Sector', d.sector)}
+                    ${detailRow('Cell', d.cell)}
+                    ${detailRow('Village', d.village)}
+                    ${detailRow('Reported by', d.reportedBy || record.reportedBy)}
+                    ${detailRow('Date', formatDate(record.dateReported || record.createdAt))}
+                </div>
+                <p class="detail-section-title">Description</p>
+                <p class="detail-text">${escapeHtml(d.description || '—')}</p>
+            `;
+            showDetailModal('Drug / Illegal Drinks Report', body);
         }
     } catch (err) {
         console.error('Error viewing drugs details:', err);
@@ -526,13 +603,27 @@ window.viewDrugsDetailsSector = async function(id) {
 
 window.viewViolenceDetailsSector = async function(id) {
     try {
-        const response = await fetch('/api/citizen-reports');
-        const records = await response.json();
-        const record = records.find(r => r._id === id);
+        const [cr, lr] = await Promise.all([
+            fetch('/api/citizen-reports').then(r => r.json()).catch(() => []),
+            fetch('/api/leader-reports').then(r => r.json()).catch(() => [])
+        ]);
+        const record = [...cr, ...lr].find(r => r._id === id);
         if (record) {
-            const data = record.data || {};
-            const details = `Victim: ${data.victimName || '—'}\nTelephone: ${data.telephone || '—'}\nLocation: ${data.village || '—'}, ${data.cell || '—'}, ${data.sector || '—'}\nReported by: ${data.reportedBy || record.reportedBy || '—'}\nDescription: ${data.description || '—'}\nDate: ${formatDate(record.dateReported || record.createdAt)}`;
-            alert(details);
+            const d = record.data || {};
+            const body = `
+                <div class="detail-grid">
+                    ${detailRow('Victim', d.victimName)}
+                    ${detailRow('Telephone', d.telephone)}
+                    ${detailRow('Sector', d.sector)}
+                    ${detailRow('Cell', d.cell)}
+                    ${detailRow('Village', d.village)}
+                    ${detailRow('Reported by', d.reportedBy || record.reportedBy)}
+                    ${detailRow('Date', formatDate(record.dateReported || record.createdAt))}
+                </div>
+                <p class="detail-section-title">Description</p>
+                <p class="detail-text">${escapeHtml(d.description || '—')}</p>
+            `;
+            showDetailModal('Sexual Violence Report', body);
         }
     } catch (err) {
         console.error('Error viewing violence details:', err);
@@ -547,21 +638,17 @@ async function loadStatistics() {
         const response = await fetch('/api/citizen-reports?type=case');
         const records = await response.json();
         
-        const sectorCases = records.filter(r => 
-            r.data?.level === 'Sector' && 
-            r.data?.sector === currentUser.sector
-        );
-        
-        document.getElementById('totalCases').textContent = sectorCases.length;
-        document.getElementById('pendingCases').textContent = sectorCases.filter(r => 
-            r.data?.status === 'Pending' || r.data?.status === 'In Progress'
-        ).length;
-        document.getElementById('solvedCases').textContent = sectorCases.filter(r => 
-            r.data?.status === 'Solved'
-        ).length;
-        document.getElementById('referredCases').textContent = sectorCases.filter(r => 
-            r.data?.status === 'Referred'
-        ).length;
+        // Sector-wide overview: count ALL cases in this sector (any level),
+        // so the cards show real numbers even before cases reach sector level.
+        const sectorCases = records.filter(r => normLoc(r.data?.sector) === normLoc(currentUser.sector));
+        const st = r => normLoc(r.data?.status);
+        const isSolved   = r => st(r) === 'solved' || st(r) === 'resolved';
+        const isReferred = r => st(r) === 'referred';
+
+        document.getElementById('totalCases').textContent    = sectorCases.length;
+        document.getElementById('pendingCases').textContent  = sectorCases.filter(r => !isSolved(r) && !isReferred(r)).length;
+        document.getElementById('solvedCases').textContent   = sectorCases.filter(isSolved).length;
+        document.getElementById('referredCases').textContent = sectorCases.filter(isReferred).length;
     } catch (err) {
         console.error('Error loading statistics:', err);
     }
@@ -849,8 +936,9 @@ async function handleSectorActivitySubmit(e) {
                 
                 if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
-                    imageUrl = uploadData.secure_url || uploadData.imageUrl;
-                    publicId = uploadData.public_id || uploadData.publicId;
+                    // /api/upload returns { url, publicId, ... }
+                    imageUrl = uploadData.url || uploadData.secure_url || uploadData.imageUrl;
+                    publicId = uploadData.publicId || uploadData.public_id;
                 }
             } catch (err) {
                 console.warn('Image upload failed', err);

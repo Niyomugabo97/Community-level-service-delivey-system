@@ -7,45 +7,93 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
-<body class="with-bottom-sidebar">
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <h1 class="logo"><i class="fa-solid fa-house-flag"></i> Village Leader Dashboard</h1>
-                <button class="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="icon-btn" id="sidebarToggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+            <a href="home.html" class="topbar-brand">
+                <span class="brand-mark"><i class="fa-solid fa-house-flag"></i></span>
+                <span class="brand-text">Leader <strong>Dashboard</strong></span>
+            </a>
+        </div>
+        <div class="topbar-right">
+            <a href="home.html" class="icon-btn" title="Public Home"><i class="fa-solid fa-house"></i></a>
+            <div class="user-menu">
+                <button class="user-chip" id="userChipBtn" aria-label="User menu">
+                    <span class="avatar" id="chipAvatar">–</span>
+                    <span class="chip-meta">
+                        <span class="chip-name" id="chipName">User</span>
+                        <span class="chip-role" id="chipRole">Village Leader</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down chip-caret"></i>
                 </button>
-                <ul class="nav-menu">
-                    <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
-                    <li><a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
-                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
-                </ul>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dd-header">
+                        <span class="avatar avatar-lg" id="ddAvatar">–</span>
+                        <div class="dd-id">
+                            <span class="dd-name" id="ddName">User</span>
+                            <span class="dd-email" id="ddEmail">—</span>
+                        </div>
+                    </div>
+                    <div class="dd-loc"><i class="fa-solid fa-location-dot"></i> <span id="ddLoc">—</span></div>
+                    <div class="dd-divider"></div>
+                    <a href="#" class="dd-item" data-go="my-profile"><i class="fa-solid fa-id-card"></i> My Profile</a>
+                    <a href="home.html" class="dd-item"><i class="fa-solid fa-house"></i> Public Home</a>
+                    <a href="#" class="dd-item danger" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
             </div>
-        </nav>
+        </div>
     </header>
 
     <main class="dashboard-container">
-        <div class="dashboard-sidebar bottom">
-            <ul class="dashboard-menu">
-                <li><a href="#register" data-section="register" class="active"><i class="fa-solid fa-user-plus"></i> 1. Register Members</a></li>
-                <li><a href="#inteko-attendance" data-section="inteko-attendance"><i class="fa-solid fa-clipboard-check"></i> 2. Inteko Attendance</a></li>
-                <li><a href="#umuganda" data-section="umuganda"><i class="fa-solid fa-people-group"></i> 3. Umuganda Attendance</a></li>
-                <li><a href="#analytics" data-section="analytics"><i class="fa-solid fa-chart-bar"></i> 4. Attendance Analytics</a></li>
-                <li><a href="#inteko" data-section="inteko"><i class="fa-solid fa-clipboard-list"></i> 5. Inteko Minutes & Decisions</a></li>
-                <li><a href="#insurance" data-section="insurance"><i class="fa-solid fa-shield-halved"></i> 6. Insurance Payment</a></li>
-                <li><a href="#drugs" data-section="drugs"><i class="fa-solid fa-bottle-droplet"></i> 7. Report Drugs/Illegal Drinks</a></li>
-                <li><a href="#violence" data-section="violence"><i class="fa-solid fa-hand-fist"></i> 8. Report Sexual Violence</a></li>
-                <li><a href="#infrastructure" data-section="infrastructure"><i class="fa-solid fa-road"></i> 9. Damaged Infrastructure Report</a></li>
-                <li><a href="#case" data-section="case"><i class="fa-solid fa-scale-balanced"></i> 10. Shift Automate Ikirago (Case)</a></li>
-                <li><a href="#homeupdates" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> 11. Recent Activities & Home Updates</a></li>
-                <li><a href="#chat" data-section="chat"><i class="fa-solid fa-comments"></i> 12. Chat</a></li>
-                <li><a href="#visitors" data-section="visitors"><i class="fa-solid fa-user-group"></i> 13. Visitor Reports</a></li>
-                <li><a href="#my-profile" data-section="my-profile"><i class="fa-solid fa-id-card"></i> 14. My Profile</a></li>
-            </ul>
-        </div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <p class="nav-group-label">Members</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#register" data-section="register" class="active"><span class="nav-icon"><i class="fa-solid fa-user-plus"></i></span><span class="nav-text">Register Members</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Attendance</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#inteko-attendance" data-section="inteko-attendance"><span class="nav-icon"><i class="fa-solid fa-clipboard-check"></i></span><span class="nav-text">Inteko Attendance</span></a></li>
+                    <li><a href="#umuganda" data-section="umuganda"><span class="nav-icon"><i class="fa-solid fa-people-group"></i></span><span class="nav-text">Umuganda Attendance</span></a></li>
+                    <li><a href="#analytics" data-section="analytics"><span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span><span class="nav-text">Attendance Analytics</span></a></li>
+                    <li><a href="#inteko" data-section="inteko"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span><span class="nav-text">Inteko Minutes &amp; Decisions</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Reports</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#drugs" data-section="drugs"><span class="nav-icon"><i class="fa-solid fa-bottle-droplet"></i></span><span class="nav-text">Report Drugs/Illegal Drinks</span></a></li>
+                    <li><a href="#violence" data-section="violence"><span class="nav-icon"><i class="fa-solid fa-hand-fist"></i></span><span class="nav-text">Report Sexual Violence</span></a></li>
+                    <li><a href="#infrastructure" data-section="infrastructure"><span class="nav-icon"><i class="fa-solid fa-road"></i></span><span class="nav-text">Damaged Infrastructure</span></a></li>
+                    <li><a href="#case" data-section="case"><span class="nav-icon"><i class="fa-solid fa-scale-balanced"></i></span><span class="nav-text">Ikirago (Case)</span></a></li>
+                    <li><a href="#visitors" data-section="visitors"><span class="nav-icon"><i class="fa-solid fa-user-group"></i></span><span class="nav-text">Visitor Reports</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Engagement</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#homeupdates" data-section="homeupdates"><span class="nav-icon"><i class="fa-solid fa-bullhorn"></i></span><span class="nav-text">Activities &amp; Home Updates</span></a></li>
+                    <li><a href="#chat" data-section="chat"><span class="nav-icon"><i class="fa-solid fa-comments"></i></span><span class="nav-text">Chat</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Account</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#my-profile" data-section="my-profile"><span class="nav-icon"><i class="fa-solid fa-id-card"></i></span><span class="nav-text">My Profile</span></a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-user">
+                <span class="avatar" id="sbAvatar">–</span>
+                <div class="sb-user-meta">
+                    <span class="sb-user-name" id="sbName">User</span>
+                    <span class="sb-user-role" id="sbRole">Village Leader</span>
+                </div>
+                <button class="sb-logout js-logout" title="Logout" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </aside>
 
         <div class="dashboard-content">
             <!-- Register Members Section -->
@@ -510,8 +558,8 @@
                         <button class="btn btn-secondary" onclick="document.getElementById('uga-dateFilter').value='';loadUmugandaAnalytics();">
                             <i class="fa-solid fa-times"></i> Clear
                         </button>
-                        <button class="btn btn-success" onclick="downloadAttendanceCSV('umuganda')" style="margin-left:auto;">
-                            <i class="fa-solid fa-download"></i> Download CSV
+                        <button class="btn btn-success" onclick="downloadAttendancePDF('umuganda')" style="margin-left:auto;">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF
                         </button>
                     </div>
 
@@ -580,8 +628,8 @@
                         <button class="btn btn-secondary" onclick="document.getElementById('int-dateFilter').value='';loadIntekoAnalytics();">
                             <i class="fa-solid fa-times"></i> Clear
                         </button>
-                        <button class="btn btn-success" onclick="downloadAttendanceCSV('inteko')" style="margin-left:auto;">
-                            <i class="fa-solid fa-download"></i> Download CSV
+                        <button class="btn btn-success" onclick="downloadAttendancePDF('inteko')" style="margin-left:auto;">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF
                         </button>
                     </div>
 
@@ -894,63 +942,6 @@
                 </div>
             </section>
 
-            <!-- Insurance Payment Section -->
-            <section id="insurance" class="dashboard-section">
-                <h2><i class="fa-solid fa-shield-halved"></i> Insurance Payment Tracking</h2>
-                <form id="insuranceForm" class="form-container">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="insuranceName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Telephone (Optional)</label>
-                            <input type="tel" id="insuranceTelephone">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Sector</label>
-                            <input type="text" id="insuranceSector" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Cell</label>
-                            <input type="text" id="insuranceCell" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Village</label>
-                            <input type="text" id="insuranceVillage" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Payment Status</label>
-                        <select id="insuranceStatus" required>
-                            <option value="Paid">Paid</option>
-                            <option value="Not Paid">Not Paid</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Record Payment Status</button>
-                </form>
-                <div class="data-table-container">
-                    <h3>Insurance Records</h3>
-                    <table id="insuranceTable" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Telephone</th>
-                                <th>Sector</th>
-                                <th>Cell</th>
-                                <th>Village</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="insuranceTableBody">
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
             <!-- Report Drugs Section -->
             <section id="drugs" class="dashboard-section">
                 <h2><i class="fa-solid fa-bottle-droplet"></i> Report Drugs and Illegal Drinks</h2>
@@ -1115,7 +1106,7 @@
                                 <th>Priority</th>
                                 <th>Level</th>
                                 <th>Status</th>
-                                <th>Time Left</th>
+                                <th>Deadline / Time Left</th>
                                 <th>Evidence</th>
                                 <th>Date</th>
                                 <th>Actions</th>
@@ -1450,11 +1441,41 @@
     </main>
 
     <script src="js/config.js"></script>
+    <!-- Set Deadline Modal -->
+    <div id="setDeadlineModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header" style="background:#e65100;color:#fff;border-radius:10px 10px 0 0;">
+                <h3 style="margin:0;color:#fff;"><i class="fa-regular fa-calendar-plus"></i> Set Resolution Deadline</h3>
+                <button class="modal-close" onclick="closeDeadlineModal()" style="color:#fff;font-size:22px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color:#555;margin:0 0 14px;font-size:13px;line-height:1.5;">
+                    Set the date and time by which this case must be resolved.<br>
+                    <strong>If not resolved by the deadline, the case will automatically escalate to Cell level.</strong>
+                </p>
+                <div class="form-group">
+                    <label><i class="fa-regular fa-calendar"></i> Deadline Date &amp; Time</label>
+                    <input type="datetime-local" id="deadlineInput" style="width:100%;padding:9px 10px;border:1px solid #ccc;border-radius:4px;font-size:14px;">
+                </div>
+                <p id="deadlineCurrentInfo" style="margin:8px 0 0;font-size:12px;color:#666;"></p>
+            </div>
+            <div style="padding:12px 20px 16px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #eee;">
+                <button class="btn btn-secondary btn-sm" onclick="closeDeadlineModal()">Cancel</button>
+                <button class="btn btn-sm" onclick="saveDeadline()" style="background:#e65100;color:#fff;border:none;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Deadline
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script src="js/face-recognition.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="js/leader-dashboard.js"></script>
     <script src="js/leader-profile.js"></script>
     <script src="js/navbar.js"></script>
+    <script src="js/dashboard-ui.js"></script>
 
 <!-- Edit Home Update Modal -->
 <div id="editHomeUpdateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">

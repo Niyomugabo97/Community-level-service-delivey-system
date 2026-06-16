@@ -1,7 +1,9 @@
 // API Service for Frontend-Backend Connection
 class ApiService {
     constructor() {
-        this.baseURL = 'https://backen-community-level-servece-delivery-system-production.up.railway.app/api';
+        this.baseURL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? '/api'
+            : 'https://backen-community-level-servece-delivery-system-production.up.railway.app/api';
     }
 
     // Home Updates API

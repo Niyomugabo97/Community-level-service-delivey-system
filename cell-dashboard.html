@@ -7,42 +7,96 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <h1 class="logo"><i class="fa-solid fa-layer-group"></i> Cell Level Dashboard</h1>
-                <button class="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="icon-btn" id="sidebarToggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+            <a href="home.html" class="topbar-brand">
+                <span class="brand-mark"><i class="fa-solid fa-layer-group"></i></span>
+                <span class="brand-text">Cell <strong>Dashboard</strong></span>
+            </a>
+        </div>
+        <div class="topbar-right">
+            <a href="home.html" class="icon-btn" title="Public Home"><i class="fa-solid fa-house"></i></a>
+            <div class="user-menu">
+                <button class="user-chip" id="userChipBtn" aria-label="User menu">
+                    <span class="avatar" id="chipAvatar">–</span>
+                    <span class="chip-meta">
+                        <span class="chip-name" id="chipName">User</span>
+                        <span class="chip-role" id="chipRole">Cell Leader</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down chip-caret"></i>
                 </button>
-                <ul class="nav-menu">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="#" id="logoutBtn">Logout</a></li>
-                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
-                </ul>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dd-header">
+                        <span class="avatar avatar-lg" id="ddAvatar">–</span>
+                        <div class="dd-id">
+                            <span class="dd-name" id="ddName">User</span>
+                            <span class="dd-email" id="ddEmail">—</span>
+                        </div>
+                    </div>
+                    <div class="dd-loc"><i class="fa-solid fa-location-dot"></i> <span id="ddLoc">—</span></div>
+                    <div class="dd-divider"></div>
+                    <a href="#" class="dd-item" data-go="profile"><i class="fa-solid fa-user-gear"></i> My Profile &amp; Location</a>
+                    <a href="home.html" class="dd-item"><i class="fa-solid fa-house"></i> Public Home</a>
+                    <a href="#" class="dd-item danger js-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
             </div>
-        </nav>
+        </div>
     </header>
 
     <main class="dashboard-container">
-        <div class="dashboard-sidebar">
-            <ul class="dashboard-menu">
-                <li><a href="#" data-section="cases" class="active"><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases</a></li>
-                <li><a href="#" data-section="activities"><i class="fa-solid fa-chart-line"></i> Village Activities</a></li>
-                <li><a href="#" data-section="reports"><i class="fa-solid fa-file-lines"></i> Reports Summary</a></li>
-                <li><a href="#" data-section="statistics"><i class="fa-solid fa-chart-pie"></i> Statistics</a></li>
-                <li><a href="#" data-section="registrations"><i class="fa-solid fa-users"></i> Member Registrations</a></li>
-                <li><a href="#" data-section="attendance"><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</a></li>
-                <li><a href="#" data-section="infra-visitors"><i class="fa-solid fa-road"></i> Infrastructure & Visitors</a></li>
-                <li><a href="#" data-section="homeupdates"><i class="fa-solid fa-bullhorn"></i> Activities & Home Updates</a></li>
-                <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat</a></li>
-            </ul>
-        </div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <p class="nav-group-label">Overview</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="cases" class="active"><span class="nav-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></span><span class="nav-text">Escalated Cases</span></a></li>
+                    <li><a href="#" data-section="activities"><span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span><span class="nav-text">Village Activities</span></a></li>
+                    <li><a href="#" data-section="statistics"><span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span><span class="nav-text">Statistics</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Records</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="registrations"><span class="nav-icon"><i class="fa-solid fa-users"></i></span><span class="nav-text">Member Registrations</span></a></li>
+                    <li><a href="#" data-section="attendance"><span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span><span class="nav-text">Attendance Analytics</span></a></li>
+                    <li><a href="#" data-section="reports"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span class="nav-text">Reports Summary</span></a></li>
+                    <li><a href="#" data-section="infra-visitors"><span class="nav-icon"><i class="fa-solid fa-road"></i></span><span class="nav-text">Infrastructure &amp; Visitors</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Engagement</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="homeupdates"><span class="nav-icon"><i class="fa-solid fa-bullhorn"></i></span><span class="nav-text">Activities &amp; Home Updates</span></a></li>
+                    <li><a href="#" data-section="chat"><span class="nav-icon"><i class="fa-solid fa-comments"></i></span><span class="nav-text">Chat</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Account</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="profile"><span class="nav-icon"><i class="fa-solid fa-user-gear"></i></span><span class="nav-text">My Profile / Location</span></a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-user">
+                <span class="avatar" id="sbAvatar">–</span>
+                <div class="sb-user-meta">
+                    <span class="sb-user-name" id="sbName">User</span>
+                    <span class="sb-user-role" id="sbRole">Cell Leader</span>
+                </div>
+                <button class="sb-logout js-logout" title="Logout" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </aside>
 
         <div class="dashboard-content">
+            <!-- Location Banner -->
+            <div id="cellLocationBanner" class="location-banner">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Showing data for: <strong id="bannerSector">—</strong> Sector › <strong id="bannerCell">—</strong> Cell</span>
+                <span id="bannerWarning" class="banner-alert" style="display:none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Your profile is missing sector/cell. Go to <strong>My Profile / Location</strong> to set it.
+                </span>
+            </div>
             <!-- Escalated Cases Section -->
             <section id="cases" class="dashboard-section active">
                 <h2><i class="fa-solid fa-arrow-up-from-bracket"></i> Escalated Cases from Villages</h2>
@@ -53,15 +107,17 @@
                     <table id="caseTable" class="data-table">
                         <thead>
                             <tr>
-                                <th>Case ID</th>
-                                <th>Plaintiff</th>
-                                <th>Defendant</th>
-                                <th>Village</th>
-                                <th>Original Leader</th>
-                                <th>Case Description</th>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Plaintiff (Reporter)</th>
+                                <th>Accused (Defendant)</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Level</th>
                                 <th>Status</th>
-                                <th>Escalated Date</th>
-                                <th>Countdown</th>
+                                <th>Deadline / Time Left</th>
+                                <th>Evidence</th>
+                                <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -71,7 +127,7 @@
                 </div>
                 
                 <!-- Case Resolution Form -->
-                <div class="form-container" style="margin-top: 2rem;">
+                <div class="form-container mt-section">
                     <h3>Resolve Case</h3>
                     <form id="resolveCaseForm">
                         <div class="form-group">
@@ -221,18 +277,18 @@
                         </div>
                     </div>
 
-                    <div class="stats-grid" style="margin-bottom:1rem;">
+                    <div class="stats-grid">
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-users"></i> Total Members</h4>
                             <div class="stat-value" id="cellRegTotal">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Current Members</h4>
-                            <div class="stat-value" style="color:#27ae60;" id="cellRegCurrent">0</div>
+                            <h4><i class="fa-solid fa-user-check success"></i> Current Members</h4>
+                            <div class="stat-value success" id="cellRegCurrent">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-plus" style="color:#2980b9;"></i> New Members</h4>
-                            <div class="stat-value" style="color:#2980b9;" id="cellRegNew">0</div>
+                            <h4><i class="fa-solid fa-user-plus info"></i> New Members</h4>
+                            <div class="stat-value info" id="cellRegNew">0</div>
                         </div>
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-venus-mars"></i> Male / Female</h4>
@@ -264,7 +320,7 @@
             <section id="attendance" class="dashboard-section">
                 <h2><i class="fa-solid fa-chart-bar"></i> Attendance Analytics (Cell)</h2>
 
-                <div class="sub-analytics-tabs" style="margin-bottom:0;">
+                <div class="sub-analytics-tabs">
                     <a class="sub-analytics-tab active" data-atab="cell-umuganda-analytics">
                         <i class="fa-solid fa-people-group"></i> Umuganda
                     </a>
@@ -274,41 +330,41 @@
                 </div>
 
                 <!-- Umuganda panel -->
-                <div class="sub-tab-panel active" id="atab-cell-umuganda-analytics" style="padding-top:1.5rem;">
-                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                <div class="sub-tab-panel active" id="atab-cell-umuganda-analytics">
+                    <div class="stats-grid">
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-users"></i> Total Records</h4>
                             <div class="stat-value" id="cuga-total">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
-                            <div class="stat-value" style="color:#27ae60;" id="cuga-present">0</div>
+                            <h4><i class="fa-solid fa-user-check success"></i> Present</h4>
+                            <div class="stat-value success" id="cuga-present">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
-                            <div class="stat-value" style="color:#e74c3c;" id="cuga-absent">0</div>
+                            <h4><i class="fa-solid fa-user-xmark danger"></i> Absent</h4>
+                            <div class="stat-value danger" id="cuga-absent">0</div>
                         </div>
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-percent"></i> Rate</h4>
                             <div class="stat-value" id="cuga-rate">0%</div>
                         </div>
                     </div>
-                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                    <div class="analytics-filter-bar">
                         <i class="fa-solid fa-calendar-days"></i>
                         <label>Filter by date:</label>
-                        <input type="date" id="cuga-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <input type="date" id="cuga-dateFilter">
                         <button class="btn btn-primary" onclick="loadCellUmugandaAnalytics()"><i class="fa-solid fa-filter"></i> Apply</button>
                         <button class="btn btn-secondary" onclick="document.getElementById('cuga-dateFilter').value='';loadCellUmugandaAnalytics()"><i class="fa-solid fa-times"></i> Clear</button>
                     </div>
-                    <div class="data-table-container" style="margin-bottom:1.5rem;">
-                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members</h4>
+                    <div class="data-table-container">
+                        <h4 class="table-caption success"><i class="fa-solid fa-user-check"></i> Present Members</h4>
                         <table class="data-table">
                             <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
                             <tbody id="cuga-present-tbody"></tbody>
                         </table>
                     </div>
                     <div class="data-table-container">
-                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
+                        <h4 class="table-caption danger"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
                         <table class="data-table">
                             <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
                             <tbody id="cuga-absent-tbody"></tbody>
@@ -317,41 +373,41 @@
                 </div>
 
                 <!-- Inteko panel -->
-                <div class="sub-tab-panel" id="atab-cell-inteko-analytics" style="padding-top:1.5rem;">
-                    <div class="stats-grid" style="margin-bottom:1.5rem;">
+                <div class="sub-tab-panel" id="atab-cell-inteko-analytics">
+                    <div class="stats-grid">
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-users"></i> Total Records</h4>
                             <div class="stat-value" id="cint-total">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-check" style="color:#27ae60;"></i> Present</h4>
-                            <div class="stat-value" style="color:#27ae60;" id="cint-present">0</div>
+                            <h4><i class="fa-solid fa-user-check success"></i> Present</h4>
+                            <div class="stat-value success" id="cint-present">0</div>
                         </div>
                         <div class="stat-card">
-                            <h4><i class="fa-solid fa-user-xmark" style="color:#e74c3c;"></i> Absent</h4>
-                            <div class="stat-value" style="color:#e74c3c;" id="cint-absent">0</div>
+                            <h4><i class="fa-solid fa-user-xmark danger"></i> Absent</h4>
+                            <div class="stat-value danger" id="cint-absent">0</div>
                         </div>
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-percent"></i> Rate</h4>
                             <div class="stat-value" id="cint-rate">0%</div>
                         </div>
                     </div>
-                    <div class="analytics-filter-bar" style="margin-bottom:1.2rem;">
+                    <div class="analytics-filter-bar">
                         <i class="fa-solid fa-calendar-days"></i>
                         <label>Filter by date:</label>
-                        <input type="date" id="cint-dateFilter" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;">
+                        <input type="date" id="cint-dateFilter">
                         <button class="btn btn-primary" onclick="loadCellIntekoAnalytics()"><i class="fa-solid fa-filter"></i> Apply</button>
                         <button class="btn btn-secondary" onclick="document.getElementById('cint-dateFilter').value='';loadCellIntekoAnalytics()"><i class="fa-solid fa-times"></i> Clear</button>
                     </div>
-                    <div class="data-table-container" style="margin-bottom:1.5rem;">
-                        <h4 style="color:#27ae60;"><i class="fa-solid fa-user-check"></i> Present Members</h4>
+                    <div class="data-table-container">
+                        <h4 class="table-caption success"><i class="fa-solid fa-user-check"></i> Present Members</h4>
                         <table class="data-table">
                             <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
                             <tbody id="cint-present-tbody"></tbody>
                         </table>
                     </div>
                     <div class="data-table-container">
-                        <h4 style="color:#e74c3c;"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
+                        <h4 class="table-caption danger"><i class="fa-solid fa-user-xmark"></i> Absent Members</h4>
                         <table class="data-table">
                             <thead><tr><th>#</th><th>Name</th><th>Sex</th><th>Age</th><th>Sector</th><th>Cell</th><th>Village</th><th>Telephone</th><th>Date</th></tr></thead>
                             <tbody id="cint-absent-tbody"></tbody>
@@ -367,11 +423,10 @@
                 <div class="home-updates-tabs">
                     <button type="button" class="tab-btn active" data-tab="infra">Infrastructure Reports</button>
                     <button type="button" class="tab-btn" data-tab="visitors">Visitor Reports</button>
-                    <button type="button" class="tab-btn" data-tab="insurance">Insurance Payments</button>
                 </div>
 
                 <!-- Infrastructure -->
-                <div id="tab-infra" class="home-update-form active" style="padding-top:1rem;">
+                <div id="tab-infra" class="home-update-form active">
                     <div class="data-table-container">
                         <h3><i class="fa-solid fa-road"></i> Damaged Infrastructure Reports</h3>
                         <table class="data-table">
@@ -391,8 +446,8 @@
                 </div>
 
                 <!-- Visitors -->
-                <div id="tab-visitors" class="home-update-form" style="padding-top:1rem;">
-                    <div class="stats-grid" style="margin-bottom:1rem;">
+                <div id="tab-visitors" class="home-update-form">
+                    <div class="stats-grid">
                         <div class="stat-card">
                             <h4><i class="fa-solid fa-users"></i> Total Visitors</h4>
                             <div class="stat-value" id="cellVisitorTotal">0</div>
@@ -423,41 +478,6 @@
                     </div>
                 </div>
 
-                <!-- Insurance -->
-                <div id="tab-insurance" class="home-update-form" style="padding-top:1rem;">
-                    <div class="stats-grid" style="margin-bottom:1rem;">
-                        <div class="stat-card">
-                            <h4><i class="fa-solid fa-shield-halved"></i> Total Records</h4>
-                            <div class="stat-value" id="cellInsuranceTotal">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4><i class="fa-solid fa-check-circle" style="color:#27ae60;"></i> Paid</h4>
-                            <div class="stat-value" style="color:#27ae60;" id="cellInsurancePaid">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4><i class="fa-solid fa-times-circle" style="color:#e74c3c;"></i> Not Paid</h4>
-                            <div class="stat-value" style="color:#e74c3c;" id="cellInsuranceUnpaid">0</div>
-                        </div>
-                    </div>
-                    <div class="data-table-container">
-                        <h3><i class="fa-solid fa-shield-halved"></i> Insurance Payment Records</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Full Name</th>
-                                    <th>Telephone</th>
-                                    <th>Sector</th>
-                                    <th>Cell</th>
-                                    <th>Village</th>
-                                    <th>Status</th>
-                                    <th>Date Recorded</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cellInsuranceBody"></tbody>
-                        </table>
-                    </div>
-                </div>
             </section>
 
             <!-- Activities & Home Updates Section -->
@@ -537,9 +557,39 @@
                         <button type="submit" class="btn btn-primary">Post Trending</button>
                     </form>
                 </div>
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div class="data-table-container mt-section">
                     <h3>Your recent posts (Cell)</h3>
                     <div id="cellHomeUpdatesList"></div>
+                </div>
+            </section>
+
+            <!-- Profile / Location Settings Section -->
+            <section id="profile" class="dashboard-section">
+                <h2><i class="fa-solid fa-user-gear"></i> My Profile & Location Settings</h2>
+                <p class="section-desc">Verify or correct your location so the dashboard filters data for the right cell.</p>
+                <div class="form-container form-narrow">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="profileName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="text" id="profileEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Sector <span class="req">*</span></label>
+                        <input type="text" id="profileSector" placeholder="e.g. Ruhuha">
+                    </div>
+                    <div class="form-group">
+                        <label>Cell <span class="req">*</span></label>
+                        <input type="text" id="profileCell" placeholder="e.g. Butereri">
+                    </div>
+                    <div class="form-group">
+                        <label>Village</label>
+                        <input type="text" id="profileVillage" placeholder="e.g. Gatanga (optional)">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> Save Location</button>
+                    <p id="profileSaveMsg" class="form-success-msg" style="display:none;">Saved! Reload the page to see updated data.</p>
                 </div>
             </section>
 
@@ -589,6 +639,7 @@
 
     <script src="js/cell-dashboard.js"></script>
     <script src="js/navbar.js"></script>
+    <script src="js/dashboard-ui.js"></script>
 </body>
 </html>
 

@@ -130,7 +130,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupNavigation() {
-    const menu = document.querySelector('.dashboard-menu');
+    // Delegate on the sidebar nav wrapper so it catches clicks across ALL
+    // grouped .dashboard-menu lists (not just the first one).
+    const menu = document.querySelector('.sidebar-nav') || document.querySelector('.dashboard-menu');
     const links = () => Array.from(document.querySelectorAll('.dashboard-menu a'));
     const sections = () => Array.from(document.querySelectorAll('.dashboard-section'));
 
@@ -213,38 +215,67 @@ function savePerformanceStore(store) {
     }
 }
 
+// Attendance % = (present * 100) / (present + absent), from cumulative counts.
+//   present 1 / total 1 -> 100      |  present 0 / total 1 -> 0
+//   present 1 / total 2 -> 50       |  present 2 / total 3 -> 66.67
+function _attendancePercents(entry) {
+    const present = Number(entry && entry.present) || 0;
+    const absent  = Number(entry && entry.absent)  || 0;
+    const total = present + absent;
+    const pct = total > 0 ? (present * 100) / total : 0;
+    return { present, absent, total, pct };
+}
+
+// Whole numbers stay clean (100%), otherwise show up to 2 decimals (66.67%).
+function _fmtPct(pct) {
+    return String(Math.round(pct * 100) / 100);
+}
+
+function _renderPerfText(entry) {
+    const { present, absent, total, pct } = _attendancePercents(entry);
+    return total === 0 ? '—' : `${_fmtPct(pct)}% (${present}P / ${absent}A)`;
+}
+
+// Adjust a member's present/absent counts when their mark changes within a session.
+function _recordMark(loadStore, saveStore, memberId, newStatus, prevStatus) {
+    if (newStatus !== 'present' && newStatus !== 'absent') return;
+    const year = getPerformanceYear();
+    const store = loadStore();
+    store[year] ||= {};
+    const entry = store[year][memberId] || { present: 0, absent: 0 };
+    entry.present = Number(entry.present) || 0;
+    entry.absent  = Number(entry.absent)  || 0;
+    if (prevStatus !== newStatus) {
+        if (prevStatus === 'present') entry.present = Math.max(0, entry.present - 1);
+        else if (prevStatus === 'absent') entry.absent = Math.max(0, entry.absent - 1);
+        if (newStatus === 'present') entry.present += 1;
+        else entry.absent += 1;
+    }
+    entry.updatedAt = new Date().toISOString();
+    store[year][memberId] = entry;
+    saveStore(store);
+    return entry;
+}
+
 function ensureMemberPerformance(memberId) {
     const year = getPerformanceYear();
     const store = loadPerformanceStore();
     store[year] ||= {};
-    store[year][memberId] ||= { score: 100, absences: 0, updatedAt: new Date().toISOString() };
+    store[year][memberId] ||= { present: 0, absent: 0, updatedAt: new Date().toISOString() };
     savePerformanceStore(store);
     return store[year][memberId];
 }
 
-function getMemberPerformancePercents(memberId) {
-    const entry = ensureMemberPerformance(memberId);
-    const present = Math.max(0, Math.min(100, Number(entry.score) || 0));
-    const absent = 100 - present;
-    return { present, absent };
+function recordMark(memberId, newStatus, prevStatus) {
+    return _recordMark(loadPerformanceStore, savePerformanceStore, memberId, newStatus, prevStatus);
 }
 
-function applyAbsentPenalty(memberId) {
-    const year = getPerformanceYear();
-    const store = loadPerformanceStore();
-    store[year] ||= {};
-    const entry = store[year][memberId] || { score: 100, absences: 0 };
-    entry.score = Math.max(0, (Number(entry.score) || 100) - 1);
-    entry.absences = (Number(entry.absences) || 0) + 1;
-    entry.updatedAt = new Date().toISOString();
-    store[year][memberId] = entry;
-    savePerformanceStore(store);
-    return entry;
+function getMemberPerformancePercents(memberId) {
+    return _attendancePercents(ensureMemberPerformance(memberId));
 }
 
 function renderPerformanceText(memberId) {
-    const { present, absent } = getMemberPerformancePercents(memberId);
-    return `Present: ${present}% | Absent: ${absent}%`;
+    return _renderPerfText(ensureMemberPerformance(memberId));
 }
 
 function updatePerformanceUI(memberId) {
@@ -261,8 +292,6 @@ function setupForms() {
     // Register form
     document.getElementById('registerForm').addEventListener('submit', handleRegisterSubmit);
 
-    // Insurance form
-    document.getElementById('insuranceForm').addEventListener('submit', handleInsuranceSubmit);
 
     // Drugs form
     document.getElementById('drugsForm').addEventListener('submit', handleDrugsSubmit);
@@ -509,30 +538,39 @@ function filterUmugandaSavedRecords() {
     });
 }
 
-function loadUmugandaSavedRecordsTable() {
+async function loadUmugandaSavedRecordsTable() {
     const tbody = document.getElementById('umugandaTableBody');
     const wrapper = document.getElementById('umugandaSavedRecordsWrap');
     if (!tbody || !wrapper) return;
 
     const attendanceDate = sessionStorage.getItem('lastUmugandaAttendanceDate') || new Date().toISOString().split('T')[0];
-    const members = JSON.parse(localStorage.getItem('registerRecords')) || [];
 
-    // Load all normalized attendance records for the chosen day
-    const allRecords = getAllUmugandaAttendanceRecords();
-    const dayRecords = allRecords.filter(r => r.day === attendanceDate);
+    // Members from the MongoDB-backed cache (scoped to this leader), fall back to local
+    let members = (window._cachedMembers && window._cachedMembers.length)
+        ? getLeaderScopedMembers(window._cachedMembers)
+        : (JSON.parse(localStorage.getItem('registerRecords')) || []);
 
-    // Map citizenKey -> record for quick lookup
+    // Attendance for the chosen day — load from the DATABASE
+    let dayRecords = [];
+    try {
+        dayRecords = await new ApiService().getAttendance({ date: attendanceDate });
+        if (!Array.isArray(dayRecords)) dayRecords = [];
+    } catch (err) {
+        console.warn('Umuganda saved records: DB load failed, using local cache', err);
+        dayRecords = getAllUmugandaAttendanceRecords().filter(r => r.day === attendanceDate);
+    }
+
+    // Map member key (telephone/citizenId) -> record for quick lookup
     const byCitizenKey = {};
     dayRecords.forEach(r => {
-        const key = r.citizenKey;
-        if (!key) return;
-        byCitizenKey[key] = r; // keep last
+        const key = r.citizenId || r.telephone || r.citizenKey || r.name;
+        if (key) byCitizenKey[String(key)] = r; // keep last
     });
 
     // Render rows: ALL registered members + attendance status for this day + performance
     const rowsHtml = members.map(member => {
         const key = member.telephone;
-        const attendance = byCitizenKey[key];
+        const attendance = byCitizenKey[String(key)];
 
         let attendanceStatus = '-';
         if (attendance && attendance.status) {
@@ -1712,15 +1750,9 @@ function markMemberAttendance(memberId, status, index) {
     const tempAttendance = JSON.parse(sessionStorage.getItem('tempAttendance')) || {};
     const prevStatus = tempAttendance[memberId]?.status;
 
-    // Apply performance penalty only when switching into "absent"
-    if (status === 'absent' && prevStatus !== 'absent') {
-        applyAbsentPenalty(memberId);
-        updatePerformanceUI(memberId);
-    } else {
-        // Ensure the UI always has a baseline value
-        ensureMemberPerformance(memberId);
-        updatePerformanceUI(memberId);
-    }
+    // Update present/absent counts for this member (handles in-session switches)
+    recordMark(memberId, status, prevStatus);
+    updatePerformanceUI(memberId);
 
     tempAttendance[memberId] = {
         status: status,
@@ -1751,6 +1783,7 @@ function markAllPresent() {
         member.village === currentLeaderLocation.village
     );
 
+    const oldTemp = JSON.parse(sessionStorage.getItem('tempAttendance')) || {};
     const allPresentAttendance = {};
 
     locationMembers.forEach((record, index) => {
@@ -1767,7 +1800,7 @@ function markAllPresent() {
             timestamp: new Date().toISOString()
         };
 
-        ensureMemberPerformance(record.telephone);
+        recordMark(record.telephone, 'present', oldTemp[record.telephone]?.status);
         updatePerformanceUI(record.telephone);
     });
 
@@ -1794,13 +1827,7 @@ function markAllAbsent() {
             buttons[1].classList.add('active'); // Absent button
         }
 
-        // Apply performance penalty only if this member wasn't already absent
-        const prevStatus = tempAttendance[record.telephone]?.status;
-        if (prevStatus !== 'absent') {
-            applyAbsentPenalty(record.telephone);
-        } else {
-            ensureMemberPerformance(record.telephone);
-        }
+        recordMark(record.telephone, 'absent', tempAttendance[record.telephone]?.status);
         updatePerformanceUI(record.telephone);
 
         allAbsentAttendance[record.telephone] = {
@@ -1871,45 +1898,46 @@ async function saveAttendance() {
         const api = new ApiService();
 
         // Convert temp attendance to permanent records and save to MongoDB
+        // Use window._cachedMembers (populated from MongoDB) instead of localStorage
+        const cachedMembers = window._cachedMembers || [];
+
         for (const [memberId, attendance] of Object.entries(currentAttendance)) {
-            const memberRecord = JSON.parse(localStorage.getItem('registerRecords')) || []
-                .find(r => r.telephone === memberId);
+            // Look up member from in-memory cache (sourced from MongoDB)
+            const memberRecord = cachedMembers.find(r =>
+                r.telephone === memberId || String(r._id) === memberId
+            );
 
-            console.log(`Processing attendance for ${memberId}:`, attendance);
+            console.log(`Processing attendance for ${memberId}:`, attendance, 'member found:', !!memberRecord);
 
-            if (memberRecord) {
-                const attendanceRecord = {
-                    name: attendance.name,
-                    age: memberRecord.age,
-                    sex: memberRecord.sex,
-                    sector: memberRecord.sector,
-                    cell: memberRecord.cell,
-                    village: memberRecord.village,
-                    date: new Date(attendanceDate).toISOString(),
-                    checkInMethod: 'manual',
-                    citizenId: memberId,
-                    status: attendance.status,
-                    attendanceDate: attendanceDate // Add date field for easy filtering
-                };
+            const attendanceRecord = {
+                name:          attendance.name,
+                age:           memberRecord ? memberRecord.age     : null,
+                sex:           memberRecord ? memberRecord.sex     : '',
+                sector:        memberRecord ? memberRecord.sector  : (currentLeaderLocation ? currentLeaderLocation.sector  : ''),
+                cell:          memberRecord ? memberRecord.cell    : (currentLeaderLocation ? currentLeaderLocation.cell    : ''),
+                village:       memberRecord ? memberRecord.village : (currentLeaderLocation ? currentLeaderLocation.village : ''),
+                telephone:     memberId,
+                date:          new Date(attendanceDate).toISOString(),
+                checkInMethod: 'manual',
+                citizenId:     memberId,
+                status:        attendance.status,
+                attendanceDate: attendanceDate
+            };
 
-                console.log('Creating attendance record:', attendanceRecord);
+            console.log('Creating attendance record:', attendanceRecord);
 
-                // Save to MongoDB
-                const result = await api.saveAttendance(attendanceRecord);
-                console.log('Attendance saved to MongoDB:', result);
+            // Save to MongoDB
+            const result = await api.saveAttendance(attendanceRecord);
+            console.log('Attendance saved to MongoDB:', result);
 
-                // Also save to localStorage for analytics compatibility
-                const existingRecords = JSON.parse(localStorage.getItem('umugandaRecords')) || [];
-                existingRecords.push(attendanceRecord);
-                localStorage.setItem('umugandaRecords', JSON.stringify(existingRecords));
-                console.log('Attendance also saved to localStorage for analytics');
+            // Also save to localStorage for analytics compatibility
+            const existingRecords = JSON.parse(localStorage.getItem('umugandaRecords')) || [];
+            existingRecords.push(attendanceRecord);
+            localStorage.setItem('umugandaRecords', JSON.stringify(existingRecords));
 
-                // Update attendance tracking
-                if (attendance.status === 'present') {
-                    updateAttendanceTracking(memberId, attendance.name);
-                }
-            } else {
-                console.log(`Member record not found for ${memberId}`);
+            // Update attendance tracking
+            if (attendance.status === 'present') {
+                updateAttendanceTracking(memberId, attendance.name);
             }
         }
 
@@ -4147,47 +4175,6 @@ function addFaceToMember(index) {
     }, 1000);
 }
 
-// Insurance Payment
-function handleInsuranceSubmit(e) {
-    e.preventDefault();
-
-    const record = {
-        id: Date.now(),
-        name: document.getElementById('insuranceName').value,
-        telephone: document.getElementById('insuranceTelephone').value,
-        sector: document.getElementById('insuranceSector').value,
-        cell: document.getElementById('insuranceCell').value,
-        village: document.getElementById('insuranceVillage').value,
-        status: document.getElementById('insuranceStatus').value,
-        date: new Date().toISOString()
-    };
-
-    const records = JSON.parse(localStorage.getItem('insuranceRecords')) || [];
-    records.push(record);
-    localStorage.setItem('insuranceRecords', JSON.stringify(records));
-
-    e.target.reset();
-    loadInsuranceTable();
-    alert('Insurance payment status recorded!');
-}
-
-async function loadInsuranceTable() {
-    const records = JSON.parse(localStorage.getItem('insuranceRecords')) || [];
-    const tbody = document.getElementById('insuranceTableBody');
-
-    tbody.innerHTML = records.map(record => `
-        <tr>
-            <td>${record.name}</td>
-            <td>${record.telephone || 'N/A'}</td>
-            <td>${record.sector}</td>
-            <td>${record.cell}</td>
-            <td>${record.village}</td>
-            <td><span class="status-badge ${record.status === 'Paid' ? 'status-completed' : 'status-pending'}">${record.status}</span></td>
-            <td>${formatDate(record.date)}</td>
-        </tr>
-    `).join('');
-}
-
 // Report Drugs
 async function handleDrugsSubmit(e) {
     e.preventDefault();
@@ -4676,9 +4663,14 @@ async function loadCaseTable() {
                 <td>${evidenceImg}</td>
                 <td>${formatDate(c.incidentDate || r.dateReported)}</td>
                 <td>
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <button class="btn btn-secondary btn-sm" onclick="readCaseDetails('${caseId}')" style="background: #1f4e79; border-color: #1f4e79;"><i class="fa-solid fa-eye"></i> Read</button>
-                        <select onchange="updateCaseStatus('${caseId}', this.value)" style="padding:6px; border-radius:4px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; font-weight: bold;">
+                    <div style="display:flex;flex-direction:column;gap:5px;min-width:140px;">
+                        <div style="display:flex;gap:4px;">
+                            <button class="btn btn-secondary btn-sm" onclick="readCaseDetails('${caseId}')" style="background:#1f4e79;border-color:#1f4e79;flex:1;"><i class="fa-solid fa-eye"></i> Read</button>
+                            <button class="btn btn-sm" onclick="openSetDeadlineModal('${caseId}','${escapeHtml(c.leaderDeadline||'')}')" style="background:${c.leaderDeadline?'#e65100':'#f57c00'};color:#fff;border:none;flex:1;">
+                                <i class="fa-regular fa-calendar-${c.leaderDeadline?'check':'plus'}"></i> ${c.leaderDeadline ? 'Edit' : 'Set'} Deadline
+                            </button>
+                        </div>
+                        <select onchange="updateCaseStatus('${caseId}', this.value)" style="padding:6px;border-radius:4px;border:1px solid #ccc;background:#fff;font-size:12px;cursor:pointer;font-weight:bold;width:100%;">
                             <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
                             <option value="under-review" ${status === 'under-review' ? 'selected' : ''}>Under Review</option>
                             <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
@@ -4844,26 +4836,30 @@ window.saveModalStatus = async function (id) {
 async function checkAndEscalate(r) {
     const c = r.data || {};
     const caseId = r._id;
-    if (c.status === 'resolved') return false; 
+    if (c.status === 'resolved') return false;
 
-    const now = new Date();
-    const createdAtTime = new Date(c.createdAt || r.dateReported).getTime();
-    const ESCALATION_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
-    
+    // Only auto-escalate Village→Cell when the leader-set deadline has passed
     if (c.level === 'Village' || !c.level) {
-        const timeDiff = now.getTime() - createdAtTime;
-        if (timeDiff >= ESCALATION_PERIOD_MS) {
+        if (!c.leaderDeadline) return false; // no deadline set — no escalation
+        const now = new Date();
+        if (now >= new Date(c.leaderDeadline)) {
+            // Route escalated case to the cell leader of the same sector+cell
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+            const sector = currentUser.sector || '';
+            const cell   = currentUser.cell   || '';
+            if (sector && cell) {
+                try {
+                    const resp = await fetch(`/api/auth/cell-leader-by-location?sector=${encodeURIComponent(sector)}&cell=${encodeURIComponent(cell)}`);
+                    if (resp.ok) {
+                        const cellLeader = await resp.json();
+                        r.assignedLeaderEmail = cellLeader.email;
+                    }
+                } catch (err) {
+                    console.warn('Could not find cell leader for escalation:', err);
+                }
+            }
             c.level = 'Cell';
             c.escalatedToCellAt = now.toISOString();
-            await updateCaseOnServer(caseId, r);
-            return true;
-        }
-    } else if (c.level === 'Cell') {
-        const escalatedToCellTime = new Date(c.escalatedToCellAt || c.createdAt || r.dateReported).getTime();
-        const timeDiff = now.getTime() - escalatedToCellTime;
-        if (timeDiff >= ESCALATION_PERIOD_MS) {
-            c.level = 'Sector';
-            c.escalatedToSectorAt = now.toISOString();
             await updateCaseOnServer(caseId, r);
             return true;
         }
@@ -4883,46 +4879,111 @@ async function updateCaseOnServer(id, report) {
     }
 }
 
+// ===== Set Deadline =====
+
+let _deadlineCaseId = null;
+
+function openSetDeadlineModal(caseId, currentDeadline) {
+    _deadlineCaseId = caseId;
+    const input   = document.getElementById('deadlineInput');
+    const infoEl  = document.getElementById('deadlineCurrentInfo');
+    const now     = new Date();
+
+    // Minimum is now
+    input.min = now.toISOString().slice(0, 16);
+
+    if (currentDeadline) {
+        input.value = new Date(currentDeadline).toISOString().slice(0, 16);
+        infoEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> Current deadline: <strong>${new Date(currentDeadline).toLocaleString()}</strong>`;
+    } else {
+        // Default: 7 days from now
+        const def = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        input.value = def.toISOString().slice(0, 16);
+        infoEl.textContent = 'No deadline set yet. Default shown is 7 days from now — adjust as needed.';
+    }
+
+    document.getElementById('setDeadlineModal').style.display = 'flex';
+}
+
+function closeDeadlineModal() {
+    document.getElementById('setDeadlineModal').style.display = 'none';
+    _deadlineCaseId = null;
+}
+
+async function saveDeadline() {
+    if (!_deadlineCaseId) return;
+    const deadlineValue = document.getElementById('deadlineInput').value;
+    if (!deadlineValue) { alert('Please select a deadline date and time.'); return; }
+
+    const deadline = new Date(deadlineValue);
+    if (deadline <= new Date()) { alert('Deadline must be in the future.'); return; }
+
+    try {
+        // Fetch the current case record
+        const getRes = await fetch(`/api/citizen-reports/${_deadlineCaseId}`);
+        if (!getRes.ok) throw new Error('Could not load case');
+        const report = await getRes.json();
+
+        // Set the deadline inside data
+        report.data.leaderDeadline = deadline.toISOString();
+
+        // Save
+        const putRes = await fetch(`/api/citizen-reports/${_deadlineCaseId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(report)
+        });
+        if (!putRes.ok) throw new Error('Failed to save');
+
+        showNotification(
+            `Deadline set to ${deadline.toLocaleString()}. The case will automatically escalate to Cell level if not resolved by then.`,
+            'success'
+        );
+        closeDeadlineModal();
+        loadCaseTable();
+    } catch (err) {
+        alert('Failed to save deadline: ' + err.message);
+    }
+}
+
 function getCaseCountdownHtml(r) {
     const c = r.data || {};
+
     if (c.status === 'resolved') {
-        return `<span style="color: #28a745; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Solved</span>`;
+        return `<span style="color:#28a745;font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Solved</span>`;
+    }
+    if (c.level === 'Cell' || c.level === 'Sector') {
+        return `<span style="color:#dc3545;font-weight:bold;"><i class="fa-solid fa-arrow-up"></i> Escalated to ${c.level}</span>`;
+    }
+    if (!c.leaderDeadline) {
+        return `<span style="color:#aaa;font-size:12px;"><i class="fa-regular fa-clock"></i> No deadline set</span>`;
     }
 
+    const deadline = new Date(c.leaderDeadline);
     const now = new Date();
-    const createdAtTime = new Date(c.createdAt || r.dateReported).getTime();
-    const ESCALATION_PERIOD_MS = 14 * 24 * 60 * 60 * 1000;
+    const timeLeft = deadline - now;
+    const deadlineStr = deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      + ' ' + deadline.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    let deadline = createdAtTime + ESCALATION_PERIOD_MS;
-    if (c.level === 'Cell') {
-        const escalatedToCellTime = new Date(c.escalatedToCellAt || c.createdAt || r.dateReported).getTime();
-        deadline = escalatedToCellTime + ESCALATION_PERIOD_MS;
-    } else if (c.level === 'Sector') {
-        return `<span style="color: #dc3545; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> Sector (Max)</span>`;
-    }
-
-    const timeLeft = deadline - now.getTime();
     if (timeLeft <= 0) {
-        return `<span style="color: #dc3545; font-weight: bold; animation: pulse 1s infinite;">Escalating...</span>`;
+        return `<div><span style="color:#dc3545;font-weight:bold;animation:pulse 1s infinite;"><i class="fa-solid fa-triangle-exclamation"></i> OVERDUE — escalating</span><br/><small style="color:#999;">${deadlineStr}</small></div>`;
     }
 
-    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const days    = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
-    let displayStr = '';
-    if (days > 0) displayStr += `${days}d `;
-    if (hours > 0 || days > 0) displayStr += `${hours}h `;
-    displayStr += `${minutes}m`;
+    let display = '';
+    if (days > 0)             display += `${days}d `;
+    if (hours > 0 || days > 0) display += `${hours}h `;
+    display += `${minutes}m`;
 
-    let color = '#28a745'; 
-    if (days < 2) {
-        color = '#dc3545'; 
-    } else if (days < 5) {
-        color = '#fd7e14'; 
-    }
+    const color = days < 1 ? '#dc3545' : days < 3 ? '#fd7e14' : '#28a745';
 
-    return `<span style="color: ${color}; font-weight: bold;" title="Time remaining before cell escalation"><i class="fa-regular fa-clock"></i> ${displayStr}</span>`;
+    return `<div>
+        <span style="color:${color};font-weight:bold;"><i class="fa-regular fa-clock"></i> ${display}</span><br/>
+        <small style="color:#999;font-size:11px;">${deadlineStr}</small>
+    </div>`;
 }
 
 window.updateCaseStatus = async function (id, newStatus) {
@@ -5069,7 +5130,6 @@ function loadNotifications() {
 async function loadAllTables() {
     await loadIntekoRecords().catch(err => console.warn('loadIntekoRecords:', err));
     await loadRegisterTable().catch(err => console.warn('loadRegisterTable:', err));
-    await loadInsuranceTable().catch(err => console.warn('loadInsuranceTable:', err));
     await loadDrugsTable().catch(err => console.warn('loadDrugsTable:', err));
     await loadViolenceTable().catch(err => console.warn('loadViolenceTable:', err));
     await loadLeaderInfrastructureTable().catch(err => console.warn('loadLeaderInfrastructure:', err));
@@ -6364,29 +6424,17 @@ function ensureIntekoMemberPerformance(memberId) {
     const year = getPerformanceYear();
     const store = loadIntekoPerformanceStore();
     store[year] ||= {};
-    store[year][memberId] ||= { score: 100, absences: 0, updatedAt: new Date().toISOString() };
+    store[year][memberId] ||= { present: 0, absent: 0, updatedAt: new Date().toISOString() };
     saveIntekoPerformanceStore(store);
     return store[year][memberId];
 }
 
-function applyIntekoAbsentPenalty(memberId) {
-    const year = getPerformanceYear();
-    const store = loadIntekoPerformanceStore();
-    store[year] ||= {};
-    const entry = store[year][memberId] || { score: 100, absences: 0 };
-    entry.score = Math.max(0, (Number(entry.score) || 100) - 1);
-    entry.absences = (Number(entry.absences) || 0) + 1;
-    entry.updatedAt = new Date().toISOString();
-    store[year][memberId] = entry;
-    saveIntekoPerformanceStore(store);
-    return entry;
+function recordIntekoMark(memberId, newStatus, prevStatus) {
+    return _recordMark(loadIntekoPerformanceStore, saveIntekoPerformanceStore, memberId, newStatus, prevStatus);
 }
 
 function renderIntekoPerformanceText(memberId) {
-    const entry = ensureIntekoMemberPerformance(memberId);
-    const present = Math.max(0, Math.min(100, Number(entry.score) || 0));
-    const absent = 100 - present;
-    return `Present: ${present}% | Absent: ${absent}%`;
+    return _renderPerfText(ensureIntekoMemberPerformance(memberId));
 }
 
 function updateIntekoPerformanceUI(memberId) {
@@ -6583,11 +6631,7 @@ function markIntekoMemberAttendance(memberId, status, index) {
     const tempAttendance = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
     const prevStatus = tempAttendance[memberId]?.status;
 
-    if (status === 'absent' && prevStatus !== 'absent') {
-        applyIntekoAbsentPenalty(memberId);
-    } else {
-        ensureIntekoMemberPerformance(memberId);
-    }
+    recordIntekoMark(memberId, status, prevStatus);
     updateIntekoPerformanceUI(memberId);
 
     tempAttendance[memberId] = {
@@ -6619,6 +6663,7 @@ function markAllIntekoPresent() {
         m.village?.toLowerCase() === currentIntekoLocation.village?.toLowerCase()
     );
 
+    const oldTemp = JSON.parse(sessionStorage.getItem('intekoTempAttendance')) || {};
     const allPresentAttendance = {};
     locationMembers.forEach(record => {
         const row = document.querySelector(`tr[data-inteko-member-id="${record.telephone}"]`);
@@ -6632,7 +6677,7 @@ function markAllIntekoPresent() {
             name: record.name,
             timestamp: new Date().toISOString()
         };
-        ensureIntekoMemberPerformance(record.telephone);
+        recordIntekoMark(record.telephone, 'present', oldTemp[record.telephone]?.status);
         updateIntekoPerformanceUI(record.telephone);
     });
 
@@ -6666,12 +6711,7 @@ function markAllIntekoAbsent() {
             buttons[1].classList.add('active');
         }
 
-        const prevStatus = tempAttendance[record.telephone]?.status;
-        if (prevStatus !== 'absent') {
-            applyIntekoAbsentPenalty(record.telephone);
-        } else {
-            ensureIntekoMemberPerformance(record.telephone);
-        }
+        recordIntekoMark(record.telephone, 'absent', tempAttendance[record.telephone]?.status);
         updateIntekoPerformanceUI(record.telephone);
 
         allAbsentAttendance[record.telephone] = {
@@ -6721,7 +6761,10 @@ async function saveIntekoAttendance() {
     }
 
     const attendanceDate = dateInput.value;
-    const allRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    // Use in-memory cache (populated from MongoDB) instead of localStorage
+    const allRecords = window._cachedMembers && window._cachedMembers.length > 0
+        ? window._cachedMembers
+        : (JSON.parse(localStorage.getItem('registerRecords')) || []);
     let intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
 
     try {
@@ -6732,8 +6775,13 @@ async function saveIntekoAttendance() {
         const api = new ApiService();
 
         for (const [memberId, attendance] of Object.entries(currentAttendance)) {
-            const memberRecord = allRecords.find(r => r.telephone === memberId);
-            if (!memberRecord) continue;
+            const memberRecord = allRecords.find(r =>
+                r.telephone === memberId || String(r._id) === memberId
+            );
+            if (!memberRecord) {
+                console.warn(`Inteko: member not found for ID ${memberId} — skipping`);
+                continue;
+            }
 
             const attendanceRecord = {
                 name: attendance.name,
@@ -6804,13 +6852,28 @@ async function saveIntekoAttendance() {
     loadIntekoSavedRecordsTable();
 }
 
-function loadIntekoSavedRecordsTable() {
+async function loadIntekoSavedRecordsTable() {
     const tbody = document.getElementById('intekoSavedTableBody');
     const wrapper = document.getElementById('intekoSavedRecordsWrap');
     if (!tbody || !wrapper) return;
 
-    const intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
-    const allRecords = JSON.parse(localStorage.getItem('registerRecords')) || [];
+    // Members from the MongoDB-backed cache (scoped to this leader), fall back to local
+    const allRecords = (window._cachedMembers && window._cachedMembers.length)
+        ? getLeaderScopedMembers(window._cachedMembers)
+        : (JSON.parse(localStorage.getItem('registerRecords')) || []);
+
+    // Inteko attendance — load from the DATABASE (scoped to leader location if known)
+    let intekoRecords = [];
+    try {
+        const loc = currentIntekoLocation || {};
+        const filters = (loc.sector && loc.cell && loc.village)
+            ? { sector: loc.sector, cell: loc.cell, village: loc.village } : {};
+        intekoRecords = await new ApiService().getIntekoAttendance(filters);
+        if (!Array.isArray(intekoRecords)) intekoRecords = [];
+    } catch (err) {
+        console.warn('Inteko saved records: DB load failed, using local cache', err);
+        intekoRecords = JSON.parse(localStorage.getItem('intekoRecords')) || [];
+    }
 
     const combined = allRecords.map(reg => {
         const saved = intekoRecords.find(r => r.telephone === reg.telephone);
@@ -7022,7 +7085,7 @@ async function loadIntekoAnalytics() {
     _renderAnalyticsPanel('int', records);
 }
 
-function downloadAttendanceCSV(type) {
+function downloadAttendancePDF(type) {
     const prefix    = type === 'umuganda' ? 'uga' : 'int';
     const typeName  = type === 'umuganda' ? 'Umuganda' : 'Inteko';
     const headers   = ['#','Name','Sex','Age','Sector','Cell','Village','Telephone','Date','Status'];
@@ -7034,11 +7097,11 @@ function downloadAttendanceCSV(type) {
         if (!tbody) return [];
         return Array.from(tbody.querySelectorAll('tr'))
             .filter(tr => tr.querySelectorAll('td').length > 1)
-            .map(tr => Array.from(tr.querySelectorAll('td')).map(td => `"${td.textContent.trim()}"`));
+            .map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim()));
     };
 
-    const presentRows = rowsFromTable(presentTbody).map(r => [...r, '"Present"']);
-    const absentRows  = rowsFromTable(absentTbody).map(r  => [...r, '"Absent"']);
+    const presentRows = rowsFromTable(presentTbody).map(r => [...r, 'Present']);
+    const absentRows  = rowsFromTable(absentTbody).map(r  => [...r, 'Absent']);
     const allRows     = [...presentRows, ...absentRows];
 
     if (!allRows.length) {
@@ -7046,17 +7109,40 @@ function downloadAttendanceCSV(type) {
         return;
     }
 
-    const csv  = [headers.join(','), ...allRows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${typeName}_Attendance_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotification(`${typeName} attendance downloaded successfully.`, 'success');
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        showNotification('PDF library not loaded — please refresh and try again.', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    doc.setFontSize(16);
+    doc.setTextColor(26, 115, 232);
+    doc.text(`${typeName} Attendance Report`, 14, 16);
+    doc.setFontSize(10);
+    doc.setTextColor(110);
+    doc.text(`Generated: ${dateStr}`, 14, 22);
+    doc.text(`Total: ${allRows.length}   Present: ${presentRows.length}   Absent: ${absentRows.length}`, 14, 27);
+
+    doc.autoTable({
+        head: [headers],
+        body: allRows,
+        startY: 32,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [26, 115, 232], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 248, 252] },
+        didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === headers.length - 1) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = data.cell.raw === 'Present' ? [30, 138, 74] : [211, 47, 47];
+            }
+        }
+    });
+
+    doc.save(`${typeName}_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
+    showNotification(`${typeName} attendance PDF downloaded successfully.`, 'success');
 }
 
 // ── Inteko location: add new Sector / Cell / Village ──────────────────────

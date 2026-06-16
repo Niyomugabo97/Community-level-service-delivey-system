@@ -7,37 +7,79 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
-<body class="with-bottom-sidebar">
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <h1 class="logo"><i class="fa-solid fa-user"></i> Citizen Dashboard</h1>
-                <button class="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="icon-btn" id="sidebarToggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+            <a href="home.html" class="topbar-brand">
+                <span class="brand-mark"><i class="fa-solid fa-user"></i></span>
+                <span class="brand-text">Citizen <strong>Dashboard</strong></span>
+            </a>
+        </div>
+        <div class="topbar-right">
+            <a href="home.html" class="icon-btn" title="Public Home"><i class="fa-solid fa-house"></i></a>
+            <div class="user-menu">
+                <button class="user-chip" id="userChipBtn" aria-label="User menu">
+                    <span class="avatar" id="chipAvatar">–</span>
+                    <span class="chip-meta">
+                        <span class="chip-name" id="chipName">User</span>
+                        <span class="chip-role" id="chipRole">Citizen</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down chip-caret"></i>
                 </button>
-                <ul class="nav-menu">
-                    <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
-                    <li><a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
-                    <li><a href="auth.html" class="bell-login-btn">Login/Signup</a></li>
-                </ul>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dd-header">
+                        <span class="avatar avatar-lg" id="ddAvatar">–</span>
+                        <div class="dd-id">
+                            <span class="dd-name" id="ddName">User</span>
+                            <span class="dd-email" id="ddEmail">—</span>
+                        </div>
+                    </div>
+                    <div class="dd-loc"><i class="fa-solid fa-location-dot"></i> <span id="ddLoc">—</span></div>
+                    <div class="dd-divider"></div>
+                    <a href="#" class="dd-item" data-go="profile"><i class="fa-solid fa-id-card"></i> My Profile</a>
+                    <a href="home.html" class="dd-item"><i class="fa-solid fa-house"></i> Public Home</a>
+                    <a href="#" class="dd-item danger" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
             </div>
-        </nav>
+        </div>
     </header>
 
     <main class="dashboard-container">
-        <div class="dashboard-sidebar bottom">
-            <ul class="dashboard-menu">
-                <li><a href="#" data-section="drugs" class="active"><i class="fa-solid fa-bottle-droplet"></i> Report Drugs/Illegal Drinks</a></li>
-                <li><a href="#" data-section="violence"><i class="fa-solid fa-hand-fist"></i> Report Sexual Violence</a></li>
-                <li><a href="#" data-section="infrastructure"><i class="fa-solid fa-road"></i> Damaged Infrastructure Report</a></li>
-                <li><a href="#" data-section="visitors"><i class="fa-solid fa-user-group"></i> Report Visitors / Guests</a></li>
-                <li><a href="#" data-section="case"><i class="fa-solid fa-scale-balanced"></i> Ikirago (Case)</a></li>
-                <li><a href="#" data-section="chat"><i class="fa-solid fa-comments"></i> Chat with Leaders</a></li>
-            </ul>
-        </div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <p class="nav-group-label">Report an Issue</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="drugs" class="active"><span class="nav-icon"><i class="fa-solid fa-bottle-droplet"></i></span><span class="nav-text">Report Drugs/Illegal Drinks</span></a></li>
+                    <li><a href="#" data-section="violence"><span class="nav-icon"><i class="fa-solid fa-hand-fist"></i></span><span class="nav-text">Report Sexual Violence</span></a></li>
+                    <li><a href="#" data-section="infrastructure"><span class="nav-icon"><i class="fa-solid fa-road"></i></span><span class="nav-text">Damaged Infrastructure</span></a></li>
+                    <li><a href="#" data-section="visitors"><span class="nav-icon"><i class="fa-solid fa-user-group"></i></span><span class="nav-text">Report Visitors / Guests</span></a></li>
+                    <li><a href="#" data-section="case"><span class="nav-icon"><i class="fa-solid fa-scale-balanced"></i></span><span class="nav-text">Ikirago (Case)</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Communication</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="chat"><span class="nav-icon"><i class="fa-solid fa-comments"></i></span><span class="nav-text">Chat with Leaders</span></a></li>
+                </ul>
+
+                <p class="nav-group-label">Account</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#" data-section="profile"><span class="nav-icon"><i class="fa-solid fa-id-card"></i></span><span class="nav-text">My Profile</span></a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-user">
+                <span class="avatar" id="sbAvatar">–</span>
+                <div class="sb-user-meta">
+                    <span class="sb-user-name" id="sbName">User</span>
+                    <span class="sb-user-role" id="sbRole">Citizen</span>
+                </div>
+                <button class="sb-logout js-logout" title="Logout" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </aside>
 
         <div class="dashboard-content">
             <!-- Report Drugs Section -->
@@ -466,6 +508,47 @@
                     <div id="citizenChatMessages" class="chat-messages"></div>
                 </div>
             </section>
+
+            <!-- My Profile -->
+            <section id="profile" class="dashboard-section">
+                <h2><i class="fa-solid fa-id-card"></i> My Profile</h2>
+                <p class="section-desc">Your account details. Keep your location up to date so the dashboard shows the right data.</p>
+                <div class="profile-overview">
+                    <div class="profile-id-card">
+                        <span class="avatar avatar-xl" id="dbProfileAvatar">–</span>
+                        <div class="profile-id-meta">
+                            <span class="profile-id-name" id="dbProfileCardName">User</span>
+                            <span class="profile-id-role" id="dbProfileCardRole">Role</span>
+                        </div>
+                    </div>
+                    <form class="form-container form-narrow" onsubmit="return false;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="dbProfileName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" id="dbProfileEmail" readonly>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sector</label>
+                                <input type="text" id="dbProfileSector" placeholder="e.g. Ruhuha">
+                            </div>
+                            <div class="form-group">
+                                <label>Cell</label>
+                                <input type="text" id="dbProfileCell" placeholder="e.g. Butereri">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Village</label>
+                            <input type="text" id="dbProfileVillage" placeholder="e.g. Gatanga">
+                        </div>
+                        <button class="btn btn-primary js-profile-save"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                        <p class="form-success-msg js-profile-msg" style="display:none;"></p>
+                    </form>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -748,6 +831,7 @@
     <script src="js/api.js"></script>
     <script src="js/citizen-dashboard.js"></script>
     <script src="js/navbar.js"></script>
+    <script src="js/dashboard-ui.js"></script>
 </body>
 </html>
 
