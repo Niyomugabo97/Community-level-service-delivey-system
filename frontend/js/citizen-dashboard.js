@@ -1,7 +1,7 @@
 // ===============================
 // 🌐 FIXED API BASE (RAILWAY BACKEND)
 // ===============================
-const API_BASE = "https://backen-community-level-servece-delivery-system-production.up.railway.app/api";
+const API= "https://backen-community-level-servece-delivery-system-production.up.railway.app/api";
 
 
 // Citizen Dashboard JavaScript
@@ -78,7 +78,7 @@ function setupForms() {
 // ===============================
 async function sendReportToServer(record) {
     try {
-        const res = await fetch(`${API_BASE}/citizen-reports`, {
+        const res = await fetch(`${API}/citizen-reports`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(record)
@@ -135,7 +135,7 @@ async function loadDrugsTable() {
     const tbody = document.getElementById('drugsTableBody');
 
     try {
-        const res = await fetch(`${API_BASE}/citizen-reports?type=drugs&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        const res = await fetch(`${API}/citizen-reports?type=drugs&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -201,7 +201,7 @@ async function loadViolenceTable() {
     const tbody = document.getElementById('violenceTableBody');
 
     try {
-        const res = await fetch(`${API_BASE}/citizen-reports?type=violence&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
+        const res = await fetch(`${API}/citizen-reports?type=violence&reportedByEmail=${encodeURIComponent(currentUser.email)}`);
         if (!res.ok) throw new Error();
 
         const data = await res.json();
@@ -233,7 +233,7 @@ async function uploadInfrastructureImage(file) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const res = await fetch(`${API_BASE}/upload`, {
+    const res = await fetch(`${API}/upload`, {
         method: 'POST',
         body: formData
     });
