@@ -66,7 +66,7 @@
         }
         .roles-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 24px;
             margin-top: 40px;
         }
@@ -86,6 +86,10 @@
         }
         .role-card.school {
             background: linear-gradient(135deg, #e67e22 0%, #c0612a 100%);
+            color: #fff;
+        }
+        .role-card.sector {
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
             color: #fff;
         }
         .role-card i.role-icon {
@@ -368,6 +372,18 @@
                 <h2 class="section-title"><i class="fa-solid fa-user-tag"></i> Who Uses This Platform</h2>
                 <p class="section-subtitle">Designed for every level of community leadership and participation</p>
                 <div class="roles-grid">
+                    <div class="role-card sector">
+                        <i class="fa-solid fa-building role-icon"></i>
+                        <h3>Sector Leaders</h3>
+                        <p>Oversee all cells and villages in the sector — monitor attendance, review escalated cases, and analyse performance across the whole sector.</p>
+                        <ul>
+                            <li>Statistics for each cell &amp; village</li>
+                            <li>Review cases escalated from cells</li>
+                            <li>See reports from every cell</li>
+                            <li>Post sector-wide activities &amp; updates</li>
+                        </ul>
+                        <a href="auth.html" class="role-btn">Sector Login</a>
+                    </div>
                     <div class="role-card leader">
                         <i class="fa-solid fa-user-tie role-icon"></i>
                         <h3>Village & Cell Leaders</h3>
@@ -376,7 +392,7 @@
                             <li>Mark Umuganda &amp; Inteko attendance</li>
                             <li>View attendance analytics by location</li>
                             <li>Submit infrastructure damage reports</li>
-                            <li>Download attendance CSV reports</li>
+                            <li>Download attendance PDF reports</li>
                         </ul>
                         <a href="auth.html" class="role-btn">Leader Login</a>
                     </div>

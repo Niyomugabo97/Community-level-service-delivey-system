@@ -78,6 +78,7 @@ async function loadAllData() {
     await loadActivities();
     await loadReports();
     await loadStatistics();
+    await loadSectorBreakdown();
     await updateCaseSelect();
     loadSectorChatMessages();
     loadSectorInbox();
@@ -654,6 +655,99 @@ async function loadStatistics() {
     }
 }
 
+// ===== Per-cell and per-village breakdown (histograms) =====
+let _cellChart = null;
+let _villageChart = null;
+
+// Render a grouped bar histogram (Umuganda % + Inteko %). Destroys any prior chart.
+function _renderRateHistogram(canvasId, emptyId, existing, labels, umugandaRates, intekoRates) {
+    const canvas  = document.getElementById(canvasId);
+    const emptyEl = document.getElementById(emptyId);
+    if (!canvas) return existing;
+    if (existing) { existing.destroy(); existing = null; }
+
+    const hasData = labels.length > 0;
+    if (emptyEl) emptyEl.style.display = hasData ? 'none' : '';
+    canvas.style.display = hasData ? '' : 'none';
+    if (!hasData || typeof Chart === 'undefined') return null;
+
+    return new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Umuganda %', data: umugandaRates, backgroundColor: '#1a73e8', borderRadius: 4, maxBarThickness: 46 },
+                { label: 'Inteko %',   data: intekoRates,   backgroundColor: '#41a0d4', borderRadius: 4, maxBarThickness: 46 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` } }
+            },
+            scales: {
+                y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Attendance rate' } },
+                x: { ticks: { autoSkip: false } }
+            }
+        }
+    });
+}
+
+async function loadSectorBreakdown() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    const sector = currentUser.sector || '';
+    const q = 'sector=' + encodeURIComponent(sector);
+
+    try {
+        const [members, umuganda, inteko] = await Promise.all([
+            fetch('/api/members?' + q).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/attendance?' + q).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch('/api/inteko-attendance?' + q).then(r => r.ok ? r.json() : []).catch(() => [])
+        ]);
+
+        const present = arr => arr.filter(r => normLoc(r.status) === 'present').length;
+        const rate    = arr => arr.length ? Math.round((present(arr) * 100) / arr.length) : 0;
+
+        // Case-insensitive grouping so "kindama" and "Kindama" are treated as ONE
+        // cell/village. Records are keyed by the lowercased name (normLoc); the bar
+        // is labelled in Title Case.
+        const titleCase = s => (s || '').trim().toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase());
+        const groupByCI = (arr, keyFn) => {
+            const m = {};
+            arr.forEach(x => { const k = normLoc(keyFn(x)); if (k) (m[k] ||= []).push(x); });
+            return m;
+        };
+        // Unique [key, displayLabel] pairs across the given name lists, sorted by label.
+        const uniqueNames = (...lists) => {
+            const seen = new Map();
+            lists.flat().forEach(n => { const k = normLoc(n); if (k && !seen.has(k)) seen.set(k, titleCase(n)); });
+            return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+        };
+
+        // ---------- By Cell ----------
+        const cells = uniqueNames(members.map(m => m.cell), umuganda.map(r => r.cell), inteko.map(r => r.cell));
+        const ugaByCell = groupByCI(umuganda, r => r.cell);
+        const intByCell = groupByCI(inteko,   r => r.cell);
+        _cellChart = _renderRateHistogram('cellChart', 'cellChartEmpty', _cellChart,
+            cells.map(([, label]) => label),
+            cells.map(([k]) => rate(ugaByCell[k] || [])),
+            cells.map(([k]) => rate(intByCell[k] || [])));
+
+        // ---------- By Village ----------
+        const villages = uniqueNames(members.map(m => m.village), umuganda.map(r => r.village), inteko.map(r => r.village));
+        const ugaByVil = groupByCI(umuganda, r => r.village);
+        const intByVil = groupByCI(inteko,   r => r.village);
+        _villageChart = _renderRateHistogram('villageChart', 'villageChartEmpty', _villageChart,
+            villages.map(([, label]) => label),
+            villages.map(([k]) => rate(ugaByVil[k] || [])),
+            villages.map(([k]) => rate(intByVil[k] || [])));
+    } catch (err) {
+        console.error('loadSectorBreakdown error:', err);
+    }
+}
+
 // Setup auto-refresh
 function setupAutoRefresh() {
     // Refresh case table every 30 seconds to catch new escalations
@@ -676,7 +770,15 @@ function formatDate(dateString) {
 // ===== Chat Logic for Sector Dashboard =====
 
 // Handle sending chat message from sector leader
-function handleSectorChatSubmit(e) {
+async function _fetchSectorMessages() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    try {
+        const resp = await fetch('/api/messages?email=' + encodeURIComponent(currentUser.email));
+        return resp.ok ? await resp.json() : [];
+    } catch { return []; }
+}
+
+async function handleSectorChatSubmit(e) {
     e.preventDefault();
 
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
@@ -687,52 +789,49 @@ function handleSectorChatSubmit(e) {
         alert('Select a citizen to reply to from the list below.');
         return;
     }
-
     if (!messageText) {
         alert('Please enter a message.');
         return;
     }
 
-    const message = {
-        id: Date.now(),
-        fromName: currentUser.name,
-        fromEmail: currentUser.email,
-        fromRole: 'sector',
-        toRole: toRole, // 'citizen', 'leader', 'cell'
-        toEmail: sectorReplyTarget ? sectorReplyTarget.email : null,
-        toName: sectorReplyTarget ? sectorReplyTarget.name : null,
-        text: messageText,
-        timestamp: new Date().toISOString()
-    };
-
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    messages.push(message);
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-
-    e.target.reset();
-    loadSectorChatMessages();
+    try {
+        const resp = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fromName: currentUser.name,
+                fromEmail: currentUser.email,
+                fromRole: 'sector',
+                toRole,
+                toEmail: sectorReplyTarget ? sectorReplyTarget.email : null,
+                toName: sectorReplyTarget ? sectorReplyTarget.name : null,
+                text: messageText
+            })
+        });
+        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+        e.target.reset();
+        sectorReplyTarget = null;
+        loadSectorChatMessages();
+    } catch (err) {
+        alert('Could not send message: ' + err.message);
+    }
 }
 
 // Load chat messages relevant for this sector leader
-function loadSectorChatMessages() {
+async function loadSectorChatMessages() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-
-    // Show messages where this sector leader is sender or receiver
-    const relevant = messages.filter(m =>
-        m.fromEmail === currentUser.email || m.toEmail === currentUser.email
-    );
+    const messages = await _fetchSectorMessages();
 
     const container = document.getElementById('sectorChatMessages');
     if (!container) return;
 
-    if (relevant.length === 0) {
+    if (messages.length === 0) {
         container.innerHTML = '<p>No messages yet.</p>';
         return;
     }
 
-    container.innerHTML = relevant
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    container.innerHTML = messages
+        .sort((a, b) => new Date(a.createdAt || a.timestamp) - new Date(b.createdAt || b.timestamp))
         .map(m => {
             const isMe = m.fromEmail === currentUser.email;
             const otherName = isMe ? (m.toName || roleLabel(m.toRole)) : (m.fromName || roleLabel(m.fromRole));
@@ -741,7 +840,7 @@ function loadSectorChatMessages() {
                 <div class="chat-message ${isMe ? 'chat-message-me' : 'chat-message-other'}">
                     <div class="chat-meta">
                         <span class="chat-direction">${direction}</span>
-                        <span class="chat-time">${formatDateTime(m.timestamp)}</span>
+                        <span class="chat-time">${formatDateTime(m.createdAt || m.timestamp)}</span>
                     </div>
                     <div class="chat-text">${escapeHtml(m.text)}</div>
                 </div>
@@ -778,10 +877,9 @@ function escapeHtml(text) {
 }
 
 // Build inbox of citizens who have sent messages to this sector leader
-function loadSectorInbox() {
+async function loadSectorInbox() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const messages = await _fetchSectorMessages();
 
     const incoming = messages.filter(m =>
         m.toEmail === currentUser.email && m.fromRole === 'citizen'
@@ -789,9 +887,9 @@ function loadSectorInbox() {
 
     const byCitizen = {};
     incoming.forEach(m => {
-        if (!byCitizen[m.fromEmail] || new Date(m.timestamp) > new Date(byCitizen[m.fromEmail].timestamp)) {
-            byCitizen[m.fromEmail] = m;
-        }
+        const t = m.createdAt || m.timestamp;
+        const prev = byCitizen[m.fromEmail];
+        if (!prev || new Date(t) > new Date(prev.createdAt || prev.timestamp)) byCitizen[m.fromEmail] = m;
     });
 
     const tbody = document.getElementById('sectorInboxBody');
@@ -804,12 +902,11 @@ function loadSectorInbox() {
     }
 
     tbody.innerHTML = entries
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp))
         .map(m => {
-            const user = users.find(u => u.email === m.fromEmail);
-            const phone = m.fromPhone || (user ? (user.phone || '') : '');
-            const name = m.fromName || (user ? user.name : m.fromEmail);
-            const when = formatDateTime(m.timestamp);
+            const phone = m.fromPhone || '';
+            const name = m.fromName || m.fromEmail;
+            const when = formatDateTime(m.createdAt || m.timestamp);
             return `
                 <tr>
                     <td>${escapeHtml(name)}</td>
@@ -1011,49 +1108,56 @@ async function handleSectorUpcomingSubmit(e) {
     }
 }
 
-function handleSectorTrendingSubmit(e) {
+async function handleSectorTrendingSubmit(e) {
     e.preventDefault();
-    const description = document.getElementById('sectorTrendingDesc').value.trim();
-    const place = document.getElementById('sectorTrendingPlace').value.trim();
-    const date = document.getElementById('sectorTrendingDate').value;
-    const trending = JSON.parse(localStorage.getItem('trending')) || [];
-    trending.push({
-        id: Date.now(),
-        description,
-        place,
-        date,
-        level: HOME_LEVEL_SECTOR,
-        uploadedBy: getCurrentSectorLeaderName()
-    });
-    localStorage.setItem('trending', JSON.stringify(trending));
-    e.target.reset();
-    document.getElementById('sectorTrendingDate').value = new Date().toISOString().slice(0, 10);
-    loadSectorHomeUpdatesList();
-    alert('Trending topic posted! It will appear on the home page.');
+    try {
+        const place = document.getElementById('sectorTrendingPlace').value.trim();
+        const resp = await fetch('/api/home-updates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'trending',
+                title: place,
+                description: document.getElementById('sectorTrendingDesc').value.trim(),
+                place,
+                date: document.getElementById('sectorTrendingDate').value,
+                postedBy: getCurrentSectorLeaderName()
+            })
+        });
+        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+        e.target.reset();
+        document.getElementById('sectorTrendingDate').value = new Date().toISOString().slice(0, 10);
+        await loadSectorHomeUpdatesList();
+        alert('Trending topic posted! It will appear on the home page.');
+    } catch (err) {
+        alert('Could not post trending topic: ' + err.message);
+    }
 }
 
-function loadSectorHomeUpdatesList() {
+async function loadSectorHomeUpdatesList() {
     const listEl = document.getElementById('sectorHomeUpdatesList');
     if (!listEl) return;
-    const activities = JSON.parse(localStorage.getItem('activities')) || [];
-    const news = JSON.parse(localStorage.getItem('news')) || [];
-    const trending = JSON.parse(localStorage.getItem('trending')) || [];
     const myName = getCurrentSectorLeaderName();
-    const myActivities = activities.filter(a => a.level === HOME_LEVEL_SECTOR && a.uploadedBy === myName);
-    const myNews = news.filter(n => n.level === HOME_LEVEL_SECTOR && n.uploadedBy === myName);
-    const myTrending = trending.filter(t => t.level === HOME_LEVEL_SECTOR && t.uploadedBy === myName);
-    const all = [
-        ...myActivities.map(a => ({ type: 'Activity', date: a.date, text: a.description })),
-        ...myNews.map(n => ({ type: 'Upcoming', date: n.date, text: n.title })),
-        ...myTrending.map(t => ({ type: 'Trending', date: t.date, text: t.description }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
-    if (all.length === 0) {
+    let updates = [];
+    try {
+        const resp = await fetch('/api/home-updates');
+        updates = resp.ok ? await resp.json() : [];
+    } catch { updates = []; }
+
+    const typeLabel = t => ({ activity: 'Activity', upcoming: 'Upcoming', trending: 'Trending' }[t] || t);
+    const mine = updates
+        .filter(u => (u.postedBy || '') === myName)
+        .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+        .slice(0, 15);
+
+    if (mine.length === 0) {
         listEl.innerHTML = '<p>No posts yet. Use the forms above to post.</p>';
         return;
     }
-    listEl.innerHTML = '<ul class="simple-list">' + all.map(item =>
-        `<li><strong>${item.type}</strong> — ${formatDate(item.date)}: ${escapeHtml(item.text.slice(0, 60))}${item.text.length > 60 ? '…' : ''}</li>`
-    ).join('') + '</ul>';
+    listEl.innerHTML = '<ul class="simple-list">' + mine.map(item => {
+        const text = item.title || item.description || '';
+        return `<li><strong>${typeLabel(item.type)}</strong> — ${formatDate(item.date || item.createdAt)}: ${escapeHtml(text.slice(0, 60))}${text.length > 60 ? '…' : ''}</li>`;
+    }).join('') + '</ul>';
 }
 
 

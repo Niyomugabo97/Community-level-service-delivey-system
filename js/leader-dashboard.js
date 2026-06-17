@@ -5288,7 +5288,15 @@ Date Reported: ${formatDate(record.date)}
 let leaderReplyTarget = null;
 
 // Handle sending chat message from village leader
-function handleLeaderChatSubmit(e) {
+async function _fetchLeaderMessages() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    try {
+        const resp = await fetch('/api/messages?email=' + encodeURIComponent(currentUser.email));
+        return resp.ok ? await resp.json() : [];
+    } catch { return []; }
+}
+
+async function handleLeaderChatSubmit(e) {
     e.preventDefault();
 
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
@@ -5299,52 +5307,49 @@ function handleLeaderChatSubmit(e) {
         alert('Select a citizen to reply to from the list below.');
         return;
     }
-
     if (!messageText) {
         alert('Please enter a message.');
         return;
     }
 
-    const message = {
-        id: Date.now(),
-        fromName: currentUser.name,
-        fromEmail: currentUser.email,
-        fromRole: 'leader',  // village leader
-        toRole: toRole,      // 'citizen', 'cell', 'sector'
-        toEmail: leaderReplyTarget ? leaderReplyTarget.email : null,
-        toName: leaderReplyTarget ? leaderReplyTarget.name : null,
-        text: messageText,
-        timestamp: new Date().toISOString()
-    };
-
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    messages.push(message);
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-
-    e.target.reset();
-    loadLeaderChatMessages();
+    try {
+        const resp = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fromName: currentUser.name,
+                fromEmail: currentUser.email,
+                fromRole: 'leader',
+                toRole,
+                toEmail: leaderReplyTarget ? leaderReplyTarget.email : null,
+                toName: leaderReplyTarget ? leaderReplyTarget.name : null,
+                text: messageText
+            })
+        });
+        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+        e.target.reset();
+        leaderReplyTarget = null;
+        loadLeaderChatMessages();
+    } catch (err) {
+        alert('Could not send message: ' + err.message);
+    }
 }
 
-// Load chat messages relevant for this leader
+// Load chat messages relevant for this leader (from MongoDB)
 async function loadLeaderChatMessages() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-
-    // Show messages where this leader is sender or receiver
-    const relevant = messages.filter(m =>
-        m.fromEmail === currentUser.email || m.toEmail === currentUser.email
-    );
+    const messages = await _fetchLeaderMessages();
 
     const container = document.getElementById('leaderChatMessages');
     if (!container) return;
 
-    if (relevant.length === 0) {
+    if (messages.length === 0) {
         container.innerHTML = '<p>No messages yet.</p>';
         return;
     }
 
-    container.innerHTML = relevant
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    container.innerHTML = messages
+        .sort((a, b) => new Date(a.createdAt || a.timestamp) - new Date(b.createdAt || b.timestamp))
         .map(m => {
             const isMe = m.fromEmail === currentUser.email;
             const otherName = isMe ? (m.toName || roleLabel(m.toRole)) : (m.fromName || roleLabel(m.fromRole));
@@ -5353,7 +5358,7 @@ async function loadLeaderChatMessages() {
                 <div class="chat-message ${isMe ? 'chat-message-me' : 'chat-message-other'}">
                     <div class="chat-meta">
                         <span class="chat-direction">${direction}</span>
-                        <span class="chat-time">${formatDateTime(m.timestamp)}</span>
+                        <span class="chat-time">${formatDateTime(m.createdAt || m.timestamp)}</span>
                     </div>
                     <div class="chat-text">${escapeHtml(m.text)}</div>
                 </div>
@@ -5361,10 +5366,10 @@ async function loadLeaderChatMessages() {
         }).join('');
 }
 
-// Build inbox of citizens who have sent messages to this leader
+// Build inbox of citizens who have sent messages to this leader (from MongoDB)
 async function loadLeaderInbox() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    const messages = await _fetchLeaderMessages();
     const users = JSON.parse(localStorage.getItem('users')) || [];
 
     // Only citizen → this leader
@@ -5374,9 +5379,9 @@ async function loadLeaderInbox() {
 
     const byCitizen = {};
     incoming.forEach(m => {
-        if (!byCitizen[m.fromEmail] || new Date(m.timestamp) > new Date(byCitizen[m.fromEmail].timestamp)) {
-            byCitizen[m.fromEmail] = m;
-        }
+        const t = m.createdAt || m.timestamp;
+        const prev = byCitizen[m.fromEmail];
+        if (!prev || new Date(t) > new Date(prev.createdAt || prev.timestamp)) byCitizen[m.fromEmail] = m;
     });
 
     const tbody = document.getElementById('leaderInboxBody');
@@ -5389,12 +5394,12 @@ async function loadLeaderInbox() {
     }
 
     tbody.innerHTML = entries
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp))
         .map(m => {
             const user = users.find(u => u.email === m.fromEmail);
             const phone = m.fromPhone || (user ? (user.phone || '') : '');
             const name = m.fromName || (user ? user.name : m.fromEmail);
-            const when = formatDateTime(m.timestamp);
+            const when = formatDateTime(m.createdAt || m.timestamp);
             return `
                 <tr>
                     <td>${escapeHtml(name)}</td>

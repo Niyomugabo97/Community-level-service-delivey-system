@@ -478,68 +478,63 @@ async function loadVisitorsTable() {
 // ===== Chat between Citizen and Leaders =====
 
 // Handle sending chat message from citizen
-function handleCitizenChatSubmit(e) {
+async function handleCitizenChatSubmit(e) {
     e.preventDefault();
-    
+
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     const toRole = document.getElementById('chatRecipientRole').value;
     const toEmail = document.getElementById('chatRecipientUser').value;
     const messageText = document.getElementById('citizenChatMessage').value.trim();
-    
-    if (!toEmail) {
-        alert('Please select which leader you want to chat with.');
-        return;
-    }
 
-    if (!messageText) {
-        alert('Please enter a message.');
-        return;
-    }
+    if (!toEmail) { alert('Please select which leader you want to chat with.'); return; }
+    if (!messageText) { alert('Please enter a message.'); return; }
 
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const targetUser = users.find(u => u.email === toEmail);
     const toName = targetUser ? targetUser.name : toEmail;
-    
-    const message = {
-        id: Date.now(),
-        fromName: currentUser.name,
-        fromEmail: currentUser.email,
-        fromRole: 'citizen',
-        toName,
-        toEmail,
-        toRole: toRole, // 'leader', 'cell', 'sector'
-        text: messageText,
-        timestamp: new Date().toISOString()
-    };
-    
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    messages.push(message);
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-    
-    e.target.reset();
-    loadCitizenChatMessages();
+
+    try {
+        const resp = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fromName: currentUser.name,
+                fromEmail: currentUser.email,
+                fromRole: 'citizen',
+                fromPhone: currentUser.telephone || currentUser.phone || '',
+                toName,
+                toEmail,
+                toRole,
+                text: messageText
+            })
+        });
+        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+        e.target.reset();
+        loadCitizenChatMessages();
+    } catch (err) {
+        alert('Could not send message: ' + err.message);
+    }
 }
 
-// Load chat messages relevant for this citizen
-function loadCitizenChatMessages() {
+// Load chat messages relevant for this citizen (from MongoDB)
+async function loadCitizenChatMessages() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    
-    // Show messages where this citizen is sender or receiver (per-conversation)
-    const relevant = messages.filter(m => 
-        m.fromEmail === currentUser.email || m.toEmail === currentUser.email
-    );
-    
+    let messages = [];
+    try {
+        const resp = await fetch('/api/messages?email=' + encodeURIComponent(currentUser.email));
+        messages = resp.ok ? await resp.json() : [];
+    } catch { messages = []; }
+
     const container = document.getElementById('citizenChatMessages');
     if (!container) return;
-    
-    if (relevant.length === 0) {
+
+    if (messages.length === 0) {
         container.innerHTML = '<p>No messages yet.</p>';
         return;
     }
-    
-    container.innerHTML = relevant
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+
+    container.innerHTML = messages
+        .sort((a, b) => new Date(a.createdAt || a.timestamp) - new Date(b.createdAt || b.timestamp))
         .map(m => {
             const isMe = m.fromEmail === currentUser.email;
             const otherName = isMe ? (m.toName || roleLabel(m.toRole)) : (m.fromName || roleLabel(m.fromRole));
@@ -548,7 +543,7 @@ function loadCitizenChatMessages() {
                 <div class="chat-message ${isMe ? 'chat-message-me' : 'chat-message-other'}">
                     <div class="chat-meta">
                         <span class="chat-direction">${direction}</span>
-                        <span class="chat-time">${formatDateTime(m.timestamp)}</span>
+                        <span class="chat-time">${formatDateTime(m.createdAt || m.timestamp)}</span>
                     </div>
                     <div class="chat-text">${escapeHtml(m.text)}</div>
                 </div>

@@ -270,8 +270,12 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     padding: 1.25rem;
+    color: var(--ink-2);              /* override white text inherited from the gradient .summary-card rule */
 }
 .dashboard-content .summary-card h3 { color: var(--primary-color); margin: 0 0 .75rem; font-size: 1rem; }
+.dashboard-content .summary-card p,
+.dashboard-content .summary-card div { color: var(--ink-2); }
+.dashboard-content .summary-card strong { color: var(--ink); }
 
 /* ============================================================
    Forms
@@ -469,6 +473,12 @@
 
 /* ---------- spacing utilities ---------- */
 .mt-section { margin-top: 1.75rem; }
+
+/* ---------- chart cards (histograms) ---------- */
+.chart-card { padding: 1.25rem; }
+.chart-box { position: relative; height: 340px; width: 100%; }
+.chart-empty { text-align: center; color: var(--muted); padding: 1.5rem; font-style: italic; }
+@media (max-width: 600px) { .chart-box { height: 260px; } }
 
 /* ============================================================
    My Profile section (generic — citizen/sector/school)

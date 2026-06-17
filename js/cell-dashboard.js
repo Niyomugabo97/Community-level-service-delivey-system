@@ -888,67 +888,103 @@ function compressImageDataUrlCell(dataUrl, maxWidth, quality) {
     });
 }
 
+// Post a home update to MongoDB (multipart so the backend uploads the image to Cloudinary).
+async function postHomeUpdateToDB(fields, file) {
+    const fd = new FormData();
+    Object.entries(fields).forEach(([k, v]) => fd.append(k, v ?? ''));
+    if (file) fd.append('image', file);
+    const resp = await fetch('/api/home-updates', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    return resp.json();
+}
+
 async function handleCellActivitySubmit(e) {
     e.preventDefault();
-    const description = document.getElementById('cellActivityDesc').value.trim();
-    const place       = document.getElementById('cellActivityPlace').value.trim();
-    const date        = document.getElementById('cellActivityDate').value;
-    const file        = document.getElementById('cellActivityImage')?.files?.[0];
-    let image         = 'https://via.placeholder.com/400x200?text=Activity';
-    if (file) { try { image = await readImageAsDataUrlCell(file) || image; } catch {} }
-    postHomeUpdateLocal('activities', { description, place, date, image, level: 'cell', uploadedBy: getCurrentCellLeaderName() });
-    e.target.reset();
-    document.getElementById('cellActivityDate').value = new Date().toISOString().slice(0, 10);
-    loadCellHomeUpdatesList();
-    alert('Activity posted! It will appear on the home page.');
+    const place = document.getElementById('cellActivityPlace').value.trim();
+    const file  = document.getElementById('cellActivityImage')?.files?.[0];
+    try {
+        await postHomeUpdateToDB({
+            type: 'activity',
+            title: place,
+            description: document.getElementById('cellActivityDesc').value.trim(),
+            place,
+            date: document.getElementById('cellActivityDate').value,
+            postedBy: getCurrentCellLeaderName()
+        }, file);
+        e.target.reset();
+        document.getElementById('cellActivityDate').value = new Date().toISOString().slice(0, 10);
+        loadCellHomeUpdatesList();
+        alert('Activity posted! It will appear on the home page.');
+    } catch (err) {
+        alert('Could not post activity: ' + err.message);
+    }
 }
 
-function handleCellUpcomingSubmit(e) {
+async function handleCellUpcomingSubmit(e) {
     e.preventDefault();
-    postHomeUpdateLocal('news', {
-        title:       document.getElementById('cellUpcomingTitle').value.trim(),
-        description: document.getElementById('cellUpcomingDesc').value.trim(),
-        place:       document.getElementById('cellUpcomingPlace').value.trim(),
-        date:        document.getElementById('cellUpcomingDate').value,
-        level:       'cell',
-        uploadedBy:  getCurrentCellLeaderName()
-    });
-    e.target.reset();
-    document.getElementById('cellUpcomingDate').value = new Date().toISOString().slice(0, 10);
-    loadCellHomeUpdatesList();
-    alert('Upcoming session posted!');
+    try {
+        await postHomeUpdateToDB({
+            type: 'upcoming',
+            title: document.getElementById('cellUpcomingTitle').value.trim(),
+            description: document.getElementById('cellUpcomingDesc').value.trim(),
+            place: document.getElementById('cellUpcomingPlace').value.trim(),
+            date: document.getElementById('cellUpcomingDate').value,
+            postedBy: getCurrentCellLeaderName()
+        });
+        e.target.reset();
+        document.getElementById('cellUpcomingDate').value = new Date().toISOString().slice(0, 10);
+        loadCellHomeUpdatesList();
+        alert('Upcoming session posted!');
+    } catch (err) {
+        alert('Could not post upcoming session: ' + err.message);
+    }
 }
 
-function handleCellTrendingSubmit(e) {
+async function handleCellTrendingSubmit(e) {
     e.preventDefault();
-    postHomeUpdateLocal('trending', {
-        description: document.getElementById('cellTrendingDesc').value.trim(),
-        place:       document.getElementById('cellTrendingPlace').value.trim(),
-        date:        document.getElementById('cellTrendingDate').value,
-        level:       'cell',
-        uploadedBy:  getCurrentCellLeaderName()
-    });
-    e.target.reset();
-    document.getElementById('cellTrendingDate').value = new Date().toISOString().slice(0, 10);
-    loadCellHomeUpdatesList();
-    alert('Trending topic posted!');
+    try {
+        await postHomeUpdateToDB({
+            type: 'trending',
+            title: document.getElementById('cellTrendingPlace').value.trim(),
+            description: document.getElementById('cellTrendingDesc').value.trim(),
+            place: document.getElementById('cellTrendingPlace').value.trim(),
+            date: document.getElementById('cellTrendingDate').value,
+            postedBy: getCurrentCellLeaderName()
+        });
+        e.target.reset();
+        document.getElementById('cellTrendingDate').value = new Date().toISOString().slice(0, 10);
+        loadCellHomeUpdatesList();
+        alert('Trending topic posted!');
+    } catch (err) {
+        alert('Could not post trending topic: ' + err.message);
+    }
 }
 
-function loadCellHomeUpdatesList() {
+async function loadCellHomeUpdatesList() {
     const listEl = document.getElementById('cellHomeUpdatesList');
     if (!listEl) return;
-    const myName     = getCurrentCellLeaderName();
-    const activities = (JSON.parse(localStorage.getItem('activities')) || []).filter(a => a.level === 'cell' && a.uploadedBy === myName);
-    const news       = (JSON.parse(localStorage.getItem('news'))       || []).filter(n => n.level === 'cell' && n.uploadedBy === myName);
-    const trending   = (JSON.parse(localStorage.getItem('trending'))   || []).filter(t => t.level === 'cell' && t.uploadedBy === myName);
-    const all = [
-        ...activities.map(a => ({ type: 'Activity', date: a.date, text: a.description })),
-        ...news.map(n       => ({ type: 'Upcoming', date: n.date, text: n.title })),
-        ...trending.map(t   => ({ type: 'Trending', date: t.date, text: t.description }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
-    if (!all.length) { listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bullhorn"></i><p class="empty-title">No posts yet</p><p class="empty-sub">Use the forms above to post activities, sessions or trending topics.</p></div>'; return; }
+    const myName = getCurrentCellLeaderName();
+    let updates = [];
+    try {
+        const resp = await fetch('/api/home-updates');
+        updates = resp.ok ? await resp.json() : [];
+    } catch { updates = []; }
+
+    const typeLabel = t => ({ activity: 'Activity', upcoming: 'Upcoming', trending: 'Trending' }[t] || t);
+    const mine = updates
+        .filter(u => (u.postedBy || '') === myName)
+        .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+        .slice(0, 15);
+
+    if (!mine.length) {
+        listEl.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bullhorn"></i><p class="empty-title">No posts yet</p><p class="empty-sub">Use the forms above to post activities, sessions or trending topics.</p></div>';
+        return;
+    }
     listEl.innerHTML = '<ul class="simple-list">' +
-        all.map(item => `<li><strong>${item.type}</strong> — ${formatDate(item.date)}: ${escapeHtml(item.text.slice(0, 60))}${item.text.length > 60 ? '…' : ''}</li>`).join('') +
+        mine.map(item => {
+            const text = item.title || item.description || '';
+            return `<li><strong>${typeLabel(item.type)}</strong> — ${formatDate(item.date || item.createdAt)}: ${escapeHtml(text.slice(0, 60))}${text.length > 60 ? '…' : ''}</li>`;
+        }).join('') +
         '</ul>';
 }
 
@@ -956,7 +992,7 @@ function loadCellHomeUpdatesList() {
 
 let cellReplyTarget = null;
 
-function handleCellChatSubmit(e) {
+async function handleCellChatSubmit(e) {
     e.preventDefault();
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     const toRole      = document.getElementById('cellChatRecipientRole').value;
@@ -965,33 +1001,45 @@ function handleCellChatSubmit(e) {
     if (toRole === 'citizen' && !cellReplyTarget) { alert('Select a citizen to reply to from the list below.'); return; }
     if (!messageText) { alert('Please enter a message.'); return; }
 
-    const message = {
-        id: Date.now(),
-        fromName:  currentUser.name,
-        fromEmail: currentUser.email,
-        fromRole:  'cell',
-        toRole,
-        toEmail: cellReplyTarget ? cellReplyTarget.email : null,
-        toName:  cellReplyTarget ? cellReplyTarget.name  : null,
-        text:      messageText,
-        timestamp: new Date().toISOString()
-    };
-    const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    messages.push(message);
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-    e.target.reset();
-    loadCellChatMessages();
+    try {
+        const resp = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fromName:  currentUser.name,
+                fromEmail: currentUser.email,
+                fromRole:  'cell',
+                toRole,
+                toEmail: cellReplyTarget ? cellReplyTarget.email : null,
+                toName:  cellReplyTarget ? cellReplyTarget.name  : null,
+                text: messageText
+            })
+        });
+        if (!resp.ok) throw new Error('Server returned ' + resp.status);
+        e.target.reset();
+        cellReplyTarget = null;
+        loadCellChatMessages();
+    } catch (err) {
+        alert('Could not send message: ' + err.message);
+    }
 }
 
-function loadCellChatMessages() {
+async function _fetchCellMessages() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages    = JSON.parse(localStorage.getItem('chatMessages')) || [];
-    const relevant    = messages.filter(m => m.fromEmail === currentUser.email || m.toEmail === currentUser.email);
+    try {
+        const resp = await fetch('/api/messages?email=' + encodeURIComponent(currentUser.email));
+        return resp.ok ? await resp.json() : [];
+    } catch { return []; }
+}
+
+async function loadCellChatMessages() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    const messages    = await _fetchCellMessages();
     const container   = document.getElementById('cellChatMessages');
     if (!container) return;
-    if (!relevant.length) { container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-comments"></i><p class="empty-title">No conversation yet</p><p class="empty-sub">Send a message above to start a conversation.</p></div>'; return; }
-    container.innerHTML = relevant
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    if (!messages.length) { container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-comments"></i><p class="empty-title">No conversation yet</p><p class="empty-sub">Send a message above to start a conversation.</p></div>'; return; }
+    container.innerHTML = messages
+        .sort((a, b) => new Date(a.createdAt || a.timestamp) - new Date(b.createdAt || b.timestamp))
         .map(m => {
             const isMe  = m.fromEmail === currentUser.email;
             const other = isMe ? (m.toName || roleLabel(m.toRole)) : (m.fromName || roleLabel(m.fromRole));
@@ -999,7 +1047,7 @@ function loadCellChatMessages() {
                 <div class="chat-message ${isMe ? 'chat-message-me' : 'chat-message-other'}">
                     <div class="chat-meta">
                         <span class="chat-direction">${isMe ? 'You → ' + other : other + ' → You'}</span>
-                        <span class="chat-time">${formatDateTime(m.timestamp)}</span>
+                        <span class="chat-time">${formatDateTime(m.createdAt || m.timestamp)}</span>
                     </div>
                     <div class="chat-text">${escapeHtml(m.text)}</div>
                 </div>
@@ -1007,27 +1055,27 @@ function loadCellChatMessages() {
         }).join('');
 }
 
-function loadCellInbox() {
+async function loadCellInbox() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-    const messages    = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    const messages    = await _fetchCellMessages();
     const incoming    = messages.filter(m => m.toEmail === currentUser.email && m.fromRole === 'citizen');
     const byCitizen   = {};
     incoming.forEach(m => {
-        if (!byCitizen[m.fromEmail] || new Date(m.timestamp) > new Date(byCitizen[m.fromEmail].timestamp)) {
-            byCitizen[m.fromEmail] = m;
-        }
+        const t = m.createdAt || m.timestamp;
+        const prev = byCitizen[m.fromEmail];
+        if (!prev || new Date(t) > new Date(prev.createdAt || prev.timestamp)) byCitizen[m.fromEmail] = m;
     });
     const tbody   = document.getElementById('cellInboxBody');
     if (!tbody) return;
     const entries = Object.values(byCitizen);
     if (!entries.length) { tbody.innerHTML = emptyRow(4, 'fa-inbox', 'No messages yet', 'Citizens who message you will appear here.'); return; }
     tbody.innerHTML = entries
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp))
         .map(m => `
             <tr>
                 <td>${escapeHtml(m.fromName || m.fromEmail)}</td>
                 <td>${escapeHtml(m.fromPhone || 'N/A')}</td>
-                <td>${formatDateTime(m.timestamp)}</td>
+                <td>${formatDateTime(m.createdAt || m.timestamp)}</td>
                 <td><button class="btn btn-secondary" onclick="replyToCitizenFromCell('${m.fromEmail.replace(/'/g, "\\'")}', '${escapeHtml(m.fromName || '')}')">Reply</button></td>
             </tr>
         `).join('');

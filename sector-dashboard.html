@@ -243,6 +243,20 @@
                         <p class="stat-number" id="referredCases">0</p>
                     </div>
                 </div>
+
+                <div class="data-table-container mt-section chart-card">
+                    <h3><i class="fa-solid fa-layer-group"></i> Attendance by Cell</h3>
+                    <p class="section-desc">Umuganda &amp; Inteko attendance rate (%) for every cell in your sector.</p>
+                    <div class="chart-box"><canvas id="cellChart"></canvas></div>
+                    <p id="cellChartEmpty" class="chart-empty" style="display:none;">No cell attendance data yet.</p>
+                </div>
+
+                <div class="data-table-container mt-section chart-card">
+                    <h3><i class="fa-solid fa-house"></i> Attendance by Village</h3>
+                    <p class="section-desc">Umuganda &amp; Inteko attendance rate (%) for every village in your sector.</p>
+                    <div class="chart-box"><canvas id="villageChart"></canvas></div>
+                    <p id="villageChartEmpty" class="chart-empty" style="display:none;">No village attendance data yet.</p>
+                </div>
             </section>
 
             <!-- Activities & Home Updates Section -->
@@ -413,6 +427,7 @@
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="js/sector-dashboard.js"></script>
     <script src="js/navbar.js"></script>
     <script src="js/dashboard-ui.js"></script>
