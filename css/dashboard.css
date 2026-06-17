@@ -1027,3 +1027,47 @@
     .location-banner { font-size: .88rem; }
     .banner-alert { margin-left: 0; }
 }
+
+/* ============================================================
+   Notification bell (topbar)
+   ============================================================ */
+.notif-menu { position: relative; }
+.notif-bell { position: relative; }
+.notif-badge {
+    position: absolute; top: 2px; right: 2px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 999px; background: #e53935; color: #fff;
+    font-size: .65rem; font-weight: 700; line-height: 16px; text-align: center;
+    box-shadow: 0 0 0 2px var(--primary-dark);
+}
+.notif-dropdown {
+    position: absolute; right: 0; top: calc(100% + 10px);
+    width: 320px; max-height: 420px; overflow-y: auto;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 14px; box-shadow: var(--shadow-lg);
+    opacity: 0; visibility: hidden; transform: translateY(-6px);
+    transition: opacity .16s, transform .16s, visibility .16s; z-index: 1100;
+}
+.notif-dropdown.open { opacity: 1; visibility: visible; transform: none; }
+.notif-head {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .85rem 1rem; font-weight: 700; color: var(--ink);
+    border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff;
+}
+.notif-head i { color: var(--primary-color); }
+.notif-list { padding: .35rem; }
+.notif-empty { text-align: center; color: var(--muted); padding: 1.75rem 1rem; font-style: italic; margin: 0; }
+.notif-item {
+    display: flex; gap: .65rem; align-items: flex-start;
+    padding: .7rem .75rem; border-radius: 9px;
+}
+.notif-item.unread { background: var(--primary-soft); }
+.notif-item + .notif-item { border-top: 1px solid var(--line); }
+.notif-icon {
+    width: 30px; height: 30px; flex: none; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--success-soft); color: var(--success); font-size: .85rem;
+}
+.notif-body { min-width: 0; }
+.notif-text { font-size: .85rem; color: var(--ink-2); line-height: 1.4; }
+.notif-meta { font-size: .72rem; color: var(--muted); margin-top: .2rem; }

@@ -209,6 +209,8 @@ function renderCaseTable(cases) {
             ? `<img src="${c.image}" class="evidence-thumb" onclick="viewEvidenceModal('${c.image}')" alt="evidence">`
             : '<span class="muted-text">No image</span>';
         const countdown = calculateCountdownFromData(c);
+        const repEmail = (r.reportedByEmail || '').replace(/'/g, "\\'");
+        const repName  = (r.reportedBy || '').replace(/'/g, "\\'");
 
         return `
             <tr>
@@ -231,6 +233,7 @@ function renderCaseTable(cases) {
                 <td>${formatDate(c.incidentDate || c.escalatedToCellAt || r.createdAt)}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm" onclick="viewCaseDetails('${r._id}')"><i class="fa-solid fa-eye"></i> View</button>
+                    <button class="btn btn-sm" onclick="confirmReceived('${repEmail}','${repName}','case','${r._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this case was received"><i class="fa-solid fa-bell"></i> Confirm</button>
                     ${level === 'Cell' && status !== 'resolved' && status !== 'Solved' ?
                         `<button class="btn btn-primary btn-sm" onclick="selectCaseForResolution('${r._id}')"><i class="fa-solid fa-gavel"></i> Resolve</button>` : ''}
                 </td>
@@ -430,7 +433,10 @@ async function loadReports() {
                     <td>${truncateDescCell(d.description, 40)}</td>
                     <td>${escapeHtml(r.reportedBy || '—')}</td>
                     <td>${formatDate(r.createdAt)}</td>
-                    <td><button class="btn btn-secondary" onclick="viewDrugsDetailsCell(${i})">View</button></td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="viewDrugsDetailsCell(${i})">View</button>
+                        <button class="btn btn-sm" onclick="confirmReceived('${(r.reportedByEmail || d.reportedByEmail || '').replace(/'/g, "\\'")}','${(r.reportedBy || '').replace(/'/g, "\\'")}','drugs','${r._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this report was received"><i class="fa-solid fa-bell"></i> Confirm</button>
+                    </td>
                 </tr>`;
             }).join('')
             : emptyRow(8, 'fa-wine-bottle', 'No drug reports', 'Drug and illegal-drink reports from citizens and village leaders will show here.');
@@ -447,7 +453,10 @@ async function loadReports() {
                     <td>${truncateDescCell(d.description, 40)}</td>
                     <td>${escapeHtml(r.reportedBy || '—')}</td>
                     <td>${formatDate(r.createdAt)}</td>
-                    <td><button class="btn btn-secondary" onclick="viewViolenceDetailsCell(${i})">View</button></td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="viewViolenceDetailsCell(${i})">View</button>
+                        <button class="btn btn-sm" onclick="confirmReceived('${(r.reportedByEmail || d.reportedByEmail || '').replace(/'/g, "\\'")}','${(r.reportedBy || '').replace(/'/g, "\\'")}','violence','${r._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this report was received"><i class="fa-solid fa-bell"></i> Confirm</button>
+                    </td>
                 </tr>`;
             }).join('')
             : emptyRow(9, 'fa-shield-heart', 'No violence reports', 'Sexual-violence reports in your cell will appear here.');

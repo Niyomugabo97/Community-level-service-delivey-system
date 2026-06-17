@@ -4638,6 +4638,8 @@ async function loadCaseTable() {
         const accusedText = `${c.accusedName || '—'} (${c.accusedPhone || '—'})`;
         const evidenceImg = c.image ? `<img src="${c.image}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="viewEvidenceModal('${c.image}')" />` : 'No Image';
         const countdownHtml = getCaseCountdownHtml(r);
+        const repEmail = (r.reportedByEmail || '').replace(/'/g, "\\'");
+        const repName  = (r.reportedBy || '').replace(/'/g, "\\'");
 
         return `
             <tr>
@@ -4675,6 +4677,7 @@ async function loadCaseTable() {
                             <option value="under-review" ${status === 'under-review' ? 'selected' : ''}>Under Review</option>
                             <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
                         </select>
+                        <button class="btn btn-sm" onclick="confirmReceived('${repEmail}','${repName}','case','${caseId}')" style="background:#1e8a4a;color:#fff;border:none;width:100%;" title="Notify the reporter that this case was received"><i class="fa-solid fa-bell"></i> Confirm Received</button>
                     </div>
                 </td>
             </tr>

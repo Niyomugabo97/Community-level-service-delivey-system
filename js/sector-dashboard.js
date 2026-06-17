@@ -180,6 +180,8 @@ async function loadCaseTable() {
         const countdown = calculateCountdown(record);
         const shortId = record._id ? record._id.slice(-6) : '—';
         const desc = data.description || '';
+        const repEmail = (record.reportedByEmail || data.reportedByEmail || '').replace(/'/g, "\\'");
+        const repName  = (record.reportedBy || data.plaintiff || '').replace(/'/g, "\\'");
 
         return `
             <tr>
@@ -200,6 +202,7 @@ async function loadCaseTable() {
                 </td>
                 <td>
                     <button class="btn btn-secondary" onclick="viewCaseDetails('${record._id}')">View</button>
+                    <button class="btn btn-sm" onclick="confirmReceived('${repEmail}','${repName}','case','${record._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this case was received"><i class="fa-solid fa-bell"></i> Confirm</button>
                     ${(atSectorLevel(data) && isOpenCase(data)) ?
                         `<button class="btn btn-primary" onclick="selectCaseForResolution('${record._id}')">Resolve</button>` :
                         ''}
@@ -545,7 +548,10 @@ async function loadReports() {
                         <td>${truncateDescSector(data.description, 40)}</td>
                         <td>${escapeHtml(reportedByLabel(r))}</td>
                         <td>${formatDate(r.dateReported || r.createdAt)}</td>
-                        <td><button class="btn btn-secondary" onclick="viewDrugsDetailsSector('${r._id}')">View details</button></td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="viewDrugsDetailsSector('${r._id}')">View details</button>
+                            <button class="btn btn-sm" onclick="confirmReceived('${(r.reportedByEmail || data.reportedByEmail || '').replace(/'/g, "\\'")}','${(reportedByLabel(r) || '').replace(/'/g, "\\'")}','drugs','${r._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this report was received"><i class="fa-solid fa-bell"></i> Confirm</button>
+                        </td>
                     </tr>
                 `;
             }).join('') : '<tr><td colspan="8">No reports in this sector</td></tr>';
@@ -565,7 +571,10 @@ async function loadReports() {
                         <td>${truncateDescSector(data.description, 40)}</td>
                         <td>${escapeHtml(reportedByLabel(r))}</td>
                         <td>${formatDate(r.dateReported || r.createdAt)}</td>
-                        <td><button class="btn btn-secondary" onclick="viewViolenceDetailsSector('${r._id}')">View details</button></td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="viewViolenceDetailsSector('${r._id}')">View details</button>
+                            <button class="btn btn-sm" onclick="confirmReceived('${(r.reportedByEmail || data.reportedByEmail || '').replace(/'/g, "\\'")}','${(reportedByLabel(r) || '').replace(/'/g, "\\'")}','violence','${r._id}')" style="background:#1e8a4a;color:#fff;border:none;" title="Notify the reporter this report was received"><i class="fa-solid fa-bell"></i> Confirm</button>
+                        </td>
                     </tr>
                 `;
             }).join('') : '<tr><td colspan="9">No reports in this sector</td></tr>';

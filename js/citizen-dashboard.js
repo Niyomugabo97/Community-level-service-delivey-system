@@ -830,7 +830,7 @@ async function loadCaseTable() {
     if (cases.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" style="text-align: center; color: #666; padding: 20px;">No cases submitted yet</td>
+                <td colspan="9" style="text-align: center; color: #666; padding: 20px;">No cases submitted yet</td>
             </tr>
         `;
         return;
@@ -845,7 +845,6 @@ async function loadCaseTable() {
             c.priority === 'medium' ? 'status-pending' : 'status-solved';
 
         const level = c.level || 'Village';
-        const countdownHtml = getCaseCountdownHtml(c);
 
         return `
             <tr>
@@ -859,7 +858,6 @@ async function loadCaseTable() {
                         ${capitalize(c.status)}
                     </span>
                 </td>
-                <td>${countdownHtml}</td>
                 <td>
                     ${c.image ? `<img src="${c.image}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;" />` : 'No Image'}
                 </td>
@@ -874,10 +872,6 @@ async function loadCaseTable() {
             </tr>
         `;
     }).join('');
-
-    if (!citizenCasesInterval) {
-        startCountdownUpdates();
-    }
 }
 
 function getCaseCountdownHtml(c) {

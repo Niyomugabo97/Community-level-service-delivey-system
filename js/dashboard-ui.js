@@ -141,5 +141,98 @@
                 });
             }
         }
+
+        /* ---- global helpers so higher levels can confirm receipt ---- */
+        window.sendNotification = async function (payload) {
+            try {
+                const resp = await fetch('/api/notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                return resp.ok;
+            } catch { return false; }
+        };
+
+        // Confirm a case/report was received and notify the person who submitted it.
+        window.confirmReceived = async function (toEmail, toName, refType, refId, customMsg) {
+            if (!toEmail) { alert('This item has no reporter contact on file — cannot notify.'); return false; }
+            const u = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            const roleName = ({ cell: 'Cell Leader', leader: 'Village Leader', sector: 'Sector Leader' }[u.userType]) || (u.name || 'A leader');
+            const msg = customMsg || `${roleName} confirmed your ${refType || 'submission'} was received and is being handled.`;
+            const ok = await window.sendNotification({
+                toEmail, toName,
+                fromName: u.name || roleName,
+                fromRole: u.userType || u.role,
+                kind: 'received', refType, refId, message: msg
+            });
+            alert(ok ? 'The reporter has been notified that their submission was received.'
+                     : 'Could not send the notification — please try again.');
+            return ok;
+        };
+
+        /* ---- notification bell in the topbar (receive side) ---- */
+        const topbarRight = document.querySelector('.topbar-right');
+        if (topbarRight && user.email) {
+            const esc = s => { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; };
+            const timeAgo = d => {
+                const diff = Date.now() - new Date(d).getTime();
+                const m = Math.floor(diff / 60000), h = Math.floor(diff / 3600000), dd = Math.floor(diff / 86400000);
+                if (m < 1) return 'just now';
+                if (m < 60) return m + 'm ago';
+                if (h < 24) return h + 'h ago';
+                return dd + 'd ago';
+            };
+
+            const wrap = document.createElement('div');
+            wrap.className = 'notif-menu';
+            wrap.innerHTML =
+                '<button class="icon-btn notif-bell" id="notifBellBtn" title="Notifications" aria-label="Notifications">' +
+                    '<i class="fa-solid fa-bell"></i><span class="notif-badge" id="notifBadge" style="display:none;">0</span>' +
+                '</button>' +
+                '<div class="notif-dropdown" id="notifDropdown">' +
+                    '<div class="notif-head"><i class="fa-solid fa-bell"></i> Notifications</div>' +
+                    '<div class="notif-list" id="notifList"><p class="notif-empty">Loading…</p></div>' +
+                '</div>';
+            topbarRight.insertBefore(wrap, topbarRight.querySelector('.user-menu'));
+
+            const dropdown = wrap.querySelector('#notifDropdown');
+            const badge    = wrap.querySelector('#notifBadge');
+            const listEl   = wrap.querySelector('#notifList');
+            let notifs = [];
+
+            async function loadNotifs() {
+                try {
+                    const resp = await fetch('/api/notifications?email=' + encodeURIComponent(user.email));
+                    notifs = resp.ok ? await resp.json() : [];
+                } catch { notifs = []; }
+                const unread = notifs.filter(n => !n.read).length;
+                if (unread > 0) { badge.textContent = unread > 99 ? '99+' : unread; badge.style.display = ''; }
+                else badge.style.display = 'none';
+                listEl.innerHTML = notifs.length ? notifs.map(n =>
+                    '<div class="notif-item ' + (n.read ? '' : 'unread') + '">' +
+                        '<span class="notif-icon"><i class="fa-solid fa-circle-check"></i></span>' +
+                        '<div class="notif-body"><div class="notif-text">' + esc(n.message || 'Your submission was received.') + '</div>' +
+                        '<div class="notif-meta">' + esc(n.fromName || '') + ' · ' + timeAgo(n.createdAt) + '</div></div>' +
+                    '</div>'
+                ).join('') : '<p class="notif-empty">No notifications yet.</p>';
+            }
+
+            wrap.querySelector('#notifBellBtn').addEventListener('click', async e => {
+                e.stopPropagation();
+                const opening = !dropdown.classList.contains('open');
+                dropdown.classList.toggle('open');
+                if (opening && notifs.some(n => !n.read)) {
+                    try { await fetch('/api/notifications/read-all?email=' + encodeURIComponent(user.email), { method: 'PUT' }); } catch {}
+                    notifs.forEach(n => n.read = true);
+                    badge.style.display = 'none';
+                    listEl.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+                }
+            });
+            document.addEventListener('click', e => { if (!e.target.closest('.notif-menu')) dropdown.classList.remove('open'); });
+
+            loadNotifs();
+            setInterval(loadNotifs, 30000);
+        }
     });
 })();
