@@ -160,6 +160,10 @@ function setupNavigation() {
         // Ensure the newly-activated content is visible
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        if (sectionId === 'overview') {
+            loadOverview();
+        }
+
         // Load analytics data when section 4 is activated
         if (sectionId === 'analytics') {
             loadUmugandaAnalytics();
@@ -179,13 +183,112 @@ function setupNavigation() {
 
     // Restore section from hash (or default to register)
     const initial = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
-    activateSection(initial || 'register', { updateHash: false });
+    activateSection(initial || 'overview', { updateHash: false });
 
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
         e.preventDefault();
         sessionStorage.removeItem('currentUser');
         window.location.href = 'home.html';
+    });
+}
+
+// ===== Overview / landing =====
+async function loadOverview() {
+    const u = JSON.parse(sessionStorage.getItem('currentUser')) || {};
+    const loc = currentLeaderLocation || { sector: u.sector, cell: u.cell, village: u.village };
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+
+    const welcome = document.getElementById('overviewWelcome');
+    if (welcome) {
+        const place = [loc.village, loc.cell, loc.sector].filter(Boolean).join(', ');
+        welcome.textContent = `Welcome${u.name ? ', ' + String(u.name).split(' ')[0] : ''}. ${place ? place + ' — a' : 'A'} snapshot of your village at a glance.`;
+    }
+
+    // NOTE: we fetch ALL members/attendance and scope on the client by matching
+    // attendance.citizenId (telephone) to in-scope members. The /api/attendance
+    // ?sector=&cell=&village= filter is unreliable because attendance docs often
+    // don't carry their own location fields (they reference the member by phone),
+    // so server-side filtering would return 0 records and show 0% everywhere.
+    const getJSON = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+    const norm = s => String(s || '').trim().toLowerCase();
+    const inScope = m =>
+        (!loc.sector  || norm(m.sector)  === norm(loc.sector)) &&
+        (!loc.cell    || norm(m.cell)    === norm(loc.cell)) &&
+        (!loc.village || norm(m.village) === norm(loc.village));
+
+    try {
+        const [allMembers, allUmuganda, allInteko, cases] = await Promise.all([
+            getJSON('/api/members'),
+            getJSON('/api/attendance'),
+            getJSON('/api/inteko-attendance'),
+            getJSON('/api/citizen-reports?type=case&assignedLeaderEmail=' + encodeURIComponent(u.email || ''))
+        ]);
+        const arr = x => (Array.isArray(x) ? x : []);
+
+        const members = arr(allMembers).filter(inScope);
+        const scopedPhones = new Set(members.map(m => String(m.telephone || '').trim()).filter(Boolean));
+
+        // A record is in scope if it references an in-scope member by phone,
+        // or (fallback) carries its own matching location fields.
+        const recInScope = r => {
+            if (scopedPhones.has(String(r.citizenId || '').trim())) return true;
+            if (r.sector || r.cell || r.village) return inScope(r);
+            return false;
+        };
+        const scope = a => arr(a).filter(recInScope);
+        const rate = a => {
+            const s = scope(a);
+            if (!s.length) return 0;
+            const present = s.filter(r => norm(r.status) === 'present').length;
+            return Math.round((present * 100) / s.length);
+        };
+
+        const openCases = arr(cases).filter(c => {
+            const s = ((c.data || {}).status || '').toLowerCase();
+            return s !== 'resolved' && s !== 'solved';
+        }).length;
+
+        set('ovMembers', members.length);
+        set('ovUmuganda', rate(allUmuganda) + '%');
+        set('ovInteko', rate(allInteko) + '%');
+        set('ovCases', openCases);
+
+        drawOverviewChart(scope(allUmuganda), scope(allInteko));
+    } catch (err) {
+        console.error('loadOverview error:', err);
+    }
+}
+
+let _ovChart = null;
+function drawOverviewChart(umuganda, inteko) {
+    const canvas = document.getElementById('ovChart');
+    const empty  = document.getElementById('ovChartEmpty');
+    if (!canvas) return;
+    if (_ovChart) { _ovChart.destroy(); _ovChart = null; }
+
+    const present = a => a.filter(r => (r.status || '').toLowerCase() === 'present').length;
+    const absent  = a => a.filter(r => (r.status || '').toLowerCase() === 'absent').length;
+    const has = umuganda.length || inteko.length;
+    if (empty) empty.style.display = has ? 'none' : '';
+    canvas.style.display = has ? '' : 'none';
+    if (!has || typeof Chart === 'undefined') return;
+
+    _ovChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: ['Umuganda', 'Inteko'],
+            datasets: [
+                { label: 'Present', data: [present(umuganda), present(inteko)], backgroundColor: '#1e8a4a', borderRadius: 4, maxBarThickness: 64 },
+                { label: 'Absent',  data: [absent(umuganda),  absent(inteko)],  backgroundColor: '#d32f2f', borderRadius: 4, maxBarThickness: 64 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
     });
 }
 

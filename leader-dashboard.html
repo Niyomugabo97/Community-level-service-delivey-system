@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/new-styles.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dashboard.css?v=3">
 </head>
 <body>
     <header class="topbar">
@@ -52,9 +52,14 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <aside class="dashboard-sidebar">
             <nav class="sidebar-nav">
+                <p class="nav-group-label">Overview</p>
+                <ul class="dashboard-menu">
+                    <li><a href="#overview" data-section="overview" class="active"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span class="nav-text">Overview</span></a></li>
+                </ul>
+
                 <p class="nav-group-label">Members</p>
                 <ul class="dashboard-menu">
-                    <li><a href="#register" data-section="register" class="active"><span class="nav-icon"><i class="fa-solid fa-user-plus"></i></span><span class="nav-text">Register Members</span></a></li>
+                    <li><a href="#register" data-section="register"><span class="nav-icon"><i class="fa-solid fa-user-plus"></i></span><span class="nav-text">Register Members</span></a></li>
                 </ul>
 
                 <p class="nav-group-label">Attendance</p>
@@ -86,20 +91,48 @@
                 </ul>
             </nav>
 
-            <div class="sidebar-user">
-                <span class="avatar" id="sbAvatar">–</span>
-                <div class="sb-user-meta">
-                    <span class="sb-user-name" id="sbName">User</span>
-                    <span class="sb-user-role" id="sbRole">Village Leader</span>
-                </div>
-                <button class="sb-logout js-logout" title="Logout" aria-label="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            <div class="sidebar-foot">
+                <button class="sidebar-signout js-logout" aria-label="Sign out"><i class="fa-solid fa-right-from-bracket"></i> <span>Sign out</span></button>
             </div>
         </aside>
 
         <div class="dashboard-content">
+            <!-- Overview / Landing Section -->
+            <section id="overview" class="dashboard-section active">
+                <h2><i class="fa-solid fa-gauge-high"></i> Overview</h2>
+                <p class="section-desc" id="overviewWelcome">A snapshot of your village at a glance.</p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4><i class="fa-solid fa-users"></i> Registered Members</h4>
+                        <div class="stat-value" id="ovMembers">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4><i class="fa-solid fa-people-group"></i> Umuganda Attendance</h4>
+                        <div class="stat-value info" id="ovUmuganda">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4><i class="fa-solid fa-clipboard-check"></i> Inteko Attendance</h4>
+                        <div class="stat-value info" id="ovInteko">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4><i class="fa-solid fa-scale-balanced"></i> Open Cases</h4>
+                        <div class="stat-value danger" id="ovCases">—</div>
+                    </div>
+                </div>
+
+                <div class="data-table-container chart-card">
+                    <h3><i class="fa-solid fa-chart-column"></i> Attendance overview</h3>
+                    <p class="section-desc">Present vs absent across Umuganda and Inteko in your village.</p>
+                    <div class="chart-box"><canvas id="ovChart"></canvas></div>
+                    <p id="ovChartEmpty" class="chart-empty" style="display:none;">No attendance recorded yet.</p>
+                </div>
+            </section>
+
             <!-- Register Members Section -->
-            <section id="register" class="dashboard-section active">
+            <section id="register" class="dashboard-section">
                 <h2><i class="fa-solid fa-user-plus"></i> Register Members</h2>
+                <p class="section-desc">Add community members to the register — their details power attendance tracking and analytics.</p>
                 
                 <!-- Simple Registration Form -->
                 <form id="registerForm" class="form-container">
@@ -172,15 +205,17 @@
             <!-- Umuganda Attendance Section -->
             <section id="umuganda" class="dashboard-section">
                 <h2><i class="fa-solid fa-people-group"></i> Umuganda Attendance</h2>
+                <p class="section-desc">Mark present or absent for Umuganda (community work) and save the record for this session.</p>
                 
                 <!-- Manual Attendance -->
                 <div class="manual-attendance-container">
                     <!-- Leader Location Selection -->
                     <div class="leader-location-selection">
-                        <h3>Select Your Location</h3>
+                        <h3>Select your location</h3>
+                        <p class="location-hint">Choose where you're recording attendance — Cell and Village unlock once you pick a Sector.</p>
                         <div class="location-selector">
                             <div class="form-group">
-                                <label>Select Sector *</label>
+                                <label>Sector *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="leaderSector" required onchange="updateLeaderCells()" style="flex: 1;">
                                         <option value="">-- Select your sector --</option>
@@ -194,7 +229,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Select Cell *</label>
+                                <label>Cell *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="leaderCell" required onchange="updateLeaderVillages()" disabled style="flex: 1;">
                                         <option value="">Select your cell</option>
@@ -205,7 +240,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Select Village *</label>
+                                <label>Village *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="leaderVillage" required onchange="loadLeaderAttendance()" disabled style="flex: 1;">
                                         <option value="">Select your village</option>
@@ -349,14 +384,16 @@
             <!-- Inteko Attendance Section -->
             <section id="inteko-attendance" class="dashboard-section">
                 <h2><i class="fa-solid fa-clipboard-check"></i> Inteko Attendance</h2>
+                <p class="section-desc">Mark present or absent for Inteko (community meeting) and save the record for this session.</p>
 
                 <div class="manual-attendance-container">
                     <!-- Location Selection -->
                     <div class="leader-location-selection">
-                        <h3>Select Your Location</h3>
+                        <h3>Select your location</h3>
+                        <p class="location-hint">Choose where you're recording attendance — Cell and Village unlock once you pick a Sector.</p>
                         <div class="location-selector">
                             <div class="form-group">
-                                <label>Select Sector *</label>
+                                <label>Sector *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="intekoSector" required onchange="updateIntekoLeaderCells()" style="flex: 1;">
                                         <option value="">-- Select your sector --</option>
@@ -370,7 +407,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Select Cell *</label>
+                                <label>Cell *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="intekoCell" required onchange="updateIntekoLeaderVillages()" disabled style="flex: 1;">
                                         <option value="">Select your cell</option>
@@ -381,7 +418,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Select Village *</label>
+                                <label>Village *</label>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <select id="intekoVillage" required disabled style="flex: 1;">
                                         <option value="">Select your village</option>
@@ -514,6 +551,7 @@
             <!-- Attendance Analytics Section -->
             <section id="analytics" class="dashboard-section">
                 <h2><i class="fa-solid fa-chart-bar"></i> Attendance Analytics</h2>
+                <p class="section-desc">Present, absent and attendance-rate breakdowns for Umuganda and Inteko, with PDF export.</p>
 
                 <!-- Type tabs -->
                 <div class="sub-analytics-tabs" style="margin-bottom:0;">
@@ -670,6 +708,7 @@
             <!-- Inteko Minutes Section -->
             <section id="inteko" class="dashboard-section">
                 <h2><i class="fa-solid fa-clipboard-list"></i> Inteko Minutes & Decisions</h2>
+                <p class="section-desc">Record meeting minutes, decisions and action items for each Inteko session.</p>
                 <form id="intekoForm" class="form-container">
                     <h3>A. MEETING INFORMATION</h3>
                     <div class="form-row">
@@ -946,6 +985,7 @@
             <!-- Report Drugs Section -->
             <section id="drugs" class="dashboard-section">
                 <h2><i class="fa-solid fa-bottle-droplet"></i> Report Drugs and Illegal Drinks</h2>
+                <p class="section-desc">Report drug or illegal-drink activity in your village for review by the higher levels.</p>
                 <p class="section-desc">Reports are automatically visible with full details on this page, the cell dashboard and the sector dashboard.</p>
                 <form id="drugsForm" class="form-container">
                     <div class="form-group">
@@ -996,6 +1036,7 @@
             <!-- Report Sexual Violence Section -->
             <section id="violence" class="dashboard-section">
                 <h2><i class="fa-solid fa-hand-fist"></i> Report Sexual Violence</h2>
+                <p class="section-desc">Confidentially report sexual-violence cases for escalation and follow-up.</p>
                 <p class="section-desc">Reports are automatically visible with full details on this page, the cell dashboard and the sector dashboard.</p>
                 <form id="violenceForm" class="form-container">
                     <div class="form-group">
@@ -1051,6 +1092,7 @@
             <!-- Damaged Infrastructure Report Section -->
             <section id="infrastructure" class="dashboard-section">
                 <h2><i class="fa-solid fa-road"></i> Damaged Infrastructure Report</h2>
+                <p class="section-desc">Report damaged roads or facilities so they can be scheduled for repair.</p>
                 <form id="leaderInfrastructureForm" class="form-container">
                     <div class="form-group">
                         <label>Place/Location</label>
@@ -1094,6 +1136,7 @@
             <!-- Shift Automate Case Section -->
             <section id="case" class="dashboard-section">
                 <h2><i class="fa-solid fa-scale-balanced"></i> Shift Automate Ikirago (Case)</h2>
+                <p class="section-desc">Manage citizen cases (Ikirago) — review details, set deadlines, resolve or escalate, and confirm receipt.</p>
                 <div class="data-table-container">
                     <h3>Citizen Case Records</h3>
                     <table id="caseTable" class="data-table">
@@ -1223,6 +1266,7 @@
             <!-- Chat Section -->
             <section id="chat" class="dashboard-section">
                 <h2><i class="fa-solid fa-comments"></i> Chat with Citizens and Upper Levels</h2>
+                <p class="section-desc">Message citizens and the upper levels (cell, sector) directly.</p>
                 <div class="form-container">
                     <form id="leaderChatForm">
                         <div class="form-row">
@@ -1265,6 +1309,7 @@
             <!-- Visitor Reports Section -->
             <section id="visitors" class="dashboard-section">
                 <h2><i class="fa-solid fa-user-group"></i> Visitor Reports from Citizens</h2>
+                <p class="section-desc">Guest and visitor reports submitted by citizens in your village.</p>
                 
                 <div class="form-container">
                     <div class="visitor-summary-cards">
